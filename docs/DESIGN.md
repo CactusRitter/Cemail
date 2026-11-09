@@ -1,0 +1,49 @@
+# Diseño de Cemail (familia "Ce")
+
+Cemail forma parte de las apps "Ce" que César y Jonathan hacen juntos: **Celander** (calendario), **Cenotes** (notas) y **Cemail**. Las tres comparten el mismo lenguaje visual para que parezcan una sola familia.
+
+## Fuentes de referencia
+- **Celander 1.07** (no la 1.08, que aún necesita cambios): https://celandar.winterwonderland.cloud/ — el changelog está en `/changelog/`.
+- **Cenotes**: `D:\cesar\Documents\Claude Projects\Cenotes` — ya implementa el diseño de Celander en Compose. Cemail copia de ahí el tema y los componentes de cristal (`ui/theme/Theme.kt`, `ui/glass/Glass.kt`) con los mismos valores.
+- Cuando Jonathan dé acceso al repositorio de Celander, se contrastan estos valores con el código real y se ajusta lo que difiera.
+
+## Principios (de Celander)
+1. **Cristal esmerilado** ("Frosted Glass" en Android): superficies translúcidas con desenfoque, borde claro que se desvanece hacia abajo y sombra suave.
+2. **Resortes, no curvas**: todos los cambios de estado usan `glassSpring()` (amortiguación 0.8, rigidez media-baja). Nada de animaciones lineales.
+3. **Navegación flotante**: píldora de cristal (`GlassPill` + `PillIcon`) y botones redondos de 56 dp (`GlassIconButton`) sobre el contenido.
+4. **Claro y oscuro** siguiendo el sistema, ambos con la misma importancia.
+5. **Accesibilidad**: contraste WCAG AA, objetivos táctiles grandes, texto escalable hasta 200 %, opción de reducir animaciones.
+6. **Transparencia ajustable** (0–100 %, 65 % por defecto), igual que en Celander y Cenotes.
+
+## Paleta
+| Uso | Claro | Oscuro |
+|---|---|---|
+| Fondo (`background`) | `#ECE6F6` | `#141B33` |
+| Superficie | `#F7F5FA` | `#1C2033` |
+| Texto | `#1B1B21` | `#F2F1F7` |
+| Texto secundario | `#5D5B66` | `#B5B3C2` |
+| Error | `#C62828` | `#FF8A80` |
+| Cristal base (tras el desenfoque) | `#F1ECF4` | `#171B2E` |
+| Tarjeta / píldora (tinte) | blanco | `#262C45` |
+| Menús y diálogos | `#F9F7FC` al 97 % | `#262B40` al 97 % |
+
+Fondo: degradado vertical con manchas de color difuminadas (`GlassBackground`).
+
+**Acentos** (cada uno afinado para claro/oscuro; por defecto Índigo): Índigo `#4A4FD8`/`#A9ADFF`, Violeta `#7B4FD6`/`#C7AEFF`, Azul `#1F6FD1`/`#9CC7FF`, Verde `#2E8B57`/`#8FD9AE`, Coral `#D9534F`/`#FFB0A8`, Ámbar `#B7791F`/`#F5C77E`.
+
+**Marca de Celander** (web): degradado azul `#2A72FF` → índigo `#6168F1` → violeta `#8561EA` → lila `#AB64F0` → malva `#D57ABD` → rosa `#F08B94` → melocotón `#FC9774`. El icono de las apps usa un trazo con degradado índigo → violeta → coral y un punto coral.
+
+## Tipografía
+La web de Celander usa Inter (texto), Instrument Serif (titulares) y JetBrains Mono (detalles). Cenotes usa la tipografía del sistema (Roboto) en la app; Cemail hace lo mismo hasta que se decida otra cosa junto con Celander.
+
+## Cómo se usa en el código
+- `CemailTheme(settings)` aplica el esquema de colores y proporciona `LocalGlass`.
+- `Modifier.glass(shape, kind, elevation, hazeState)` crea cualquier superficie de cristal. Para desenfocar lo que hay detrás, el contenido que se desplaza lleva `hazeSource` y la superficie recibe el mismo `HazeState`.
+- `GlassKind`: `Card` (filas y tarjetas), `Chrome` (botones y píldoras), `Pinned` (resaltado con acento, p. ej. correo sin leer), `Menu` (diálogos y menús, casi opacos).
+- Los ajustes de acento y transparencia viven en `SettingsRepository` (SharedPreferences, como Cenotes).
+- Ningún color ni texto fijo en las pantallas: se toman del tema (`MaterialTheme.colorScheme`, `LocalGlass`) y de `strings.xml`.
+
+## Cómo se vería en un correo (guía para las pantallas)
+- **Bandeja**: filas como tarjetas de cristal; sin leer = `GlassKind.Pinned`. Botón flotante redondo para redactar y píldora con carpetas.
+- **Lectura**: el cuerpo en una tarjeta de cristal; acciones en una píldora flotante inferior.
+- **Redactar**: campos sobre tarjeta de cristal; el botón de enviar con el color de acento.

@@ -3,12 +3,12 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
-    alias(libs.plugins.hilt)
     alias(libs.plugins.room)
 }
 
-// Los secretos (client IDs de OAuth) viven en local.properties, que no se sube a git.
+// Los secretos (client IDs de OAuth, firma) viven en local.properties, que no se sube a git.
 val localProps = Properties().apply {
     val f = rootProject.file("local.properties")
     if (f.exists()) f.inputStream().use { load(it) }
@@ -30,14 +30,37 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Esquema de redirección de OAuth (AppAuth). Debe coincidir con lo registrado en Google y Microsoft.
-        manifestPlaceholders["appAuthRedirectScheme"] = "com.cemail.app"
+        // Google exige que la redirección de un cliente Android sea "com.googleusercontent.apps.<ID>".
+        // El ID de cliente es "<ID>.apps.googleusercontent.com". Vacío hasta registrar la app (docs/OAUTH_SETUP.md).
+        val googleClientId = localProp("cemail.oauth.google.clientId")
+        buildConfigField("String", "GOOGLE_OAUTH_CLIENT_ID", "\"$googleClientId\"")
+        manifestPlaceholders["appAuthRedirectScheme"] =
+            "com.googleusercontent.apps." + googleClientId.removeSuffix(".apps.googleusercontent.com").ifEmpty { "unset" }
+    }
 
-        buildConfigField("String", "GOOGLE_OAUTH_CLIENT_ID", "\"${localProp("cemail.oauth.google.clientId")}\"")
-        buildConfigField("String", "MICROSOFT_OAUTH_CLIENT_ID", "\"${localProp("cemail.oauth.microsoft.clientId")}\"")
+    // Firma de release con la clave propia (la misma para todos los APK que se reparten).
+    // Se activa solo si keystore.properties existe; ver docs/OAUTH_SETUP.md.
+    val keystoreProps = Properties().apply {
+        val f = rootProject.file("keystore.properties")
+        if (f.exists()) f.inputStream().use { load(it) }
+    }
+    signingConfigs {
+        if (keystoreProps.isNotEmpty()) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
     }
 
     buildTypes {
+        // Depuración firmada con la misma clave que release: así un único ID de cliente de Google
+        // (atado a la SHA-1 de esa clave) sirve para probar y para el APK de los amigos.
+        debug {
+            signingConfigs.findByName("release")?.let { signingConfig = it }
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -45,6 +68,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            signingConfigs.findByName("release")?.let { signingConfig = it }
         }
     }
 
@@ -62,18 +86,6 @@ android {
         // Genera locales_config.xml a partir de las carpetas values-xx → idioma por app en Ajustes (Android 13+).
         generateLocaleConfig = true
     }
-
-    packaging {
-        resources {
-            excludes += setOf(
-                "/META-INF/{AL2.0,LGPL2.1}",
-                "/META-INF/LICENSE.md",
-                "/META-INF/NOTICE.md",
-                "/META-INF/LICENSE",
-                "/META-INF/NOTICE",
-            )
-        }
-    }
 }
 
 room {
@@ -86,31 +98,24 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.navigation.compose)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
-
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
-    implementation(libs.androidx.hilt.navigation.compose)
-    implementation(libs.androidx.hilt.work)
-    ksp(libs.androidx.hilt.compiler)
+    implementation(libs.androidx.material.icons.core)
+    implementation(libs.haze)
 
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
-    implementation(libs.androidx.room.paging)
     ksp(libs.androidx.room.compiler)
 
     implementation(libs.androidx.work.runtime.ktx)
-    implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.coroutines.android)
 
-    implementation(libs.angus.mail)
-    implementation(libs.angus.activation)
+    implementation(libs.okhttp)
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.appauth)
     implementation(libs.jsoup)
 

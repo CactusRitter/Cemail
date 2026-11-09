@@ -2,4 +2,12 @@
 <!-- Default (English) strings. Every string here must also exist in each values-xx/strings.xml. -->
 <resources>
     <string name="app_name" translatable="false">Cemail</string>
+
+    <!-- Accent colours -->
+    <string name="accent_indigo">Indigo</string>
+    <string name="accent_violet">Violet</string>
+    <string name="accent_blue">Blue</string>
+    <string name="accent_green">Green</string>
+    <string name="accent_coral">Coral</string>
+    <string name="accent_amber">Amber</string>
 </resources>

@@ -1,36 +1,74 @@
-# Configurar OAuth (Gmail y Outlook)
+# Configurar el inicio de sesión con Google
 
-Cemail funciona sin esto con cualquier cuenta IMAP con contraseña. Para que el botón "Iniciar sesión con Google / Microsoft" funcione hay que registrar la app en cada proveedor y poner los client IDs en `local.properties`:
+Cemail se publica solo para uso propio y de amigos (se instala con un APK, sin Play Store). Solo admite **Gmail**; Outlook se deja para más adelante.
+
+## Estado (hecho el 2026-11-09)
+Todo lo de abajo **ya está hecho** para tu cuenta:
+- Proyecto de Google Cloud **Cemail** (`cemail-514220`), con la **Gmail API** habilitada. (Tienes otros proyectos, como "Celander"; no se tocan.)
+- Pantalla de consentimiento: nombre "Cemail", público **externo**, permisos `openid`, `userinfo.email` y `gmail.modify`.
+- Cliente OAuth **Android** `Cemail Android` (paquete `com.cemail.app`, SHA-1 de la clave de release, esquema de URI personalizado habilitado). Su ID ya está en `local.properties`.
+- Clave de firma `cemail-release.jks` + `keystore.properties` creadas en la raíz del proyecto (ignoradas por git). **Haz copia de seguridad de ambas.**
+- Las compilaciones de **depuración también se firman con esa clave**, así que un solo ID de cliente sirve para probar en el emulador y para el APK de los amigos.
+- Estado de publicación: **Testing**, con `cesar.a.caballerot@gmail.com` como usuario de prueba. Pasar a **In production** no es posible todavía: Google exige una URL de página principal y otra de política de privacidad (*Información de la marca*) y no hay ninguna. Hasta entonces la sesión caduca a los 7 días.
+- Pendiente: probar el inicio de sesión real en la fase 1. Google puede tardar entre 5 minutos y unas horas en aplicar un cliente nuevo.
+
+El resto del documento explica cómo se hizo, por si hay que repetirlo.
+
+Hay que hacerlo **una vez**, antes de la fase 1 del [ROADMAP](ROADMAP.md). Al terminar tendrás un *ID de cliente* que se pone en `local.properties`:
 
 ```properties
-cemail.oauth.google.clientId=XXXXXXXX.apps.googleusercontent.com
-cemail.oauth.microsoft.clientId=00000000-0000-0000-0000-000000000000
+cemail.oauth.google.clientId=XXXXXXXX-yyyyyyyy.apps.googleusercontent.com
 ```
 
-Llegan al código como `BuildConfig.GOOGLE_OAUTH_CLIENT_ID` y `BuildConfig.MICROSOFT_OAUTH_CLIENT_ID`.
+Llega al código como `BuildConfig.GOOGLE_OAUTH_CLIENT_ID`. El esquema de redirección del manifiesto se calcula solo a partir de él (`com.googleusercontent.apps.<ID>`), que es lo que Google exige para clientes Android.
 
-## Google (Gmail)
+## 0. Una clave de firma propia
+
+El ID de cliente de Google para Android está atado a la huella **SHA-1** del certificado con el que se firma el APK. El certificado de depuración es distinto en cada ordenador, así que para que el APK que pases a tus amigos funcione, fírmalo siempre con la misma clave.
+
+1. Crea la clave (te pedirá una contraseña y tus datos):
+   ```bash
+   keytool -genkeypair -v -keystore cemail-release.jks -alias cemail -keyalg RSA -keysize 2048 -validity 10000
+   ```
+2. Guarda `cemail-release.jks` y su contraseña en un sitio seguro, **con copia de seguridad**. Si la pierdes, tus amigos tendrán que desinstalar e instalar de nuevo. Está en `.gitignore`: no se sube a git.
+3. Crea `keystore.properties` en la raíz del proyecto (también ignorado por git):
+   ```properties
+   storeFile=cemail-release.jks
+   storePassword=TU_CONTRASEÑA
+   keyAlias=cemail
+   keyPassword=TU_CONTRASEÑA
+   ```
+   Con ese archivo, `./gradlew assembleRelease` genera el APK firmado.
+4. Obtén las huellas SHA-1 (la de release y la de depuración, para probar desde Android Studio):
+   ```bash
+   keytool -list -v -keystore cemail-release.jks -alias cemail
+   keytool -list -v -keystore "%USERPROFILE%\.android\debug.keystore" -alias androiddebugkey -storepass android -keypass android
+   ```
+
+## 1. Proyecto en Google Cloud
 
 1. En https://console.cloud.google.com crea un proyecto "Cemail".
-2. *APIs y servicios → Pantalla de consentimiento OAuth*: tipo **Externo**, estado **Pruebas**, y añade tu cuenta como usuario de prueba.
-3. Añade el scope `https://mail.google.com/` (acceso IMAP/SMTP completo).
-4. *Credenciales → Crear ID de cliente OAuth → Android*:
+2. *APIs y servicios → Biblioteca*: busca **Gmail API** y pulsa **Habilitar**.
+3. *Google Auth Platform → Branding*: nombre "Cemail" y tu correo de contacto.
+4. *Público (Audience)*: tipo **Externo**.
+5. *Acceso a los datos (Data access) → Añadir o quitar permisos*: añade `.../auth/gmail.modify` (leer, redactar, enviar, archivar y mover a la papelera; no borra de forma permanente) y los básicos `openid` y `email`.
+6. *Clientes → Crear cliente → Android*:
    - Nombre del paquete: `com.cemail.app`
-   - Huella SHA-1 del certificado de depuración. Obtenla con:
-     ```bash
-     keytool -list -v -keystore "%USERPROFILE%\.android\debug.keystore" -alias androiddebugkey -storepass android -keypass android
-     ```
-   - (Más adelante, otra credencial con la SHA-1 del certificado de release / Play App Signing.)
-5. Copia el client ID en `local.properties`. La redirección es `com.cemail.app:/oauth2redirect`.
+   - SHA-1: la de tu clave de release (puedes crear otro cliente con la de depuración para probar).
+   - En *Configuración avanzada* activa **"Habilitar esquema de URI personalizado"**.
+7. Copia el ID de cliente en `local.properties`.
 
-> **Importante para publicar**: `https://mail.google.com/` es un scope *restringido*. En modo Pruebas funciona para hasta 100 usuarios de prueba (el token caduca a los 7 días). Para publicar en Play Store para todo el mundo, Google exige verificación de la app y una evaluación de seguridad anual (CASA). Mientras tanto, los usuarios de Gmail siempre pueden usar una contraseña de aplicación.
+> Como `app/build.gradle.kts` firma también el APK de depuración con la clave de release (cuando existe `keystore.properties`), basta con un único cliente. Si alguien compila sin esa clave, el APK saldrá firmado con su clave de depuración local y el inicio de sesión de Google fallará.
 
-## Microsoft (Outlook, Hotmail, Microsoft 365)
+## 2. Estado de publicación: elige uno
 
-1. En https://entra.microsoft.com → *Registros de aplicaciones → Nuevo registro*.
-2. Tipos de cuenta: **Cuentas en cualquier directorio organizativo y cuentas personales de Microsoft**.
-3. *Autenticación → Agregar plataforma → Aplicaciones móviles y de escritorio* → URI de redirección personalizada: `com.cemail.app://oauth2redirect`.
-4. *Permisos de API → Agregar → APIs que mi organización usa → Office 365 Exchange Online* (o Microsoft Graph, permisos delegados): `IMAP.AccessAsUser.All`, `SMTP.Send`, `offline_access`, `openid`, `email`.
-5. Copia el *Id. de aplicación (cliente)* en `local.properties`.
+| | Testing (por defecto) | In production sin verificar (recomendado) |
+|---|---|---|
+| Quién puede entrar | Solo los correos que añadas como *usuarios de prueba* (máx. 100) | Cualquier cuenta de Google, hasta 100 usuarios nuevos |
+| Caducidad de sesión | **A los 7 días hay que volver a iniciar sesión** | No caduca por esto |
+| Pantalla de aviso | Sí | Sí: "Google no ha verificado esta aplicación" → *Avanzado → Ir a Cemail (no seguro)* |
 
-Microsoft ya no permite IMAP con contraseña normal en Outlook.com, así que OAuth es imprescindible para esas cuentas.
+Para ti y unos pocos amigos, pasa la app a **In production** (botón *Publicar app*) sin enviarla a verificación. Solo sale el aviso al iniciar sesión y existe el tope de 100 usuarios. Si prefieres no hacerlo, deja Testing y añade a cada amigo en *Usuarios de prueba*, sabiendo que cada semana tendrá que volver a entrar.
+
+## Más adelante: Outlook
+Microsoft ya no permite IMAP con contraseña en Outlook.com, así que requerirá su propio registro en https://entra.microsoft.com (OAuth con Microsoft Graph o IMAP XOAUTH2). Se documentará cuando se decida hacerlo.

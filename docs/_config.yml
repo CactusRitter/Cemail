@@ -1,0 +1,9 @@
+title: Cemail
+description: A simple Gmail client for Android.
+theme: jekyll-theme-minimal
+# Only the public pages are part of the site; internal project notes stay in the repository only.
+exclude:
+  - ARCHITECTURE.md
+  - DESIGN.md
+  - OAUTH_SETUP.md
+  - ROADMAP.md

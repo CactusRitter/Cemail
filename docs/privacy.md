@@ -1,0 +1,98 @@
+---
+title: Privacy Policy - Cemail
+permalink: /privacy/
+---
+
+# Privacy Policy
+
+*Last updated: 9 November 2026* · [Español](#español)
+
+Cemail ("the app") is an Android email client for Gmail, developed by César Caballero ("I", "me"). This policy explains what information the app accesses, how it is used and stored, and your choices. Cemail is a small personal project distributed to a few people as an APK; it is not published on Google Play.
+
+## Summary
+- Cemail talks **directly** between your phone and Google. I do not run any server that receives your data.
+- Your email stays **on your device**. I never see it, store it, sell it or share it.
+- No advertising, no analytics, no tracking, no crash-reporting services.
+
+## Information the app accesses
+When you sign in with Google, you grant the app these permissions:
+
+| Permission | What it is used for |
+|---|---|
+| Your Google account email address and basic profile (`openid`, `userinfo.email`) | To show which account is signed in and to tell accounts apart. |
+| Gmail access (`https://www.googleapis.com/auth/gmail.modify`) | To read your messages, labels and attachments; to compose and send messages; and to mark as read, star, archive and move messages to the trash. The app cannot permanently delete messages. |
+
+The app uses this access only to provide the features you see in the app, at your request.
+
+## How information is stored
+- Messages, labels and attachments you open are cached in a **local database on your phone** so the app works quickly and offline.
+- Sign-in tokens are stored on your phone **encrypted** with a key kept in the Android Keystore.
+- Cloud backup of the app's data is disabled.
+- Nothing is sent to me or to any third party. The only network connections the app makes are to Google's services (for example `accounts.google.com`, `oauth2.googleapis.com` and `gmail.googleapis.com`) and, only if you choose to show remote images in a message, to the servers hosting those images. Remote images are blocked by default.
+
+## Sharing
+I do not sell, rent, share or transfer your data to anyone. Google receives the requests the app makes to its services, as described in [Google's Privacy Policy](https://policies.google.com/privacy).
+
+## Google API Services User Data Policy
+Cemail's use and transfer of information received from Google APIs adheres to the [Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy), including the Limited Use requirements. In particular, the data is used only to provide and improve the user-facing features of the app, is not used for advertising, and is not read by humans except where you explicitly share it or it is required for security or by law.
+
+## Retention and deletion
+- Data stays on your phone until you remove the account in the app or uninstall it. Removing an account deletes its local messages and tokens.
+- You can revoke Cemail's access to your Google account at any time at [myaccount.google.com/permissions](https://myaccount.google.com/permissions).
+
+## Children
+The app is not directed at children under 13 and I do not knowingly collect information from them.
+
+## Changes
+If this policy changes, the new version will be published on this page with an updated date.
+
+## Contact
+César Caballero · cesar.a.caballerot@gmail.com
+
+---
+
+# Política de privacidad {#español}
+
+*Última actualización: 9 de noviembre de 2026* · [English](#privacy-policy)
+
+Cemail ("la app") es un cliente de correo para Android que funciona con Gmail, desarrollado por César Caballero ("yo"). Esta política explica a qué información accede la app, cómo se usa y se guarda, y qué puedes decidir tú. Cemail es un pequeño proyecto personal que se reparte como APK a unas pocas personas; no está publicada en Google Play.
+
+## Resumen
+- Cemail se comunica **directamente** entre tu teléfono y Google. No tengo ningún servidor que reciba tus datos.
+- Tu correo se queda **en tu dispositivo**. Yo nunca lo veo, lo guardo, lo vendo ni lo comparto.
+- Sin publicidad, sin analíticas, sin seguimiento y sin servicios de informes de errores.
+
+## Información a la que accede la app
+Al iniciar sesión con Google concedes a la app estos permisos:
+
+| Permiso | Para qué se usa |
+|---|---|
+| Dirección de correo de tu cuenta de Google y perfil básico (`openid`, `userinfo.email`) | Para mostrar qué cuenta está activa y distinguir cuentas. |
+| Acceso a Gmail (`https://www.googleapis.com/auth/gmail.modify`) | Para leer tus mensajes, etiquetas y adjuntos; redactar y enviar mensajes; y marcar como leídos, destacar, archivar y mover a la papelera. La app no puede borrar mensajes de forma permanente. |
+
+La app usa este acceso solo para ofrecer las funciones que ves en ella, a petición tuya.
+
+## Cómo se guarda la información
+- Los mensajes, etiquetas y adjuntos que abres se guardan en una **base de datos local en tu teléfono** para que la app funcione rápido y sin conexión.
+- Los tokens de inicio de sesión se guardan en tu teléfono **cifrados** con una clave del Android Keystore.
+- La copia de seguridad en la nube de los datos de la app está desactivada.
+- No se envía nada a mí ni a terceros. Las únicas conexiones de red de la app son con los servicios de Google (por ejemplo `accounts.google.com`, `oauth2.googleapis.com` y `gmail.googleapis.com`) y, solo si decides mostrar las imágenes remotas de un mensaje, con los servidores que las alojan. Las imágenes remotas están bloqueadas por defecto.
+
+## Compartir datos
+No vendo, alquilo, comparto ni transfiero tus datos a nadie. Google recibe las peticiones que la app hace a sus servicios, según su [Política de Privacidad](https://policies.google.com/privacy).
+
+## Política de datos de usuario de los servicios de las API de Google
+El uso y la transferencia que Cemail hace de la información recibida de las API de Google cumple la [Política de datos de usuario de los servicios de las API de Google](https://developers.google.com/terms/api-services-user-data-policy), incluidos los requisitos de uso limitado. En concreto, los datos se usan solo para ofrecer y mejorar las funciones de la app visibles para el usuario, no se usan para publicidad y no los lee ninguna persona, salvo que tú lo compartas expresamente o sea necesario por seguridad o por ley.
+
+## Conservación y eliminación
+- Los datos permanecen en tu teléfono hasta que quites la cuenta en la app o la desinstales. Quitar una cuenta borra sus mensajes locales y sus tokens.
+- Puedes revocar el acceso de Cemail a tu cuenta de Google en cualquier momento en [myaccount.google.com/permissions](https://myaccount.google.com/permissions).
+
+## Menores
+La app no está dirigida a menores de 13 años y no recopilo conscientemente información de ellos.
+
+## Cambios
+Si esta política cambia, la nueva versión se publicará en esta página con la fecha actualizada.
+
+## Contacto
+César Caballero · cesar.a.caballerot@gmail.com

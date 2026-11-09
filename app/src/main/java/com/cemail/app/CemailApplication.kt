@@ -1,18 +1,18 @@
 package com.cemail.app
 
 import android.app.Application
-import androidx.hilt.work.HiltWorkerFactory
-import androidx.work.Configuration
-import dagger.hilt.android.HiltAndroidApp
-import javax.inject.Inject
+import com.cemail.app.data.SettingsRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
-@HiltAndroidApp
-class CemailApplication : Application(), Configuration.Provider {
+/**
+ * Manual dependency container, like Cenotes: each piece is created lazily on first use.
+ * (No Hilt: the "Ce" apps keep dependencies simple.)
+ */
+class CemailApplication : Application() {
+    val settings: SettingsRepository by lazy { SettingsRepository(this) }
 
-    @Inject lateinit var workerFactory: HiltWorkerFactory
-
-    override val workManagerConfiguration: Configuration
-        get() = Configuration.Builder()
-            .setWorkerFactory(workerFactory)
-            .build()
+    /** Lives as long as the process: work started while leaving a screen always finishes. */
+    val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 }

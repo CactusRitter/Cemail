@@ -1,12 +1,16 @@
 # Reglas de R8 para Cemail.
 
-# Jakarta Mail / Angus carga proveedores (IMAP, SMTP) por reflexión vía META-INF.
--keep class org.eclipse.angus.mail.** { *; }
--keep class jakarta.mail.** { *; }
--keep class jakarta.activation.** { *; }
--keep class org.eclipse.angus.activation.** { *; }
--dontwarn org.eclipse.angus.**
--dontwarn jakarta.**
--dontwarn java.awt.**
--dontwarn javax.security.sasl.**
--dontwarn javax.naming.**
+# kotlinx.serialization: conservar los serializadores generados.
+-keepattributes *Annotation*, InnerClasses
+-dontnote kotlinx.serialization.**
+-keepclassmembers class com.cemail.app.** {
+    *** Companion;
+}
+-keepclasseswithmembers class com.cemail.app.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+
+# OkHttp usa estos paquetes opcionales si existen.
+-dontwarn org.bouncycastle.**
+-dontwarn org.conscrypt.**
+-dontwarn org.openjsse.**
