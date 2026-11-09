@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Default (English) strings. Every string here must also exist in each values-xx/strings.xml. -->
+<resources>
+    <string name="app_name" translatable="false">Cemail</string>
+</resources>
