@@ -1,0 +1,231 @@
+package com.cemail.app.ui.mail
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.remember
+import com.cemail.app.R
+import com.cemail.app.data.mail.MailBox
+import com.cemail.app.ui.glass.GlassKind
+import com.cemail.app.ui.glass.GlassPill
+import com.cemail.app.ui.glass.PillIcon
+import com.cemail.app.ui.glass.glass
+import com.cemail.app.ui.icons.CemailIcons
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
+
+fun MailBox.labelRes(): Int = when (this) {
+    MailBox.INBOX -> R.string.box_inbox
+    MailBox.STARRED -> R.string.box_starred
+    MailBox.SNOOZED -> R.string.box_snoozed
+    MailBox.SENT -> R.string.box_sent
+    MailBox.DRAFTS -> R.string.box_drafts
+    MailBox.ARCHIVE -> R.string.box_archive
+    MailBox.TRASH -> R.string.box_trash
+}
+
+@Composable
+fun ListScreen(
+    state: MailUiState,
+    vm: MailViewModel,
+    onOpenDrawer: () -> Unit,
+) {
+    val haze = rememberHazeState()
+    val selecting = state.selection.isNotEmpty()
+    val startIsArchive = state.box != MailBox.ARCHIVE && state.box != MailBox.TRASH
+
+    Box(Modifier.fillMaxSize()) {
+        val empty = state.pinned.isEmpty() && state.others.isEmpty()
+        LazyColumn(
+            Modifier.fillMaxSize().hazeSource(haze),
+            contentPadding = PaddingValues(
+                start = 12.dp,
+                end = 12.dp,
+                top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() + 80.dp,
+                bottom = 120.dp,
+            ),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            if (empty) {
+                item {
+                    Column(
+                        Modifier.fillParentMaxWidth().padding(top = 96.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Icon(CemailIcons.Inbox, null, Modifier.size(56.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            stringResource(if (state.query.isBlank()) R.string.empty_title else R.string.no_results),
+                            Modifier.padding(top = 12.dp),
+                            style = MaterialTheme.typography.titleMedium,
+                            textAlign = TextAlign.Center,
+                        )
+                        if (state.query.isBlank()) {
+                            Text(
+                                stringResource(R.string.empty_body),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                    }
+                }
+            }
+            if (state.pinned.isNotEmpty()) {
+                item(key = "h-pinned") { SectionHeader(stringResource(R.string.section_pinned)) }
+                items(state.pinned, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive) }
+                if (state.others.isNotEmpty()) item(key = "h-mail") { SectionHeader(stringResource(R.string.section_mail)) }
+            }
+            items(state.others, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive) }
+        }
+
+        // Top bar: glass pill over the list (menu, title or search field, search).
+        Box(
+            Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 12.dp, vertical = 8.dp),
+        ) {
+            when {
+                selecting -> SelectionBar(state, vm, haze)
+                state.searching -> SearchBar(state, vm, haze)
+                else -> GlassPill(Modifier.fillMaxWidth(), hazeState = haze) {
+                    PillIcon(Icons.Filled.Menu, stringResource(R.string.menu_open), onOpenDrawer)
+                    Text(
+                        stringResource(state.box.labelRes()),
+                        Modifier.weight(1f).padding(horizontal = 8.dp),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    PillIcon(Icons.Filled.Search, stringResource(R.string.search), { vm.setSearching(true) })
+                }
+            }
+        }
+
+        // Compose button (Thunderbird has a floating "write" button).
+        if (!selecting && !state.searching) {
+            Row(
+                Modifier
+                    .align(Alignment.BottomEnd)
+                    .windowInsetsPadding(WindowInsets.safeDrawing)
+                    .padding(16.dp)
+                    .glass(CircleShape, GlassKind.Pinned, elevation = 10.dp, hazeState = haze)
+                    .clickable(role = Role.Button) { vm.newDraft() }
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Icon(Icons.Filled.Create, null, tint = MaterialTheme.colorScheme.primary)
+                Text(stringResource(R.string.compose), style = MaterialTheme.typography.titleSmall)
+            }
+        }
+    }
+}
+
+@Composable
+private fun MailItem(mail: com.cemail.app.data.mail.Mail, state: MailUiState, vm: MailViewModel, startIsArchive: Boolean) {
+    val one = setOf(mail.id)
+    MailRow(
+        mail = mail,
+        selected = mail.id in state.selection,
+        selectionMode = state.selection.isNotEmpty(),
+        onClick = { if (state.selection.isNotEmpty()) vm.toggleSelect(mail.id) else if (state.box == MailBox.DRAFTS) vm.editDraft(mail) else vm.open(mail.id) },
+        onLongClick = { vm.toggleSelect(mail.id) },
+        onToggleStar = { vm.toggleStar(one) },
+        onSwipeStart = { if (startIsArchive) vm.archive(one) else vm.moveToInbox(one) },
+        onSwipeEnd = { vm.trash(one) },
+        startIsArchive = startIsArchive,
+    )
+}
+
+@Composable
+private fun SectionHeader(text: String) {
+    Text(
+        text,
+        Modifier.padding(start = 8.dp, top = 8.dp),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.primary,
+    )
+}
+
+@Composable
+private fun SelectionBar(state: MailUiState, vm: MailViewModel, haze: dev.chrisbanes.haze.HazeState) {
+    val ids = state.selection
+    GlassPill(Modifier.fillMaxWidth(), hazeState = haze) {
+        PillIcon(Icons.Filled.Close, stringResource(R.string.close), vm::clearSelection)
+        Text(
+            stringResource(R.string.selected_count, ids.size),
+            Modifier.weight(1f).padding(horizontal = 4.dp),
+            style = MaterialTheme.typography.titleSmall,
+        )
+        PillIcon(CemailIcons.Archive, stringResource(R.string.action_archive), { vm.archive(ids) }, width = 44.dp)
+        PillIcon(Icons.Filled.Delete, stringResource(R.string.action_trash), { vm.trash(ids) }, width = 44.dp)
+        PillIcon(CemailIcons.Snooze, stringResource(R.string.action_snooze), { vm.askSnooze(ids) }, width = 44.dp)
+        PillIcon(CemailIcons.Pin, stringResource(R.string.action_pin), { vm.togglePin(ids) }, width = 44.dp)
+        PillIcon(Icons.Filled.Email, stringResource(R.string.action_mark_unread), { vm.markRead(ids, false) }, width = 44.dp)
+    }
+}
+
+@Composable
+private fun SearchBar(state: MailUiState, vm: MailViewModel, haze: dev.chrisbanes.haze.HazeState) {
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { focus.requestFocus() }
+    GlassPill(Modifier.fillMaxWidth(), hazeState = haze) {
+        PillIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), { vm.setSearching(false) })
+        Box(Modifier.weight(1f).padding(horizontal = 4.dp), contentAlignment = Alignment.CenterStart) {
+            if (state.query.isEmpty()) {
+                Text(
+                    stringResource(R.string.search_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
+            }
+            BasicTextField(
+                value = state.query,
+                onValueChange = vm::setQuery,
+                modifier = Modifier.fillMaxWidth().focusRequester(focus),
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            )
+        }
+        if (state.query.isNotEmpty()) PillIcon(Icons.Filled.Close, stringResource(R.string.close), { vm.setQuery("") })
+    }
+}

@@ -9,7 +9,8 @@ Todo lo de abajo **ya está hecho** para tu cuenta:
 - Cliente OAuth **Android** `Cemail Android` (paquete `com.cemail.app`, SHA-1 de la clave de release, esquema de URI personalizado habilitado). Su ID ya está en `local.properties`.
 - Clave de firma `cemail-release.jks` + `keystore.properties` creadas en la raíz del proyecto (ignoradas por git). **Haz copia de seguridad de ambas.**
 - Las compilaciones de **depuración también se firman con esa clave**, así que un solo ID de cliente sirve para probar en el emulador y para el APK de los amigos.
-- Estado de publicación: **Testing**, con `cesar.a.caballerot@gmail.com` como usuario de prueba. Pasar a **In production** no es posible todavía: Google exige una URL de página principal y otra de política de privacidad (*Información de la marca*) y no hay ninguna. Hasta entonces la sesión caduca a los 7 días.
+- Estado de publicación: **In production, sin verificar** (hecho el 2026-11-09). Google pidió una página principal y una política de privacidad, así que se creó una web en GitHub Pages (gratis): inicio `https://cactusritter.github.io/Cemail/` y política `https://cactusritter.github.io/Cemail/privacy/` (fuente en `docs/index.md` y `docs/privacy.md`, repositorio público `CactusRitter/Cemail`). Se añadió `cactusritter.github.io` como dominio autorizado. La consola muestra "tu app requiere verificación": se ignora, no se enviará a revisión. Consecuencias: al iniciar sesión sale el aviso "Google no ha verificado esta aplicación" (*Avanzado → Ir a Cemail*), tope de 100 usuarios, y la sesión ya no caduca a los 7 días.
+- Si se cambia el nombre de usuario de GitHub o el repositorio, hay que actualizar esas URLs y el dominio autorizado en *Información de la marca*.
 - Pendiente: probar el inicio de sesión real en la fase 1. Google puede tardar entre 5 minutos y unas horas en aplicar un cliente nuevo.
 
 El resto del documento explica cómo se hizo, por si hay que repetirlo.

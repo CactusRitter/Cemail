@@ -8,4 +8,102 @@
     <string name="accent_green">Verde</string>
     <string name="accent_coral">Coral</string>
     <string name="accent_amber">Ámbar</string>
+
+    <!-- Carpetas -->
+    <string name="box_inbox">Recibidos</string>
+    <string name="box_starred">Destacados</string>
+    <string name="box_snoozed">Pospuestos</string>
+    <string name="box_sent">Enviados</string>
+    <string name="box_drafts">Borradores</string>
+    <string name="box_archive">Archivados</string>
+    <string name="box_trash">Papelera</string>
+
+    <!-- Pantalla de lista -->
+    <string name="section_pinned">Fijados</string>
+    <string name="section_mail">Mensajes</string>
+    <string name="empty_title">No hay nada aquí</string>
+    <string name="empty_body">Los mensajes que muevas a esta carpeta aparecerán aquí.</string>
+    <string name="search_hint">Buscar (from:, is:unread, has:attachment)</string>
+    <string name="no_results">Ningún mensaje coincide con la búsqueda.</string>
+    <string name="menu_open">Abrir carpetas</string>
+    <string name="search">Buscar</string>
+    <string name="close">Cerrar</string>
+    <string name="back">Atrás</string>
+    <string name="compose">Redactar</string>
+    <string name="selected_count">%1$d seleccionados</string>
+    <string name="no_subject">(sin asunto)</string>
+    <string name="demo_account">Cuenta de prueba</string>
+    <string name="demo_banner">Modo de prueba: el inicio de sesión con Google llega en la siguiente fase.</string>
+
+    <!-- Acciones -->
+    <string name="action_archive">Archivar</string>
+    <string name="action_trash">Mover a la papelera</string>
+    <string name="action_star">Destacar</string>
+    <string name="action_unstar">Quitar destacado</string>
+    <string name="action_pin">Fijar arriba</string>
+    <string name="action_unpin">Desfijar</string>
+    <string name="action_snooze">Posponer</string>
+    <string name="action_mark_read">Marcar como leído</string>
+    <string name="action_mark_unread">Marcar como no leído</string>
+    <string name="action_reply">Responder</string>
+    <string name="action_reply_all">Responder a todos</string>
+    <string name="action_forward">Reenviar</string>
+    <string name="action_more">Más</string>
+    <string name="action_move_inbox">Mover a recibidos</string>
+    <string name="action_undo">Deshacer</string>
+    <string name="done_archived">Archivado</string>
+    <string name="done_trashed">Movido a la papelera</string>
+    <string name="done_snoozed">Pospuesto</string>
+    <string name="done_pinned">Fijado</string>
+    <string name="done_marked">Actualizado</string>
+    <string name="done_sent">Mensaje enviado</string>
+    <string name="done_draft_saved">Borrador guardado</string>
+
+    <!-- Posponer -->
+    <string name="snooze_title">Posponer hasta…</string>
+    <string name="snooze_later">Más tarde hoy</string>
+    <string name="snooze_tomorrow">Mañana por la mañana</string>
+    <string name="snooze_weekend">Este fin de semana</string>
+    <string name="snooze_next_week">La semana que viene</string>
+    <string name="snoozed_until">Vuelve %1$s</string>
+
+    <!-- Lectura -->
+    <string name="to_me">para mí</string>
+    <string name="attachment">Tiene adjuntos</string>
+    <string name="reply_prefix">Re: %1$s</string>
+    <string name="forward_prefix">Fwd: %1$s</string>
+    <string name="quote_header">El %1$s, %2$s escribió:</string>
+
+    <!-- Redactar -->
+    <string name="compose_to">Para</string>
+    <string name="compose_subject">Asunto</string>
+    <string name="compose_body">Escribe tu mensaje</string>
+    <string name="compose_send">Enviar</string>
+    <string name="compose_discard">Descartar</string>
+
+    <!-- Mensajes de ejemplo -->
+    <string name="demo_1_name">Jonathan</string>
+    <string name="demo_1_subject">El diseño de Celander está listo</string>
+    <string name="demo_1_body">¡Hola César! Te acabo de añadir al repositorio de Celander. Echa un vistazo al tema de cristal cuando puedas y dime qué ajustamos antes de la 1.08.</string>
+    <string name="demo_2_name">Equipo de Thunderbird</string>
+    <string name="demo_2_subject">Novedades de Thunderbird para Android</string>
+    <string name="demo_2_body">Ya están disponibles los gestos de deslizar personalizables, la bandeja unificada y una lista de mensajes más limpia. Actualiza la app para probarlos.</string>
+    <string name="demo_3_name">Resumen de Spark</string>
+    <string name="demo_3_subject">Consejo: pospón los correos que aún no puedes responder</string>
+    <string name="demo_3_body">Desliza o usa el icono del reloj para ocultar un mensaje hasta el momento adecuado. Vuelve arriba de tu bandeja, justo a tiempo.</string>
+    <string name="demo_4_name">Lucía Ortega</string>
+    <string name="demo_4_subject">Fotos del fin de semana</string>
+    <string name="demo_4_body">¡Aquí van las fotos de la excursión! La del lago es mi favorita. Dime si quieres los archivos en tamaño completo y te los paso por enlace.</string>
+    <string name="demo_5_name">Cenotes</string>
+    <string name="demo_5_subject">Tus notas tienen copia de seguridad</string>
+    <string name="demo_5_body">Todo está guardado en tu teléfono. No se ha enviado nada a ningún sitio, como siempre.</string>
+    <string name="demo_6_name">Banco Ejemplo</string>
+    <string name="demo_6_subject">Tu extracto mensual</string>
+    <string name="demo_6_body">Ya está disponible el extracto de este mes. Es un mensaje de ejemplo para probar los correos fijados y los adjuntos.</string>
+    <string name="demo_7_name">Mateo Ruiz</string>
+    <string name="demo_7_subject">¿Cenamos el viernes?</string>
+    <string name="demo_7_body">¿Estás libre el viernes por la noche? Pensábamos en ese sitio nuevo junto al río. Dime y reservo mesa para cuatro.</string>
+    <string name="demo_8_name">Cemail</string>
+    <string name="demo_8_subject">Te damos la bienvenida a Cemail</string>
+    <string name="demo_8_body">Un cliente de Gmail sencillo con el aspecto de cristal de las apps Ce. Desliza un mensaje para archivarlo, mantén pulsado para seleccionar varios y usa el reloj para posponer.</string>
 </resources>

@@ -10,4 +10,102 @@
     <string name="accent_green">Green</string>
     <string name="accent_coral">Coral</string>
     <string name="accent_amber">Amber</string>
+
+    <!-- Folders -->
+    <string name="box_inbox">Inbox</string>
+    <string name="box_starred">Starred</string>
+    <string name="box_snoozed">Snoozed</string>
+    <string name="box_sent">Sent</string>
+    <string name="box_drafts">Drafts</string>
+    <string name="box_archive">Archive</string>
+    <string name="box_trash">Trash</string>
+
+    <!-- List screen -->
+    <string name="section_pinned">Pinned</string>
+    <string name="section_mail">Messages</string>
+    <string name="empty_title">Nothing here</string>
+    <string name="empty_body">Messages you move to this folder will show up here.</string>
+    <string name="search_hint">Search mail (from:, is:unread, has:attachment)</string>
+    <string name="no_results">No messages match your search.</string>
+    <string name="menu_open">Open folders</string>
+    <string name="search">Search</string>
+    <string name="close">Close</string>
+    <string name="back">Back</string>
+    <string name="compose">Write</string>
+    <string name="selected_count">%1$d selected</string>
+    <string name="no_subject">(no subject)</string>
+    <string name="demo_account">Demo account</string>
+    <string name="demo_banner">Demo mode: sign in with Google arrives in the next phase.</string>
+
+    <!-- Actions -->
+    <string name="action_archive">Archive</string>
+    <string name="action_trash">Move to trash</string>
+    <string name="action_star">Star</string>
+    <string name="action_unstar">Remove star</string>
+    <string name="action_pin">Pin to top</string>
+    <string name="action_unpin">Unpin</string>
+    <string name="action_snooze">Snooze</string>
+    <string name="action_mark_read">Mark as read</string>
+    <string name="action_mark_unread">Mark as unread</string>
+    <string name="action_reply">Reply</string>
+    <string name="action_reply_all">Reply all</string>
+    <string name="action_forward">Forward</string>
+    <string name="action_more">More</string>
+    <string name="action_move_inbox">Move to inbox</string>
+    <string name="action_undo">Undo</string>
+    <string name="done_archived">Archived</string>
+    <string name="done_trashed">Moved to trash</string>
+    <string name="done_snoozed">Snoozed</string>
+    <string name="done_pinned">Pinned</string>
+    <string name="done_marked">Updated</string>
+    <string name="done_sent">Message sent</string>
+    <string name="done_draft_saved">Draft saved</string>
+
+    <!-- Snooze -->
+    <string name="snooze_title">Snooze until…</string>
+    <string name="snooze_later">Later today</string>
+    <string name="snooze_tomorrow">Tomorrow morning</string>
+    <string name="snooze_weekend">This weekend</string>
+    <string name="snooze_next_week">Next week</string>
+    <string name="snoozed_until">Back %1$s</string>
+
+    <!-- Reading -->
+    <string name="to_me">to me</string>
+    <string name="attachment">Has attachments</string>
+    <string name="reply_prefix">Re: %1$s</string>
+    <string name="forward_prefix">Fwd: %1$s</string>
+    <string name="quote_header">On %1$s, %2$s wrote:</string>
+
+    <!-- Compose -->
+    <string name="compose_to">To</string>
+    <string name="compose_subject">Subject</string>
+    <string name="compose_body">Write your message</string>
+    <string name="compose_send">Send</string>
+    <string name="compose_discard">Discard</string>
+
+    <!-- Demo messages -->
+    <string name="demo_1_name">Jonathan</string>
+    <string name="demo_1_subject">Celander design is ready</string>
+    <string name="demo_1_body">Hi César! I just added you to the Celander repository. Have a look at the glass theme whenever you can and tell me what we should adjust before 1.08.</string>
+    <string name="demo_2_name">Thunderbird Team</string>
+    <string name="demo_2_subject">What\'s new in Thunderbird for Android</string>
+    <string name="demo_2_body">Customizable swipe actions, a unified inbox and a cleaner message list are now available. Update the app to try them.</string>
+    <string name="demo_3_name">Spark Digest</string>
+    <string name="demo_3_subject">Tip: snooze emails you can\'t answer yet</string>
+    <string name="demo_3_body">Swipe or use the clock icon to hide a message until the right moment. It comes back to the top of your inbox, right on time.</string>
+    <string name="demo_4_name">Lucía Ortega</string>
+    <string name="demo_4_subject">Photos from the weekend</string>
+    <string name="demo_4_body">Here are the photos from the hike! The lake one is my favourite. Let me know if you want the full-size files and I will send them by link.</string>
+    <string name="demo_5_name">Cenotes</string>
+    <string name="demo_5_subject">Your notes are backed up</string>
+    <string name="demo_5_body">Everything is saved on your phone. Nothing has been sent anywhere, as always.</string>
+    <string name="demo_6_name">Banco Ejemplo</string>
+    <string name="demo_6_subject">Your monthly statement</string>
+    <string name="demo_6_body">Your statement for this month is available. This is an example message used to test pinned mail and attachments.</string>
+    <string name="demo_7_name">Mateo Ruiz</string>
+    <string name="demo_7_subject">Dinner on Friday?</string>
+    <string name="demo_7_body">Are you free on Friday evening? We were thinking of that new place near the river. Tell me and I will book a table for four.</string>
+    <string name="demo_8_name">Cemail</string>
+    <string name="demo_8_subject">Welcome to Cemail</string>
+    <string name="demo_8_body">A simple Gmail client with the frosted glass look of the Ce apps. Swipe a message to archive it, long-press to select several, and use the clock to snooze.</string>
 </resources>
