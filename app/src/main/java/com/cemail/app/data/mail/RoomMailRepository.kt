@@ -40,6 +40,8 @@ class RoomMailRepository(
     private val scope: CoroutineScope,
     /** Folder where this account's embedded pictures are kept, one sub-folder per message. */
     private val inlineDir: File,
+    /** Called with the unread Inbox messages that a sync found for the first time (never on the first sync). */
+    private val onNewMail: (accountId: String, mails: List<Mail>) -> Unit = { _, _ -> },
 ) : MailRepository {
     override val mails: StateFlow<List<Mail>> = dao.observe(accountId)
         .map { list -> list.map { it.toMail() } }
@@ -165,6 +167,7 @@ class RoomMailRepository(
         val remoteIds = api.listMessageIds(QUERY, LIMIT)
         val cached = dao.remoteOnes(accountId).associateBy { it.remoteId!! }
         val gate = Semaphore(6)
+        val arrived = java.util.concurrent.ConcurrentLinkedQueue<MessageEntity>()
         coroutineScope {
             remoteIds.map { id ->
                 async(Dispatchers.IO) {
@@ -180,6 +183,9 @@ class RoomMailRepository(
                             }
                             if (old == null) {
                                 dao.insert(entity)
+                                if (!entity.read && entity.folder == Folder.INBOX.name && entity.timeMillis > System.currentTimeMillis() - RECENT_MILLIS) {
+                                    arrived.add(entity) // not an old message that only now fell inside the synced window
+                                }
                             } else {
                                 dao.update(entity.copy(localId = old.localId, pinned = old.pinned, snoozedUntil = old.snoozedUntil))
                             }
@@ -199,6 +205,10 @@ class RoomMailRepository(
         }
         val gone = cached.filterKeys { it !in remoteIds }.values.map { it.localId }
         gone.chunked(500).forEach { dao.deleteAll(accountId, it) }
+        // The first sync of an account brings in its whole history: that is not "new mail".
+        if (cached.isNotEmpty() && arrived.isNotEmpty()) {
+            onNewMail(accountId, arrived.sortedByDescending { it.timeMillis }.map { it.toMail() })
+        }
         if (!quick) {
             // Messages saved by an older version may still lack their embedded pictures: fetch them in the background.
             scope.launch(Dispatchers.IO) {
@@ -219,6 +229,7 @@ class RoomMailRepository(
         const val QUERY = "in:anywhere -in:spam -in:chats"
         const val LIMIT = 120
         const val MAX_INLINE_BYTES = 4 * 1024 * 1024
+        const val RECENT_MILLIS = 3L * 24 * 60 * 60 * 1000
 
         /** Renamed whenever the way embedded pictures are found changes, so they are fetched again. */
         const val INLINE_INDEX = "index.v2"

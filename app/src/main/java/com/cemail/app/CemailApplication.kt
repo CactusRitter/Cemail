@@ -18,6 +18,9 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import com.cemail.app.notify.MailNotifier
 
 /**
  * Manual dependency container, like Cenotes: each piece is created lazily on first use.
@@ -40,6 +43,7 @@ class CemailApplication : Application() {
                 accountId, database.messages(), database.labels(),
                 HttpGmailApi(AccountTokenProvider(accountId, tokenStore, googleAuth)), appScope,
                 java.io.File(filesDir, "inline/$accountId"),
+                onNewMail = ::notifyNewMail,
             )
         }
     }
@@ -54,9 +58,34 @@ class CemailApplication : Application() {
         unified.getOrPut(accountIds.joinToString(" ")) { UnifiedMailRepository(accountIds.map(::mailRepositoryFor), appScope) }
     }
 
+    val notifier: MailNotifier by lazy { MailNotifier(this) }
+
+    /** Number of activities on screen: the app counts as open while it is above 0. */
+    @Volatile private var visibleActivities = 0
+
+    /** Notifies only when the user is not looking at the app (it already shows the new mail by itself). */
+    private fun notifyNewMail(accountId: String, mails: List<com.cemail.app.data.mail.Mail>) {
+        if (visibleActivities > 0 || !settings.state.value.notifications) return
+        appScope.launch {
+            val accounts = accountRepository.accounts.first()
+            val label = accounts.firstOrNull { it.id == accountId }?.email?.takeIf { accounts.size > 1 }
+            notifier.show(accountId, label, mails)
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         CrashLog.install(this)
+        notifier.createChannel()
+        registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
+            override fun onActivityStarted(activity: android.app.Activity) { visibleActivities++ }
+            override fun onActivityStopped(activity: android.app.Activity) { visibleActivities-- }
+            override fun onActivityCreated(activity: android.app.Activity, savedInstanceState: android.os.Bundle?) = Unit
+            override fun onActivityResumed(activity: android.app.Activity) = Unit
+            override fun onActivityPaused(activity: android.app.Activity) = Unit
+            override fun onActivitySaveInstanceState(activity: android.app.Activity, outState: android.os.Bundle) = Unit
+            override fun onActivityDestroyed(activity: android.app.Activity) = Unit
+        })
         SyncWorker.schedule(this, settings.state.value.syncMinutes)
     }
 

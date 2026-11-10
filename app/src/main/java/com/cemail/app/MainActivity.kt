@@ -1,7 +1,10 @@
 package com.cemail.app
 
+import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
@@ -18,6 +21,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val app = application as CemailApplication
+        // Android 13+ asks once, the first time the app opens; Settings can ask again.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !app.settings.askedNotificationPermission) {
+            app.settings.askedNotificationPermission = true
+            if (!app.notifier.allowed()) {
+                registerForActivityResult(ActivityResultContracts.RequestPermission()) {}.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
         setContent {
             val settings by app.settings.state.collectAsStateWithLifecycle()
             CemailTheme(settings) {

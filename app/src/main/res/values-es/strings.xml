@@ -150,7 +150,7 @@
     <string name="settings_no_accounts">No hay ninguna cuenta con sesión iniciada.</string>
     <string name="settings_section_sync">Correo nuevo</string>
     <string name="settings_sync_title">Comprobar correo nuevo</string>
-    <string name="settings_sync_body">Cada cuánto busca Cemail mensajes nuevos por su cuenta. Las notificaciones usarán también este ajuste. Con Manual, el correo solo llega al pulsar actualizar.</string>
+    <string name="settings_sync_body">Cada cuánto busca Cemail mensajes nuevos por su cuenta. Las notificaciones usan también este ajuste. Con Manual, el correo solo llega al pulsar actualizar.</string>
     <string name="sync_manual">Manual</string>
     <plurals name="sync_minutes">
         <item quantity="one">%d min</item>
@@ -172,4 +172,17 @@
         <item quantity="one">%d cuenta</item>
         <item quantity="other">%d cuentas</item>
     </plurals>
+    <string name="notif_channel_name">Correo nuevo</string>
+    <string name="notif_channel_body">Mensajes que llegan mientras Cemail está cerrado.</string>
+    <plurals name="notif_new_messages">
+        <item quantity="one">%d mensaje nuevo</item>
+        <item quantity="other">%d mensajes nuevos</item>
+    </plurals>
+    <string name="settings_notifications_title">Notificaciones</string>
+    <string name="settings_notifications_body">Muestra una notificación cuando llega correo nuevo con la app cerrada. Cuánto tarda depende del intervalo de abajo.</string>
+    <string name="settings_notifications_blocked">Las notificaciones de Cemail están bloqueadas en los ajustes del sistema.</string>
+    <string name="settings_notifications_test">Enviar una notificación de prueba</string>
+    <string name="notif_test_sender">Cemail</string>
+    <string name="notif_test_subject">Las notificaciones funcionan</string>
+    <string name="notif_test_body">Así se verá el correo nuevo cuando llegue con Cemail cerrado.</string>
 </resources>

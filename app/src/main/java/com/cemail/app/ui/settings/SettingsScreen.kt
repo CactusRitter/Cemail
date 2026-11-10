@@ -1,5 +1,10 @@
 package com.cemail.app.ui.settings
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.NotificationManagerCompat
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -148,6 +153,37 @@ fun SettingsScreen(
 
             // --- New mail (and, later, notifications) ---
             SectionTitle(R.string.settings_section_sync)
+            val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+            SwitchRow(
+                title = R.string.settings_notifications_title,
+                body = R.string.settings_notifications_body,
+                checked = settings.notifications,
+                onChange = { on ->
+                    repo.setNotifications(on)
+                    if (on && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        askPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                },
+            )
+            if (settings.notifications) {
+                TextAction(R.string.settings_notifications_test, MaterialTheme.colorScheme.primary) {
+                    (context.applicationContext as com.cemail.app.CemailApplication).notifier.show(
+                        "test", null,
+                        listOf(com.cemail.app.data.mail.Mail(
+                            0, context.getString(R.string.notif_test_sender), "", context.getString(R.string.notif_test_subject),
+                            context.getString(R.string.notif_test_body), System.currentTimeMillis(),
+                        )),
+                    )
+                }
+            }
+            if (settings.notifications && !NotificationManagerCompat.from(context).areNotificationsEnabled()) {
+                Text(
+                    stringResource(R.string.settings_notifications_blocked),
+                    Modifier.padding(horizontal = 18.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
             Column(
                 Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card).padding(horizontal = 18.dp, vertical = 14.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),

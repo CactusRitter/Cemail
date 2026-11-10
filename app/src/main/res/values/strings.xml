@@ -152,7 +152,7 @@
     <string name="settings_no_accounts">No account signed in.</string>
     <string name="settings_section_sync">New mail</string>
     <string name="settings_sync_title">Check for new mail</string>
-    <string name="settings_sync_body">How often Cemail looks for new messages on its own. Notifications will use this too. With Manual, mail only arrives when you tap refresh.</string>
+    <string name="settings_sync_body">How often Cemail looks for new messages on its own. Notifications use this too. With Manual, mail only arrives when you tap refresh.</string>
     <string name="sync_manual">Manual</string>
     <plurals name="sync_minutes">
         <item quantity="one">%d min</item>
@@ -174,4 +174,17 @@
         <item quantity="one">%d account</item>
         <item quantity="other">%d accounts</item>
     </plurals>
+    <string name="notif_channel_name">New mail</string>
+    <string name="notif_channel_body">Messages that arrive while Cemail is closed.</string>
+    <plurals name="notif_new_messages">
+        <item quantity="one">%d new message</item>
+        <item quantity="other">%d new messages</item>
+    </plurals>
+    <string name="settings_notifications_title">Notifications</string>
+    <string name="settings_notifications_body">Show a notification when new mail arrives while the app is closed. How soon depends on the interval below.</string>
+    <string name="settings_notifications_blocked">Notifications are blocked for Cemail in the system settings.</string>
+    <string name="settings_notifications_test">Send a test notification</string>
+    <string name="notif_test_sender">Cemail</string>
+    <string name="notif_test_subject">Notifications work</string>
+    <string name="notif_test_body">This is how new mail will look when it arrives while Cemail is closed.</string>
 </resources>

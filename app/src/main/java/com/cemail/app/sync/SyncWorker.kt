@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.first
  * Looks for new mail in every account while the app is closed, as often as the user chose in Settings
  * (15 minutes is the shortest period Android allows) and only when there is a connection.
  *
- * Phase 6 (notifications): this is where a notification will be posted for the messages that arrived.
+ * New unread Inbox messages found here are announced by `CemailApplication.notifyNewMail` (see MailNotifier).
  * Instant delivery ("real" push) needs a server that Gmail can call; see docs/ROADMAP.md.
  */
 class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
