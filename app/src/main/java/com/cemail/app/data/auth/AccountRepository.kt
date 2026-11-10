@@ -2,10 +2,15 @@ package com.cemail.app.data.auth
 
 import com.cemail.app.data.db.AccountDao
 import com.cemail.app.data.db.AccountEntity
+import com.cemail.app.data.db.MessageDao
 import kotlinx.coroutines.flow.Flow
 
 /** Signed-in accounts (Room) and their tokens (encrypted). The UI only talks to this class. */
-class AccountRepository(private val dao: AccountDao, private val tokens: TokenStore) {
+class AccountRepository(
+    private val dao: AccountDao,
+    private val messages: MessageDao,
+    private val tokens: TokenStore,
+) {
     val accounts: Flow<List<AccountEntity>> = dao.observeAll()
 
     suspend fun add(result: SignInResult) {
@@ -21,7 +26,8 @@ class AccountRepository(private val dao: AccountDao, private val tokens: TokenSt
 
     suspend fun remove(accountId: String) {
         tokens.clear(accountId)
-        dao.delete(accountId) // phase 2: also deletes the account's cached messages
+        messages.deleteAccount(accountId)
+        dao.delete(accountId)
     }
 
     fun tokensOf(accountId: String): Tokens? = tokens.load(accountId)

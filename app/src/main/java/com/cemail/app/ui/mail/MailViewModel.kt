@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.util.Calendar
 
 /** Something the user just did, offered to be undone for a few seconds (Spark-style). */
@@ -47,20 +48,21 @@ data class MailUiState(
     val pinned: List<Mail> = emptyList(),
     val others: List<Mail> = emptyList(),
     val unreadByBox: Map<MailBox, Int> = emptyMap(),
+    val syncing: Boolean = false,
 )
 
 class MailViewModel(private val repo: MailRepository) : ViewModel() {
     private val ui = MutableStateFlow(Ui())
     private var undoCounter = 0L
 
-    val state: StateFlow<MailUiState> = combine(repo.mails, ui) { mails, u ->
+    val state: StateFlow<MailUiState> = combine(repo.mails, ui, repo.syncing) { mails, u, syncing ->
         val now = System.currentTimeMillis()
         val inBox = mails.filter { it.inBox(u.box, now) }
         val shown = (if (u.query.isBlank()) inBox else mails.filter { it.folder != Folder.TRASH && it.matches(u.query) })
             .sortedByDescending { it.timeMillis }
         val showPinned = u.box == MailBox.INBOX && u.query.isBlank()
         MailUiState(
-            box = u.box, query = u.query, searching = u.searching, selection = u.selection,
+            box = u.box, query = u.query, searching = u.searching, selection = u.selection, syncing = syncing,
             open = u.openId?.let { id -> mails.firstOrNull { it.id == id } },
             draft = u.draft, snoozeTargets = u.snoozeTargets, undo = u.undo,
             pinned = if (showPinned) shown.filter { it.pinned } else emptyList(),
@@ -77,6 +79,17 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
         MailBox.DRAFTS -> folder == Folder.DRAFTS
         MailBox.ARCHIVE -> folder == Folder.ARCHIVE
         MailBox.TRASH -> folder == Folder.TRASH
+    }
+
+    init {
+        refresh()
+    }
+
+    /** Syncs with the server; a failure is told with the same bar that offers Undo. */
+    fun refresh() {
+        viewModelScope.launch {
+            if (!repo.refresh()) ui.update { it.copy(undo = UndoEvent(++undoCounter, R.string.sync_failed, emptyList())) }
+        }
     }
 
     // --- navigation ---

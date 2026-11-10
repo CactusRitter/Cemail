@@ -119,5 +119,6 @@
     <string name="sign_in_not_configured">This build has no Google client ID. See docs/OAUTH_SETUP.md.</string>
     <string name="account_add">Add account</string>
     <string name="account_remove">Remove account</string>
-    <string name="sync_soon_banner">Signed in. Syncing your Gmail arrives in the next phase; these are example messages.</string>
+    <string name="refresh">Refresh</string>
+    <string name="sync_failed">Could not sync. Check your connection.</string>
 </resources>

@@ -28,7 +28,9 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -132,6 +134,11 @@ fun ListScreen(
                         Modifier.weight(1f).padding(horizontal = 8.dp),
                         style = MaterialTheme.typography.titleMedium,
                     )
+                    if (state.syncing) {
+                        CircularProgressIndicator(Modifier.padding(horizontal = 14.dp).size(24.dp), strokeWidth = 2.dp)
+                    } else {
+                        PillIcon(Icons.Filled.Refresh, stringResource(R.string.refresh), vm::refresh, width = 44.dp)
+                    }
                     PillIcon(Icons.Filled.Search, stringResource(R.string.search), { vm.setSearching(true) })
                 }
             }

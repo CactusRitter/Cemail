@@ -3,7 +3,10 @@ package com.cemail.app
 import android.app.Application
 import com.cemail.app.data.SettingsRepository
 import com.cemail.app.data.auth.AccountRepository
+import com.cemail.app.data.auth.AccountTokenProvider
 import com.cemail.app.data.auth.GoogleAuth
+import com.cemail.app.data.gmail.HttpGmailApi
+import com.cemail.app.data.mail.RoomMailRepository
 import com.cemail.app.data.auth.TokenStore
 import com.cemail.app.data.db.CemailDatabase
 import com.cemail.app.data.mail.DemoData
@@ -22,10 +25,23 @@ class CemailApplication : Application() {
 
     val database: CemailDatabase by lazy { CemailDatabase.create(this) }
     val googleAuth: GoogleAuth by lazy { GoogleAuth(this) }
-    val accountRepository: AccountRepository by lazy { AccountRepository(database.accounts(), TokenStore(this)) }
+    val tokenStore: TokenStore by lazy { TokenStore(this) }
+    val accountRepository: AccountRepository by lazy { AccountRepository(database.accounts(), database.messages(), tokenStore) }
+
+    private val repositories = HashMap<String, MailRepository>()
+
+    /** The cached Gmail account with this id (created once, lives as long as the process). */
+    fun mailRepositoryFor(accountId: String): MailRepository = synchronized(repositories) {
+        repositories.getOrPut(accountId) {
+            RoomMailRepository(
+                accountId, database.messages(),
+                HttpGmailApi(AccountTokenProvider(accountId, tokenStore, googleAuth)), appScope,
+            )
+        }
+    }
 
     /** Demo store until Gmail sync + Room arrive (phases 1-2). */
-    val mailRepository: MailRepository by lazy { DemoMailRepository(DemoData.seed(this)) }
+    val demoRepository: MailRepository by lazy { DemoMailRepository(DemoData.seed(this)) }
 
     /** Lives as long as the process: work started while leaving a screen always finishes. */
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)

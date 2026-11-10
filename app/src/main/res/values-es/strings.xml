@@ -117,5 +117,6 @@
     <string name="sign_in_not_configured">Esta compilación no tiene ID de cliente de Google. Mira docs/OAUTH_SETUP.md.</string>
     <string name="account_add">Añadir cuenta</string>
     <string name="account_remove">Quitar cuenta</string>
-    <string name="sync_soon_banner">Sesión iniciada. La sincronización de tu Gmail llega en la siguiente fase; estos son mensajes de ejemplo.</string>
+    <string name="refresh">Actualizar</string>
+    <string name="sync_failed">No se pudo sincronizar. Revisa la conexión.</string>
 </resources>

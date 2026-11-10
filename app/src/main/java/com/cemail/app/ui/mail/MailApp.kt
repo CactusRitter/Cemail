@@ -172,12 +172,14 @@ private fun DrawerContent(
                 }
             }
         }
-        Text(
-            stringResource(if (accounts.isEmpty()) R.string.demo_banner else R.string.sync_soon_banner),
-            Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        if (accounts.isEmpty()) {
+            Text(
+                stringResource(R.string.demo_banner),
+                Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         MailBox.entries.forEach { box ->
             val selected = box == state.box
             val unread = state.unreadByBox[box] ?: 0
