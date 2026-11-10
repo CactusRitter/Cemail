@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.25.2 — 2026-11-10
+- Lint sin errores: textos leídos con los recursos que respetan el cambio de idioma/configuración (responder, ajustes) y limpieza de una marca de orden de bytes en el importador de firma.
+
 ## 0.25.1 — 2026-11-10
 - «Etiquetas» del mensaje: ahora usa las etiquetas de la cuenta a la que pertenece el mensaje también desde la bandeja unificada (antes salía vacío).
 - Firma HTML en la redacción: la ✕ para quitarla va en su propia fila encima, sin tapar los iconos.

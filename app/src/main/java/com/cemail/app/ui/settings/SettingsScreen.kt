@@ -77,6 +77,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
+    val resources = androidx.compose.ui.platform.LocalResources.current
     var removing by remember { mutableStateOf<AccountEntity?>(null) }
     var crash by remember { mutableStateOf(CrashLog.read(context)) }
 
@@ -241,8 +242,8 @@ fun SettingsScreen(
                     (context.applicationContext as com.cemail.app.CemailApplication).notifier.show(
                         "test", null,
                         listOf(com.cemail.app.data.mail.Mail(
-                            0, context.getString(R.string.notif_test_sender), "", context.getString(R.string.notif_test_subject),
-                            context.getString(R.string.notif_test_body), System.currentTimeMillis(),
+                            0, resources.getString(R.string.notif_test_sender), "", resources.getString(R.string.notif_test_subject),
+                            resources.getString(R.string.notif_test_body), System.currentTimeMillis(),
                         )),
                     )
                 }

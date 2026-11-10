@@ -106,6 +106,7 @@ fun ReadScreen(
         value = if (summary.hasAttachment) vm.attachments(summary.id) else emptyList()
     }
     val context = LocalContext.current
+    val resources = androidx.compose.ui.platform.LocalResources.current
     val one = setOf(mail.id)
     // The labels of the account that owns the message (in the unified inbox the drawer shows none).
     val accountLabels by produceState(labels, summary.accountId) { value = vm.userLabels(summary.accountId).ifEmpty { labels } }
@@ -118,12 +119,12 @@ fun ReadScreen(
         val quoted = mail.body.lines().joinToString("\n") { "> $it" }
         val prefixRes = if (forward) R.string.forward_prefix else R.string.reply_prefix
         // "Re: Re: x" never happens: a subject that already starts with a reply/forward prefix is kept as it is.
-        val subject = if (SUBJECT_PREFIX.containsMatchIn(mail.subject)) mail.subject else context.getString(prefixRes, mail.subject)
+        val subject = if (SUBJECT_PREFIX.containsMatchIn(mail.subject)) mail.subject else resources.getString(prefixRes, mail.subject)
         vm.startReply(
             Draft(
                 to = if (forward) "" else mail.senderEmail,
                 subject = subject,
-                body = "\n\n" + context.getString(R.string.quote_header, quoteWhen, mail.senderName) + "\n" + quoted,
+                body = "\n\n" + resources.getString(R.string.quote_header, quoteWhen, mail.senderName) + "\n" + quoted,
             ),
             mail.id, all, forward,
         )

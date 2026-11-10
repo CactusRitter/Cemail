@@ -4,9 +4,9 @@ Las versiones van siempre por debajo de 1.0. La **1.0** será cuando funcionen b
 
 Cada versión termina con la app compilando, sus tests en verde, probada en el emulador y el APK en Drive.
 
-## Dónde estamos (0.22.0)
+## Dónde estamos (0.25.2)
 
-Hecho: menú del icono (0.20), widgets Inbox y Tools (0.21), firma por cuenta (0.22), cuenta de Google (varias) con bandeja unificada, sincronización (manual, con la app abierta y en segundo plano), etiquetas como carpetas, lectura de HTML saneado, imágenes incrustadas, adjuntos (ver, abrir, compartir, adjuntar), redactar con formato y destinatarios en píldoras con CC/CCO, enviar de verdad por Gmail, responder en el mismo hilo y «responder a todos», notificaciones con «Leído» y «Borrar», registro de actividad compartible, fijar, posponer (local) y deshacer, ajustes de aspecto.
+Hecho: menú del icono (0.20), widgets Inbox y Tools (0.21), firma por cuenta (0.22), sincronización incremental con el historial de Gmail, conversaciones (tarjeta con el resto del hilo), etiquetas desde el mensaje y sugerencias de contactos (0.25), cuenta de Google (varias) con bandeja unificada, sincronización (manual, con la app abierta y en segundo plano), etiquetas como carpetas, lectura de HTML saneado, imágenes incrustadas, adjuntos (ver, abrir, compartir, adjuntar), redactar con formato y destinatarios en píldoras con CC/CCO, enviar de verdad por Gmail, responder en el mismo hilo y «responder a todos», notificaciones con «Leído» y «Borrar», registro de actividad compartible, fijar, posponer (local) y deshacer, ajustes de aspecto.
 
 Todavía sin probar con una cuenta real en el móvil: adjuntos (ver y enviar), envío con formato y CC/CCO, respuestas en hilo. Se prueban con el teléfono conectado por adb (ver más abajo).
 

@@ -14,7 +14,7 @@ import com.cemail.app.data.gmail.SignatureHtml
 fun readSignatureFile(context: Context, uri: Uri): String? = try {
     val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return null
     if (bytes.size > 8 * 1024 * 1024) return null
-    val head = String(bytes, 0, minOf(bytes.size, 2000), Charsets.ISO_8859_1).trimStart('﻿', ' ', '\n', '\r', '\t')
+    val head = String(bytes, 0, minOf(bytes.size, 2000), Charsets.ISO_8859_1).trimStart('ï', '»', '¿', ' ', '\n', '\r', '\t')
     val parsed = if (head.startsWith("<")) {
         ParsedEml(null, String(bytes, Charsets.UTF_8), null, emptyMap())
     } else {
