@@ -66,6 +66,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.height
 import com.cemail.app.R
 import com.cemail.app.data.gmail.HtmlSanitizer
 import com.cemail.app.data.mail.Mail
@@ -77,7 +78,7 @@ import com.cemail.app.ui.glass.glass
 import com.cemail.app.ui.icons.CemailIcons
 
 @Composable
-fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean, headerStyle: Int) {
+fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
     // The list only holds the start of each text: the whole message is read when it is opened. Flags
     // (read, star...) keep coming from the list so they stay current.
     val loaded by produceState<Mail?>(null, summary.id) { value = vm.full(summary.id) }
@@ -149,7 +150,7 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean, head
             Modifier
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(start = 12.dp, end = 12.dp, top = 80.dp, bottom = 12.dp),
+                .padding(start = 12.dp, end = 12.dp, top = 88.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Column(
@@ -158,40 +159,7 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean, head
                     .glass(RoundedCornerShape(24.dp), GlassKind.Card)
                     .padding(16.dp),
             ) {
-                Text(
-                    mail.subject.ifBlank { stringResource(R.string.no_subject) },
-                    modifier = Modifier
-                        .layout { measurable, constraints ->
-                            val placeable = measurable.measure(constraints)
-                            val height = if (subjectPx == 0) placeable.height else subjectShownPx
-                            layout(placeable.width, height) { placeable.place(0, 0) }
-                        }
-                        .graphicsLayer {
-                            scaleX = subjectScale
-                            scaleY = subjectScale
-                            transformOrigin = TransformOrigin(if (rtl) 1f else 0f, 0f)
-                        }
-                        .onSizeChanged { subjectPx = it.height },
-                    style = MaterialTheme.typography.titleLarge,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    mail.senderName,
-                    modifier = Modifier
-                        .clipToBounds()
-                        .layout { measurable, constraints ->
-                            val placeable = measurable.measure(constraints)
-                            layout(placeable.width, nameShownPx) { placeable.place(0, 0) }
-                        }
-                        .graphicsLayer { alpha = progress }
-                        .onSizeChanged { namePx = it.height },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                // Everything but the subject: its height and opacity follow the scroll.
+                // Sender, date, notices and attachments: they slide away as the message is scrolled.
                 Column(
                     Modifier
                         .clipToBounds()
@@ -270,54 +238,42 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean, head
             }
         }
 
-        // Top: the back button and the subject, floating. headerStyle 0 = two separate pieces (a round button and
-        // a pill), 1 = everything together in one pill. (Both are kept until one is chosen.)
+        // Top: one floating pill with the back button, the subject over the sender, and the menu button.
         var panel by remember { mutableStateOf(false) }
-        val subjectText = mail.subject.ifBlank { stringResource(R.string.no_subject) }
         Box(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 12.dp, vertical = 8.dp)) {
-            if (headerStyle == 0) {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    GlassIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), vm::closeMail)
-                    GlassPill(Modifier.weight(1f)) {
-                        Text(
-                            subjectText,
-                            Modifier.weight(1f).padding(horizontal = 16.dp),
-                            style = MaterialTheme.typography.titleSmall,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
-            } else {
-                GlassPill(Modifier.fillMaxWidth()) {
-                    PillIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), vm::closeMail)
+            GlassPill(Modifier.fillMaxWidth(), height = 64.dp) {
+                PillIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), vm::closeMail)
+                Column(Modifier.weight(1f).padding(horizontal = 8.dp)) {
                     Text(
-                        subjectText,
-                        Modifier.weight(1f).padding(horizontal = 8.dp),
-                        style = MaterialTheme.typography.titleSmall,
-                        maxLines = 2,
+                        mail.subject.ifBlank { stringResource(R.string.no_subject) },
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        mail.senderName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
+                PillIcon(Icons.Filled.MoreVert, stringResource(R.string.action_more), { panel = true })
             }
         }
 
-        // Bottom corner: reply, and the round button that opens the panel with every other action.
-        Row(
-            Modifier.align(Alignment.BottomEnd).windowInsetsPadding(WindowInsets.safeDrawing).padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        // The floating button is reply.
+        Box(
+            Modifier
+                .align(Alignment.BottomEnd)
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(16.dp)
+                .size(60.dp)
+                .glass(CircleShape, GlassKind.Pinned, elevation = 10.dp)
+                .clickable(role = Role.Button) { vm.newDraft(reply(R.string.reply_prefix, mail.senderEmail)) },
+            contentAlignment = Alignment.Center,
         ) {
-            GlassIconButton(CemailIcons.Reply, stringResource(R.string.action_reply), { vm.newDraft(reply(R.string.reply_prefix, mail.senderEmail)) })
-            Box(
-                Modifier
-                    .size(60.dp)
-                    .glass(CircleShape, GlassKind.Pinned, elevation = 10.dp)
-                    .clickable(role = Role.Button) { panel = true },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Filled.MoreVert, stringResource(R.string.action_more), tint = MaterialTheme.colorScheme.primary)
-            }
+            Icon(CemailIcons.Reply, stringResource(R.string.action_reply), tint = MaterialTheme.colorScheme.primary)
         }
 
         if (panel) {
@@ -330,7 +286,6 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean, head
                 ),
                 organize = listOf(
                     PanelItem(CemailIcons.Archive, R.string.action_archive) { vm.archive(one) },
-                    PanelItem(Icons.Filled.Delete, R.string.action_trash, danger = true) { vm.trash(one) },
                     PanelItem(CemailIcons.Snooze, R.string.action_snooze) { vm.askSnooze(one) },
                     PanelItem(
                         if (mail.starred) Icons.Filled.Star else CemailIcons.StarOutline,
@@ -340,6 +295,7 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean, head
                     PanelItem(Icons.Filled.Email, R.string.action_mark_unread) { vm.markRead(one, false) },
                     PanelItem(CemailIcons.Inbox, R.string.action_move_inbox) { vm.moveToInbox(one) },
                 ),
+                trash = PanelItem(Icons.Filled.Delete, R.string.action_trash, danger = true) { vm.trash(one) },
             )
         }
     }
@@ -354,11 +310,12 @@ private class PanelItem(
 )
 
 /**
- * Every action on the open message, in a glass panel with a name under each icon, grouped into
- * "Reply" and "Organize". Tapping outside closes it.
+ * Every action on the open message, in a glass panel just above the buttons: all the tiles are the same size,
+ * in three columns, with a name under each icon, grouped into "Reply" and "Organize"; trashing sits alone at the
+ * bottom. Tapping outside closes it.
  */
 @Composable
-private fun ActionPanel(onDismiss: () -> Unit, reply: List<PanelItem>, organize: List<PanelItem>) {
+private fun ActionPanel(onDismiss: () -> Unit, reply: List<PanelItem>, organize: List<PanelItem>, trash: PanelItem) {
     Box(
         Modifier
             .fillMaxSize()
@@ -378,14 +335,17 @@ private fun ActionPanel(onDismiss: () -> Unit, reply: List<PanelItem>, organize:
                 .padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            PanelGroup(R.string.panel_group_reply, reply, 3, onDismiss)
-            PanelGroup(R.string.panel_group_organize, organize, 4, onDismiss)
+            PanelTitle(R.string.panel_group_reply)
+            PanelRows(reply, onDismiss)
+            PanelTitle(R.string.panel_group_organize)
+            PanelRows(organize, onDismiss)
+            PanelRows(listOf(trash), onDismiss, columns = 1)
         }
     }
 }
 
 @Composable
-private fun PanelGroup(title: Int, items: List<PanelItem>, columns: Int, onDismiss: () -> Unit) {
+private fun PanelTitle(title: Int) {
     Text(
         stringResource(title),
         Modifier.padding(start = 6.dp, top = 4.dp),
@@ -393,6 +353,11 @@ private fun PanelGroup(title: Int, items: List<PanelItem>, columns: Int, onDismi
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.primary,
     )
+}
+
+/** Tiles of one fixed size ([columns] per row), so every icon and label lines up. */
+@Composable
+private fun PanelRows(items: List<PanelItem>, onDismiss: () -> Unit, columns: Int = 3) {
     items.chunked(columns).forEach { row ->
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             row.forEach { item ->
@@ -404,16 +369,18 @@ private fun PanelGroup(title: Int, items: List<PanelItem>, columns: Int, onDismi
                 Column(
                     Modifier
                         .weight(1f)
+                        .height(PANEL_TILE_HEIGHT)
                         .clip(RoundedCornerShape(18.dp))
                         .background(if (item.selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
                         .clickable(role = Role.Button) { onDismiss(); item.onClick() }
-                        .padding(vertical = 10.dp, horizontal = 4.dp),
+                        .padding(horizontal = 4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.Center,
                 ) {
                     Icon(item.icon, null, tint = tint)
                     Text(
                         stringResource(item.label),
+                        Modifier.padding(top = 4.dp),
                         style = MaterialTheme.typography.labelMedium,
                         color = tint,
                         maxLines = 2,
@@ -425,6 +392,8 @@ private fun PanelGroup(title: Int, items: List<PanelItem>, columns: Int, onDismi
         }
     }
 }
+
+private val PANEL_TILE_HEIGHT = 84.dp
 
 /**
  * Shows sanitized email HTML. JavaScript is off, files and content providers are unreachable, remote images

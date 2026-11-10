@@ -201,8 +201,4 @@
     <string name="compose_attach_unsaved">Los adjuntos no se guardan en los borradores.</string>
     <string name="panel_group_reply">Responder</string>
     <string name="panel_group_organize">Organizar</string>
-    <string name="settings_readhdr_title">Parte superior del mensaje</string>
-    <string name="settings_readhdr_body">Dos formas de mostrar el botón atrás y el asunto al leer. Prueba las dos.</string>
-    <string name="readhdr_separate">Botón y píldora</string>
-    <string name="readhdr_together">Una sola píldora</string>
 </resources>
