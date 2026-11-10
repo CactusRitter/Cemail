@@ -28,6 +28,12 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import com.cemail.app.ui.glass.GlassIconButton
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.filled.Refresh
@@ -78,6 +84,8 @@ fun ListScreen(
     vm: MailViewModel,
     grouped: Boolean,
     stripeOf: (Mail) -> Color?,
+    showSenderCircle: Boolean,
+    onOpenSettings: () -> Unit,
     onOpenDrawer: () -> Unit,
 ) {
     val haze = rememberHazeState()
@@ -122,7 +130,7 @@ fun ListScreen(
             }
             if (state.pinned.isNotEmpty()) {
                 item(key = "h-pinned") { SectionHeader(stringResource(R.string.section_pinned)) }
-                items(state.pinned, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, stripeOf(mail)) }
+                items(state.pinned, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, stripeOf(mail), showSenderCircle) }
                 if (state.others.isNotEmpty() && !grouped) item(key = "h-mail") { SectionHeader(stringResource(R.string.section_mail)) }
             }
             if (grouped) {
@@ -132,10 +140,10 @@ fun ListScreen(
                     val list = groups[section] ?: return@forEach
                     val collapsed = section in state.collapsedSections
                     item(key = "d-$section") { DateHeader(section, list.size, collapsed) { vm.toggleSection(section) } }
-                    if (!collapsed) items(list, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, stripeOf(mail)) }
+                    if (!collapsed) items(list, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, stripeOf(mail), showSenderCircle) }
                 }
             } else {
-                items(state.others, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, stripeOf(mail)) }
+                items(state.others, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, stripeOf(mail), showSenderCircle) }
             }
         }
 
@@ -146,20 +154,33 @@ fun ListScreen(
             when {
                 selecting -> SelectionBar(state, vm, haze)
                 state.searching -> SearchBar(state, vm, haze)
-                else -> GlassPill(Modifier.fillMaxWidth(), hazeState = haze) {
-                    PillIcon(Icons.Filled.Menu, stringResource(R.string.menu_open), onOpenDrawer)
+                // Same header as Celander and Cenotes: round button on the left, the title in big bold
+                // letters in the middle, and a pill with the actions on the right.
+                else -> Box(Modifier.fillMaxWidth().height(56.dp), contentAlignment = Alignment.Center) {
+                    GlassIconButton(
+                        Icons.Filled.Menu, stringResource(R.string.menu_open), onOpenDrawer,
+                        Modifier.align(Alignment.CenterStart), hazeState = haze,
+                    )
                     Text(
                         state.labelId?.let { id -> state.labels.firstOrNull { it.id == id }?.name?.substringAfterLast("/") }
                             ?: stringResource(state.box.labelRes()),
-                        Modifier.weight(1f).padding(horizontal = 8.dp),
-                        style = MaterialTheme.typography.titleMedium,
+                        Modifier.padding(horizontal = 84.dp),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
-                    if (state.syncing) {
-                        CircularProgressIndicator(Modifier.padding(horizontal = 14.dp).size(24.dp), strokeWidth = 2.dp)
-                    } else {
-                        PillIcon(Icons.Filled.Refresh, stringResource(R.string.refresh), vm::refresh, width = 44.dp)
+                    GlassPill(Modifier.align(Alignment.CenterEnd), hazeState = haze) {
+                        if (state.syncing) {
+                            Box(Modifier.size(width = 44.dp, height = 48.dp), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
+                            }
+                        } else {
+                            PillIcon(Icons.Filled.Refresh, stringResource(R.string.refresh), vm::refresh, width = 44.dp)
+                        }
+                        PillIcon(Icons.Filled.Search, stringResource(R.string.search), { vm.setSearching(true) }, width = 44.dp)
+                        PillIcon(Icons.Filled.Settings, stringResource(R.string.settings_title), onOpenSettings, width = 44.dp)
                     }
-                    PillIcon(Icons.Filled.Search, stringResource(R.string.search), { vm.setSearching(true) })
                 }
             }
         }
@@ -185,7 +206,7 @@ fun ListScreen(
 }
 
 @Composable
-private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsArchive: Boolean, stripe: Color?) {
+private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsArchive: Boolean, stripe: Color?, showCircle: Boolean) {
     val one = setOf(mail.id)
     MailRow(
         mail = mail,
@@ -198,6 +219,7 @@ private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsA
         onSwipeEnd = { vm.trash(one) },
         startIsArchive = startIsArchive,
         stripe = stripe,
+        showCircle = showCircle,
     )
 }
 

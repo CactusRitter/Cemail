@@ -139,6 +139,12 @@ fun SettingsScreen(
                 checked = settings.groupByDate,
                 onChange = repo::setGroupByDate,
             )
+            SwitchRow(
+                title = R.string.settings_circle_title,
+                body = R.string.settings_circle_body,
+                checked = settings.showSenderCircle,
+                onChange = repo::setShowSenderCircle,
+            )
 
             // --- New mail (and, later, notifications) ---
             SectionTitle(R.string.settings_section_sync)

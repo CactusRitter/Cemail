@@ -16,6 +16,8 @@ data class AppSettings(
     val groupByDate: Boolean = true,
     /** Minutes between automatic checks for new mail; 0 = manual (never on its own). */
     val syncMinutes: Int = 15,
+    /** Round picture (the initial) next to each message in the list. */
+    val showSenderCircle: Boolean = true,
 )
 
 /** Small app preferences, kept in SharedPreferences and exposed as a StateFlow (same approach as Cenotes). */
@@ -32,6 +34,7 @@ class SettingsRepository(context: Context) {
         alwaysShowImages = prefs.getBoolean(KEY_IMAGES, false),
         groupByDate = prefs.getBoolean(KEY_GROUP, true),
         syncMinutes = prefs.getInt(KEY_SYNC, 15),
+        showSenderCircle = prefs.getBoolean(KEY_CIRCLE, true),
     )
 
     fun setAccent(accent: Accent) {
@@ -59,7 +62,13 @@ class SettingsRepository(context: Context) {
         _state.value = _state.value.copy(syncMinutes = value)
     }
 
+    fun setShowSenderCircle(value: Boolean) {
+        prefs.edit().putBoolean(KEY_CIRCLE, value).apply()
+        _state.value = _state.value.copy(showSenderCircle = value)
+    }
+
     private companion object {
+        const val KEY_CIRCLE = "show_sender_circle"
         const val KEY_SYNC = "sync_minutes"
         const val KEY_IMAGES = "always_show_images"
         const val KEY_GROUP = "group_by_date"

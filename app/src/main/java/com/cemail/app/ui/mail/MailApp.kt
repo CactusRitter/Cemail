@@ -139,10 +139,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                     DrawerContent(state, acc, onAddAccount = startSignIn, onSelectAccount = { id ->
                         accountVm.select(id)
                         scope.launch { drawer.close() }
-                    }, onToggleLabel = vm::toggleExpanded, onOpenSettings = {
-                        showSettings = true
-                        scope.launch { drawer.close() }
-                    }, onPickLabel = { id ->
+                    }, onToggleLabel = vm::toggleExpanded, onPickLabel = { id ->
                         vm.selectLabel(id)
                         scope.launch { drawer.close() }
                     }, onPick = { box ->
@@ -158,7 +155,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                     draft != null -> ComposeScreen(draft, vm, me)
                     showSettings -> SettingsScreen(settings, settingsRepo, acc.accounts, accountVm::remove) { showSettings = false }
                     open != null -> ReadScreen(open, vm, settings.alwaysShowImages)
-                    else -> ListScreen(state, vm, grouped = settings.groupByDate && state.query.isBlank(), stripeOf = stripeOf, onOpenDrawer = { scope.launch { drawer.open() } })
+                    else -> ListScreen(state, vm, grouped = settings.groupByDate && state.query.isBlank(), stripeOf = stripeOf, showSenderCircle = settings.showSenderCircle, onOpenSettings = { showSettings = true }, onOpenDrawer = { scope.launch { drawer.open() } })
                 }
                 UndoBar(state.undo, vm, Modifier.align(Alignment.BottomCenter))
             }
@@ -176,7 +173,6 @@ private fun DrawerContent(
     onSelectAccount: (String?) -> Unit,
     onPickLabel: (String) -> Unit,
     onToggleLabel: (String) -> Unit,
-    onOpenSettings: () -> Unit,
     onPick: (MailBox) -> Unit,
 ) {
     val accounts = acc.accounts
@@ -224,17 +220,6 @@ private fun DrawerContent(
             }
         }
         LabelSection(state, onPickLabel, onToggleLabel)
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .clickable(role = Role.Button, onClick = onOpenSettings)
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Icon(Icons.Filled.Settings, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.bodyLarge)
-        }
     }
 }
 

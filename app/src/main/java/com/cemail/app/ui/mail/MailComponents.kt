@@ -95,6 +95,8 @@ fun MailRow(
     startIsArchive: Boolean,
     /** Colour of the account the message belongs to (unified inbox only). */
     stripe: Color? = null,
+    /** false hides the round sender picture (Settings). */
+    showCircle: Boolean = true,
 ) {
     val state = rememberSwipeToDismissBoxState(confirmValueChange = { value ->
         when (value) {
@@ -142,7 +144,11 @@ fun MailRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             if (stripe != null) Box(Modifier.width(4.dp).height(44.dp).background(stripe, CircleShape))
-            Box(Modifier.clickable(onClick = onLongClick)) { Avatar(mail.senderName, selected) }
+            if (showCircle) {
+                Box(Modifier.clickable(onClick = onLongClick)) { Avatar(mail.senderName, selected) }
+            } else if (selected) {
+                Icon(Icons.Filled.Check, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+            }
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(

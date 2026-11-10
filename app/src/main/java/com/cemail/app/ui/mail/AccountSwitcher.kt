@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
@@ -45,8 +46,8 @@ fun accountPalette(): List<Color> {
 }
 
 /**
- * Top of the drawer: a pill with what is being shown (one account, or all of them). Tapping it unfolds
- * the other choices and "Add account". Removing an account lives in Settings.
+ * Top of the drawer. "All accounts" (the unified inbox) is always the first row. Below it, a pill with the
+ * account being shown unfolds the list of accounts and "Add account". Removing an account is in Settings.
  */
 @Composable
 fun AccountSwitcher(acc: AccountUiState, onSelect: (String?) -> Unit, onAdd: () -> Unit) {
@@ -56,36 +57,39 @@ fun AccountSwitcher(acc: AccountUiState, onSelect: (String?) -> Unit, onAdd: () 
     var open by rememberSaveable { mutableStateOf(false) }
     val current = accounts.firstOrNull { it.id == acc.selectedId } ?: accounts.singleOrNull()
 
-    // What is selected now.
+    if (several) {
+        AccountPill(
+            title = stringResource(R.string.account_all), subtitle = stringResource(R.string.account_all_body),
+            stripe = null, selected = acc.selectedId == null, expanded = null,
+            onClick = { open = false; onSelect(null) },
+        ) { AllAccountsIcon() }
+    }
+
+    // The pill that unfolds the accounts: it shows the one in use, or "Accounts" while unfolded.
+    val countText = pluralStringResource(R.plurals.accounts_count, accounts.size, accounts.size)
     when {
         accounts.isEmpty() -> AccountPill(
             title = stringResource(R.string.demo_account), subtitle = DEMO_ME, stripe = null, selected = true,
             expanded = open, onClick = { open = !open },
         ) { Avatar(stringResource(R.string.demo_account), size = 40) }
-        current != null -> AccountPill(
+        open || current == null -> AccountPill(
+            title = stringResource(R.string.settings_section_accounts), subtitle = countText, stripe = null,
+            selected = false, expanded = open, onClick = { open = !open },
+        ) { AccountsIcon() }
+        else -> AccountPill(
             title = current.displayName ?: current.email, subtitle = current.email,
             stripe = if (several) palette[accounts.indexOf(current) % palette.size] else null, selected = true,
-            expanded = open, onClick = { open = !open },
+            expanded = false, onClick = { open = !open },
         ) { Avatar(current.displayName ?: current.email, size = 40) }
-        else -> AccountPill(
-            title = stringResource(R.string.account_all), subtitle = stringResource(R.string.account_all_body),
-            stripe = null, selected = true, expanded = open, onClick = { open = !open },
-        ) { AllAccountsIcon() }
     }
 
     if (!open) return
-    // The other choices.
-    if (several && current != null) {
-        AccountPill(
-            title = stringResource(R.string.account_all), subtitle = stringResource(R.string.account_all_body),
-            stripe = null, selected = false, expanded = null, onClick = { open = false; onSelect(null) },
-        ) { AllAccountsIcon() }
-    }
     accounts.forEachIndexed { index, account ->
-        if (account.id == current?.id) return@forEachIndexed
         AccountPill(
             title = account.displayName ?: account.email, subtitle = account.email,
-            stripe = if (several) palette[index % palette.size] else null, selected = false, expanded = null,
+            stripe = if (several) palette[index % palette.size] else null,
+            selected = account.id == current?.id && acc.selectedId != null || (account.id == current?.id && !several),
+            expanded = null,
             onClick = { open = false; onSelect(account.id) },
         ) { Avatar(account.displayName ?: account.email, size = 40) }
     }
@@ -109,6 +113,13 @@ fun AccountSwitcher(acc: AccountUiState, onSelect: (String?) -> Unit, onAdd: () 
 private fun AllAccountsIcon() {
     Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
         Icon(CemailIcons.Inbox, null, tint = MaterialTheme.colorScheme.primary)
+    }
+}
+
+@Composable
+private fun AccountsIcon() {
+    Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+        Icon(CemailIcons.Mail, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
