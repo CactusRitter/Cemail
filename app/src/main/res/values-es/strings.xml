@@ -33,7 +33,7 @@
     <string name="selected_count">%1$d seleccionados</string>
     <string name="no_subject">(sin asunto)</string>
     <string name="demo_account">Cuenta de prueba</string>
-    <string name="demo_banner">Modo de prueba: el inicio de sesión con Google llega en la siguiente fase.</string>
+    <string name="demo_banner">Modo de prueba: son mensajes de ejemplo. Añade una cuenta para usar tu Gmail.</string>
 
     <!-- Acciones -->
     <string name="action_archive">Archivar</string>
@@ -106,4 +106,16 @@
     <string name="demo_8_name">Cemail</string>
     <string name="demo_8_subject">Te damos la bienvenida a Cemail</string>
     <string name="demo_8_body">Un cliente de Gmail sencillo con el aspecto de cristal de las apps Ce. Desliza un mensaje para archivarlo, mantén pulsado para seleccionar varios y usa el reloj para posponer.</string>
+
+    <!-- Inicio de sesión y cuentas -->
+    <string name="sign_in_title">Te damos la bienvenida a Cemail</string>
+    <string name="sign_in_body">Inicia sesión con tu cuenta de Google para leer y enviar tu Gmail. Tu correo se queda en tu teléfono.</string>
+    <string name="sign_in_google">Iniciar sesión con Google</string>
+    <string name="sign_in_unverified">Google dirá que la app no está verificada: toca Avanzado y luego Ir a Cemail.</string>
+    <string name="sign_in_demo">Echar un vistazo con mensajes de ejemplo</string>
+    <string name="sign_in_failed">No se pudo iniciar sesión. Inténtalo de nuevo.</string>
+    <string name="sign_in_not_configured">Esta compilación no tiene ID de cliente de Google. Mira docs/OAUTH_SETUP.md.</string>
+    <string name="account_add">Añadir cuenta</string>
+    <string name="account_remove">Quitar cuenta</string>
+    <string name="sync_soon_banner">Sesión iniciada. La sincronización de tu Gmail llega en la siguiente fase; estos son mensajes de ejemplo.</string>
 </resources>

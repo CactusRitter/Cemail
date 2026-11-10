@@ -3,7 +3,7 @@
 Versión sencilla: solo Gmail. Cada fase termina con la app compilando, sus tests en verde y probada en el emulador.
 
 - [x] **Fase 0 — Base del proyecto**: Gradle, dependencias, tema y cristal de las apps "Ce", recursos en inglés y español, documentación.
-- [ ] **Fase 1 — Cuenta de Google**: registrar la app en Google ([OAUTH_SETUP.md](OAUTH_SETUP.md)), Room, almacén cifrado de tokens, pantalla para iniciar sesión, añadir/quitar cuentas (una o varias).
+- [x] **Fase 1 — Cuenta de Google** (hecha 2026-11-10; falta que el usuario pruebe el inicio de sesión real): registrar la app en Google ([OAUTH_SETUP.md](OAUTH_SETUP.md)), Room, almacén cifrado de tokens, pantalla para iniciar sesión, añadir/quitar cuentas (una o varias).
 - [ ] **Fase 2 — Sincronizar y leer**: etiquetas, lista de la bandeja, lectura (texto y HTML saneado), marcar leído y destacado, archivar, mover a la papelera.
   - **Interfaz hecha (con datos de prueba, 2026-11-10)**: carpetas en menú lateral, lista estilo Thunderbird con avatares y deslizar para archivar/papelera, selección múltiple, lectura, redactar/responder/reenviar, búsqueda con `from:`/`is:unread`/`has:attachment`, y de Spark: fijar, posponer y deshacer. Falta conectarla a Gmail y Room.
 - [ ] **Fase 3 — Redactar y enviar**: nuevo mensaje, responder, responder a todos, reenviar, firma, envío con reintentos sin red.

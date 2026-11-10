@@ -1,6 +1,15 @@
 package com.cemail.app.ui.mail
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import com.cemail.app.ui.account.AccountUiState
+import com.cemail.app.ui.account.AccountViewModel
+import com.cemail.app.ui.account.SignInScreen
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -61,7 +70,19 @@ private fun MailBox.icon(): ImageVector = when (this) {
 }
 
 @Composable
-fun MailApp(vm: MailViewModel) {
+fun MailApp(vm: MailViewModel, accountVm: AccountViewModel) {
+    val acc by accountVm.state.collectAsStateWithLifecycle()
+    val me = acc.accounts.firstOrNull()?.email ?: DEMO_ME
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { accountVm.onSignInResult(it.data) }
+    val startSignIn = { accountVm.startSignIn()?.let { launcher.launch(it) }; Unit }
+    if (!acc.loaded) {
+        GlassBackground {}
+        return
+    }
+    if (acc.accounts.isEmpty() && !acc.demo) {
+        SignInScreen(acc, startSignIn, accountVm::useDemo)
+        return
+    }
     val state by vm.state.collectAsStateWithLifecycle()
     val draft = state.draft
     val open = state.open
@@ -69,7 +90,7 @@ fun MailApp(vm: MailViewModel) {
     val scope = rememberCoroutineScope()
 
     BackHandler(enabled = drawer.isOpen) { scope.launch { drawer.close() } }
-    BackHandler(enabled = state.draft != null) { vm.closeCompose(DEMO_ME) }
+    BackHandler(enabled = state.draft != null) { vm.closeCompose(me) }
     BackHandler(enabled = state.draft == null && state.open != null) { vm.closeMail() }
     BackHandler(enabled = state.draft == null && state.open == null && state.selection.isNotEmpty()) { vm.clearSelection() }
     BackHandler(enabled = state.draft == null && state.open == null && state.selection.isEmpty() && state.searching) { vm.setSearching(false) }
@@ -80,7 +101,7 @@ fun MailApp(vm: MailViewModel) {
             gesturesEnabled = state.draft == null && state.open == null,
             drawerContent = {
                 ModalDrawerSheet(drawerContainerColor = Color.Transparent, windowInsets = WindowInsets(0)) {
-                    DrawerContent(state, onPick = { box ->
+                    DrawerContent(state, acc, onAddAccount = startSignIn, onRemoveAccount = accountVm::remove, onPick = { box ->
                         vm.selectBox(box)
                         scope.launch { drawer.close() }
                     })
@@ -90,7 +111,7 @@ fun MailApp(vm: MailViewModel) {
         ) {
             Box(Modifier.fillMaxSize()) {
                 when {
-                    draft != null -> ComposeScreen(draft, vm, DEMO_ME)
+                    draft != null -> ComposeScreen(draft, vm, me)
                     open != null -> ReadScreen(open, vm)
                     else -> ListScreen(state, vm, onOpenDrawer = { scope.launch { drawer.open() } })
                 }
@@ -103,25 +124,56 @@ fun MailApp(vm: MailViewModel) {
 }
 
 @Composable
-private fun DrawerContent(state: MailUiState, onPick: (MailBox) -> Unit) {
+private fun DrawerContent(
+    state: MailUiState,
+    acc: AccountUiState,
+    onAddAccount: () -> Unit,
+    onRemoveAccount: (String) -> Unit,
+    onPick: (MailBox) -> Unit,
+) {
+    val accounts = acc.accounts
     Column(
         Modifier
             .windowInsetsPadding(WindowInsets.safeDrawing)
             .padding(12.dp)
             .fillMaxWidth(0.82f)
             .glass(RoundedCornerShape(28.dp), GlassKind.Menu, elevation = 12.dp)
+            .verticalScroll(rememberScrollState())
             .padding(vertical = 16.dp, horizontal = 12.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Avatar(stringResource(R.string.demo_account), size = 40)
-            Column(Modifier.padding(start = 12.dp)) {
-                Text(stringResource(R.string.demo_account), style = MaterialTheme.typography.titleSmall)
-                Text(DEMO_ME, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (accounts.isEmpty()) {
+            Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Avatar(stringResource(R.string.demo_account), size = 40)
+                Column(Modifier.padding(start = 12.dp)) {
+                    Text(stringResource(R.string.demo_account), style = MaterialTheme.typography.titleSmall)
+                    Text(DEMO_ME, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        } else {
+            accounts.forEach { account ->
+                Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Avatar(account.displayName ?: account.email, size = 40)
+                    Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                        Text(account.displayName ?: account.email, style = MaterialTheme.typography.titleSmall, maxLines = 1)
+                        Text(
+                            account.email,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                        )
+                    }
+                    Icon(
+                        Icons.Filled.Close,
+                        stringResource(R.string.account_remove),
+                        Modifier.clickable(role = Role.Button) { onRemoveAccount(account.id) }.padding(8.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
         Text(
-            stringResource(R.string.demo_banner),
+            stringResource(if (accounts.isEmpty()) R.string.demo_banner else R.string.sync_soon_banner),
             Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -149,6 +201,21 @@ private fun DrawerContent(state: MailUiState, onPick: (MailBox) -> Unit) {
                     Text(unread.toString(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                 }
             }
+        }
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clickable(role = Role.Button, onClick = onAddAccount)
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Icon(Icons.Filled.Add, null, tint = MaterialTheme.colorScheme.primary)
+            Text(
+                stringResource(R.string.account_add),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
         }
     }
 }

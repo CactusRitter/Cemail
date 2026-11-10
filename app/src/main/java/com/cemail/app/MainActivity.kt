@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.cemail.app.ui.account.AccountViewModel
 import com.cemail.app.ui.mail.MailApp
 import com.cemail.app.ui.mail.MailViewModel
 import com.cemail.app.ui.theme.CemailTheme
@@ -20,7 +21,8 @@ class MainActivity : ComponentActivity() {
             val settings by app.settings.state.collectAsStateWithLifecycle()
             CemailTheme(settings) {
                 val vm: MailViewModel = viewModel(factory = MailViewModel.Factory(app.mailRepository))
-                MailApp(vm)
+                val accountVm: AccountViewModel = viewModel(factory = AccountViewModel.Factory(app.accountRepository, app.googleAuth))
+                MailApp(vm, accountVm)
             }
         }
     }

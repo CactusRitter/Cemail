@@ -35,7 +35,7 @@
     <string name="selected_count">%1$d selected</string>
     <string name="no_subject">(no subject)</string>
     <string name="demo_account">Demo account</string>
-    <string name="demo_banner">Demo mode: sign in with Google arrives in the next phase.</string>
+    <string name="demo_banner">Demo mode: these are example messages. Add an account to use your Gmail.</string>
 
     <!-- Actions -->
     <string name="action_archive">Archive</string>
@@ -108,4 +108,16 @@
     <string name="demo_8_name">Cemail</string>
     <string name="demo_8_subject">Welcome to Cemail</string>
     <string name="demo_8_body">A simple Gmail client with the frosted glass look of the Ce apps. Swipe a message to archive it, long-press to select several, and use the clock to snooze.</string>
+
+    <!-- Sign in and accounts -->
+    <string name="sign_in_title">Welcome to Cemail</string>
+    <string name="sign_in_body">Sign in with your Google account to read and send your Gmail. Your mail stays on your phone.</string>
+    <string name="sign_in_google">Sign in with Google</string>
+    <string name="sign_in_unverified">Google will say the app is not verified: tap Advanced, then Go to Cemail.</string>
+    <string name="sign_in_demo">Look around with example messages</string>
+    <string name="sign_in_failed">Could not sign in. Please try again.</string>
+    <string name="sign_in_not_configured">This build has no Google client ID. See docs/OAUTH_SETUP.md.</string>
+    <string name="account_add">Add account</string>
+    <string name="account_remove">Remove account</string>
+    <string name="sync_soon_banner">Signed in. Syncing your Gmail arrives in the next phase; these are example messages.</string>
 </resources>
