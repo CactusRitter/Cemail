@@ -25,6 +25,7 @@ class UnifiedMailRepository(private val accounts: List<MailRepository>, scope: C
 
     /** Labels belong to one account: they are shown when that account is selected, not in the unified view. */
     override val labels: Flow<List<Label>> = flowOf(emptyList())
+    override suspend fun userLabels(accountId: String): List<Label> = accounts.flatMap { it.userLabels(accountId) }
 
     override val syncing: StateFlow<Boolean> = combine(accounts.map { it.syncing }) { all -> all.any { it } }
         .stateIn(scope, SharingStarted.Eagerly, false)

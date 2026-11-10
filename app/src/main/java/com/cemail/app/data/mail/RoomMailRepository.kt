@@ -5,6 +5,7 @@ import com.cemail.app.data.db.LabelEntity
 import com.cemail.app.data.db.MessageDao
 import com.cemail.app.data.db.MessageEntity
 import com.cemail.app.data.gmail.GmailApi
+import com.cemail.app.data.gmail.GmailHttpException
 import com.cemail.app.data.gmail.GmailMessage
 import com.cemail.app.data.gmail.GmailParser
 import com.cemail.app.data.gmail.InlineImages
@@ -27,6 +28,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
@@ -50,10 +52,15 @@ class RoomMailRepository(
     private val selfEmail: suspend () -> String? = { null },
     /** Called with the unread Inbox messages that a sync found for the first time (never on the first sync). */
     private val onNewMail: (accountId: String, mails: List<Mail>) -> Unit = { _, _ -> },
+    /** Where the sync keeps its place in the mailbox's history. */
+    private val marks: SyncMarks = SyncMarks.InMemory(),
 ) : MailRepository {
     override val mails: StateFlow<List<Mail>> = dao.observe(accountId)
         .map { list -> list.map { it.toMail() } }
         .stateIn(scope, SharingStarted.Eagerly, emptyList())
+
+    override suspend fun userLabels(accountId: String): List<Label> =
+        if (accountId == this.accountId) labels.first() else emptyList()
 
     override val labels: Flow<List<Label>> = labelDao.observe(accountId)
         .map { list -> list.map { Label(it.id, it.name) } }
@@ -78,6 +85,7 @@ class RoomMailRepository(
             for ((before, after) in changes) {
                 // Only the flags are written, so the (possibly huge) texts are never loaded here.
                 dao.updateFlags(after.id, after.folder.name, after.read, after.starred, after.pinned, after.snoozedUntil)
+                if (after.labelIds != before.labelIds) dao.updateLabelIds(after.id, after.labelIds.sorted().joinToString(" "))
                 val remote = dao.remoteIdOf(after.id) ?: continue
                 val (add, remove) = LabelDiff.between(before, after)
                 if (add.isNotEmpty() || remove.isNotEmpty()) {
@@ -254,6 +262,96 @@ class RoomMailRepository(
      * automatic checks. A full sync also brings label, read and star changes made elsewhere.
      */
     private suspend fun sync(quick: Boolean) {
+        val start = marks.historyId()
+        val fullDue = System.currentTimeMillis() - marks.lastFullMillis() > FULL_EVERY_MILLIS
+        if (start != null && !fullDue) {
+            try {
+                delta(start, quick)
+                return
+            } catch (e: GmailHttpException) {
+                if (e.code != 404) throw e
+                AppLog.i("sync", "...${accountId.takeLast(4)} history too old, full sync")
+            }
+        }
+        fullSync(quick)
+    }
+
+    /** Only what changed since [startId] (Gmail's history): a couple of requests when nothing happened. */
+    private suspend fun delta(startId: String, quick: Boolean) {
+        val cached = dao.remoteOnes(accountId).associateBy { it.remoteId!! }
+        // An empty copy (account added again) has nothing to apply changes to: list everything instead.
+        if (cached.isEmpty()) throw GmailHttpException(404, "empty local copy")
+        if (!quick) syncLabels()
+        val changes = api.changesSince(startId)
+        val gate = Semaphore(6)
+        val arrived = java.util.concurrent.ConcurrentLinkedQueue<MessageEntity>()
+        coroutineScope {
+            // Cached messages whose HTML was never kept (a migration clears it) are downloaded again here too.
+            val missing = cached.filterValues { it.bodyHtml == null }.keys
+            (changes.added + changes.relabelled + missing).map { id ->
+                async(Dispatchers.IO) {
+                    gate.withPermit {
+                        val old = cached[id]
+                        try {
+                            if (old == null || old.bodyHtml == null) {
+                                if (old != null || id in changes.added) ingest(id, old, arrived)
+                            } else {
+                                applyLabels(old, api.getLabels(id).toSet())
+                            }
+                        } catch (e: GmailHttpException) {
+                            if (e.code != 404) throw e // gone already: the deleted list of a later sync drops it
+                        }
+                    }
+                }
+            }.awaitAll()
+        }
+        val gone = changes.deleted.mapNotNull { cached[it]?.localId }
+        gone.chunked(500).forEach { dao.deleteAll(accountId, it) }
+        marks.save(changes.historyId, fullToo = false)
+        AppLog.i("sync", "...${accountId.takeLast(4)} ${if (quick) "quick" else "full"} delta ok: ${changes.added.size} added, ${changes.relabelled.size} relabelled, ${gone.size} removed, ${arrived.size} new unread")
+        if (arrived.isNotEmpty()) {
+            onNewMail(accountId, arrived.sortedByDescending { it.timeMillis }.map { it.toMail() })
+        }
+    }
+
+    /** Downloads a message whole and stores it (replacing [old]); spam and chats are not kept. */
+    private suspend fun ingest(id: String, old: MessageEntity?, arrived: java.util.Queue<MessageEntity>) {
+        val message = api.getMessage(id)
+        if (message.labelIds.any { it == "SPAM" || it == "CHAT" }) {
+            if (old != null) dao.delete(old.localId)
+            return
+        }
+        val entity = GmailParser.parse(message).toEntity(accountId, id).capped()
+        // Embedded pictures first, so they are already there when the message shows up.
+        if (entity.bodyHtml?.contains("cid:", ignoreCase = true) == true) {
+            try { saveInlineImages(id, message) } catch (_: Exception) { /* retried when the message is opened */ }
+        }
+        if (old == null) {
+            dao.insert(entity)
+            if (!entity.read && entity.folder == Folder.INBOX.name && entity.timeMillis > System.currentTimeMillis() - RECENT_MILLIS) {
+                arrived.add(entity) // not an old message that only now fell inside the synced window
+            }
+        } else {
+            dao.update(entity.copy(localId = old.localId, pinned = old.pinned, snoozedUntil = old.snoozedUntil))
+        }
+    }
+
+    /** Puts the labels the server has on the cached copy (and drops it if it became spam). */
+    private suspend fun applyLabels(old: MessageEntity, labels: Set<String>) {
+        if ("SPAM" in labels) {
+            dao.delete(old.localId)
+            return
+        }
+        val state = LabelDiff.stateOf(labels)
+        val joined = labels.sorted().joinToString(" ")
+        if (state.folder.name != old.folder || state.read != old.read || state.starred != old.starred || joined != old.labelIds) {
+            dao.updateState(old.localId, state.folder.name, state.read, state.starred, joined)
+        }
+    }
+
+    private suspend fun fullSync(quick: Boolean) {
+        // Taken before listing: anything that changes meanwhile shows up in the next delta.
+        val historyAtStart = try { api.currentHistoryId() } catch (_: Exception) { null }
         if (!quick) syncLabels()
         val remoteIds = api.listMessageIds(QUERY, LIMIT)
         val cached = dao.remoteOnes(accountId).associateBy { it.remoteId!! }
@@ -296,7 +394,8 @@ class RoomMailRepository(
         }
         val gone = cached.filterKeys { it !in remoteIds }.values.map { it.localId }
         gone.chunked(500).forEach { dao.deleteAll(accountId, it) }
-        AppLog.i("sync", "...${accountId.takeLast(4)} ${if (quick) "quick" else "full"} ok: ${remoteIds.size} listed, ${cached.size} cached, ${arrived.size} new unread, ${gone.size} removed")
+        if (historyAtStart != null) marks.save(historyAtStart, fullToo = true)
+        AppLog.i("sync", "...${accountId.takeLast(4)} ${if (quick) "quick" else "full"} ok:${remoteIds.size} listed, ${cached.size} cached, ${arrived.size} new unread, ${gone.size} removed")
         // The first sync of an account brings in its whole history: that is not "new mail".
         if (cached.isNotEmpty() && arrived.isNotEmpty()) {
             onNewMail(accountId, arrived.sortedByDescending { it.timeMillis }.map { it.toMail() })
@@ -323,6 +422,9 @@ class RoomMailRepository(
         const val RECENT_MILLIS = 3L * 24 * 60 * 60 * 1000
         const val CHUNK = 250_000
 
+        /** A real listing at least this often, so messages that fell out of the window or were missed are corrected. */
+        const val FULL_EVERY_MILLIS = 6L * 60 * 60 * 1000
+
         /** Renamed whenever the way embedded pictures are found changes, so they are fetched again. */
         const val INLINE_INDEX = "index.v2"
     }
@@ -336,13 +438,14 @@ private fun MessageEntity.toMail() = Mail(
     timeMillis = timeMillis, folder = Folder.valueOf(folder), read = read, starred = starred, pinned = pinned,
     snoozedUntil = snoozedUntil, hasAttachment = hasAttachment,
     labelIds = labelIds.split(" ").filter { it.isNotEmpty() }.toSet(), bodyHtml = bodyHtml, accountId = accountId,
+    threadId = threadId,
 )
 
 private fun Mail.toEntity(accountId: String, remoteId: String?) = MessageEntity(
     localId = id, accountId = accountId, remoteId = remoteId, folder = folder.name, senderName = senderName,
     senderEmail = senderEmail, subject = subject, body = body, timeMillis = timeMillis, read = read,
     starred = starred, pinned = pinned, snoozedUntil = snoozedUntil, hasAttachment = hasAttachment,
-    labelIds = labelIds.sorted().joinToString(" "), bodyHtml = bodyHtml ?: "",
+    labelIds = labelIds.sorted().joinToString(" "), bodyHtml = bodyHtml ?: "", threadId = threadId,
 )
 
 private fun ParsedMessage.toEntity(accountId: String, remoteId: String): MessageEntity {
@@ -351,7 +454,7 @@ private fun ParsedMessage.toEntity(accountId: String, remoteId: String): Message
         accountId = accountId, remoteId = remoteId, folder = state.folder.name,
         senderName = fromName, senderEmail = fromEmail, subject = subject, body = body, timeMillis = timeMillis,
         read = state.read, starred = state.starred, pinned = false, snoozedUntil = null, hasAttachment = hasAttachment,
-        labelIds = labels.sorted().joinToString(" "), bodyHtml = html,
+        labelIds = labels.sorted().joinToString(" "), bodyHtml = html, threadId = threadId,
     )
 }
 
@@ -385,6 +488,9 @@ object LabelDiff {
         }
         if (before.read != after.read) if (after.read) remove += "UNREAD" else add += "UNREAD"
         if (before.starred != after.starred) if (after.starred) add += "STARRED" else remove += "STARRED"
+        // Labels the user created (their ids look like "Label_12") put on or taken off from the message.
+        add += (after.labelIds - before.labelIds).filter { it.startsWith("Label_") }
+        remove += (before.labelIds - after.labelIds).filter { it.startsWith("Label_") }
         return add to remove
     }
 }

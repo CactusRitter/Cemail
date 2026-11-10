@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -82,6 +83,8 @@ data class MailUiState(
     val expanded: Set<String> = emptySet(),
     val unreadByLabel: Map<String, Int> = emptyMap(),
     val collapsedSections: Set<DateSection> = emptySet(),
+    /** The other messages of the open message's conversation, newest first. */
+    val thread: List<Mail> = emptyList(),
 )
 
 class MailViewModel(private val repo: MailRepository) : ViewModel() {
@@ -95,11 +98,17 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
         val shown = (if (u.query.isBlank()) inBox else mails.filter { it.folder != Folder.TRASH && it.matches(u.query) })
             .sortedByDescending { it.timeMillis }
         val showPinned = u.box == MailBox.INBOX && u.labelId == null && u.query.isBlank()
+        val open = u.openId?.let { id -> mails.firstOrNull { it.id == id } }
+        val conversation = open?.threadId?.let { thread ->
+            mails.filter { it.threadId == thread && it.accountId == open.accountId && it.id != open.id && it.folder != Folder.TRASH }
+                .sortedByDescending { it.timeMillis }
+        }.orEmpty()
         MailUiState(
+            thread = conversation,
             box = u.box, query = u.query, searching = u.searching, selection = u.selection, syncing = syncing,
             labels = labels, labelId = u.labelId, expanded = u.expanded, collapsedSections = u.collapsedSections,
             unreadByLabel = labels.associate { l -> l.id to mails.count { !it.read && l.id in it.labelIds && it.folder != Folder.TRASH } },
-            open = u.openId?.let { id -> mails.firstOrNull { it.id == id } },
+            open = open,
             draft = u.draft, snoozeTargets = u.snoozeTargets, undo = u.undo,
             pinned = if (showPinned) shown.filter { it.pinned } else emptyList(),
             others = if (showPinned) shown.filter { !it.pinned } else shown,
@@ -177,6 +186,9 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
         act(ids, if (turnOn) R.string.done_pinned else R.string.done_marked) { it.copy(pinned = turnOn) }
     }
     fun markRead(ids: Set<Long>, read: Boolean) = act(ids, R.string.done_marked, true) { it.copy(read = read) }
+    /** Puts a label of the user on the messages, or takes it off. */
+    fun setLabel(ids: Set<Long>, labelId: String, on: Boolean) =
+        act(ids, null) { it.copy(labelIds = if (on) it.labelIds + labelId else it.labelIds - labelId) }
     fun askSnooze(ids: Set<Long>) = ui.update { it.copy(snoozeTargets = ids) }
     fun dismissSnooze() = ui.update { it.copy(snoozeTargets = null) }
     fun snooze(option: SnoozeOption) {
@@ -291,6 +303,11 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
 
     suspend fun inlineImages(id: Long): Map<String, String> = repo.inlineImages(id)
     suspend fun full(id: Long): Mail? = repo.full(id)
+    suspend fun userLabels(accountId: String) = repo.userLabels(accountId)
+
+    /** The people who wrote to the user, to offer as recipients while typing. */
+    suspend fun senders(): List<com.cemail.app.data.mail.Suggestion> =
+        com.cemail.app.data.mail.sendersOf(repo.mails.first())
     suspend fun emlFile(id: Long): java.io.File? = repo.emlFile(id)
 
     class Factory(private val repo: MailRepository) : ViewModelProvider.Factory {

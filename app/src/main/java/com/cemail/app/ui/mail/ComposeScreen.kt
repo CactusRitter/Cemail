@@ -54,6 +54,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -120,6 +121,20 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
         }
     }
 
+    // Recipient suggestions: contacts (once the user allowed it) and the people who wrote to them. The permission
+    // is asked a single time, the first time a message is written.
+    val senders by produceState(emptyList<com.cemail.app.data.mail.Suggestion>()) { value = vm.senders() }
+    val suggest: suspend (String) -> List<com.cemail.app.data.mail.Suggestion> =
+        { q -> com.cemail.app.data.mail.ContactSuggestions.search(context, q, senders) }
+    val askContacts = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    LaunchedEffect(Unit) {
+        val prefs = context.getSharedPreferences("asked", android.content.Context.MODE_PRIVATE)
+        if (!com.cemail.app.data.mail.ContactSuggestions.hasPermission(context) && !prefs.getBoolean("contacts", false)) {
+            prefs.edit().putBoolean("contacts", true).apply()
+            askContacts.launch(android.Manifest.permission.READ_CONTACTS)
+        }
+    }
+
     // The text is edited with formatting that shows at once (no **marks**). The draft keeps the plain text and
     // the HTML; the editor itself is filled only once, from the text the draft started with.
     val rich = rememberRichTextState()
@@ -166,6 +181,7 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
                     label = stringResource(R.string.compose_to),
                     value = draft.to,
                     onValueChange = { vm.editDraft { d -> d.copy(to = it) } },
+                    suggest = suggest,
                     trailing = {
                         Box(
                             Modifier.size(48.dp).clip(CircleShape).clickable(role = Role.Button) { showCopies = !showCopies },
@@ -189,12 +205,14 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
                             label = stringResource(R.string.compose_cc),
                             value = draft.cc,
                             onValueChange = { vm.editDraft { d -> d.copy(cc = it) } },
+                            suggest = suggest,
                         )
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                         RecipientField(
                             label = stringResource(R.string.compose_bcc),
                             value = draft.bcc,
                             onValueChange = { vm.editDraft { d -> d.copy(bcc = it) } },
+                            suggest = suggest,
                         )
                     }
                 }
@@ -221,14 +239,19 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
             }
             draft.signatureHtml?.let { signature ->
                 // The HTML signature, as it will look; the x leaves it out of this message.
-                Box(Modifier.fillMaxWidth().height(170.dp).clip(RoundedCornerShape(24.dp))) {
-                    HtmlBody(HtmlSanitizer.page(signature, 0, ""), true, Modifier.fillMaxSize()) { }
-                    Box(
-                        Modifier.align(Alignment.TopEnd).padding(6.dp).size(40.dp)
-                            .glass(CircleShape, GlassKind.Chrome)
-                            .clickable(role = Role.Button) { vm.editDraft { d -> d.copy(signatureHtml = null) } },
-                        contentAlignment = Alignment.Center,
-                    ) { Icon(Icons.Filled.Close, stringResource(R.string.compose_signature_remove), Modifier.size(20.dp)) }
+                // The x sits in its own row above the picture, so it never covers the signature's icons.
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        Box(
+                            Modifier.size(40.dp)
+                                .glass(CircleShape, GlassKind.Chrome)
+                                .clickable(role = Role.Button) { vm.editDraft { d -> d.copy(signatureHtml = null) } },
+                            contentAlignment = Alignment.Center,
+                        ) { Icon(Icons.Filled.Close, stringResource(R.string.compose_signature_remove), Modifier.size(20.dp)) }
+                    }
+                    Box(Modifier.fillMaxWidth().height(170.dp).clip(RoundedCornerShape(24.dp))) {
+                        HtmlBody(HtmlSanitizer.page(signature, 0, ""), true, Modifier.fillMaxSize()) { }
+                    }
                 }
             }
             draft.attachments.forEach { file ->

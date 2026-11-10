@@ -53,3 +53,32 @@ data class GmailLabel(val id: String, val name: String, val type: String = "user
 
 @Serializable
 data class AttachmentBody(val size: Int = 0, val data: String = "")
+
+@Serializable
+data class Profile(val historyId: String = "")
+
+@Serializable
+data class HistoryMessage(val message: MessageRef)
+
+@Serializable
+data class HistoryRecord(
+    val messagesAdded: List<HistoryMessage> = emptyList(),
+    val messagesDeleted: List<HistoryMessage> = emptyList(),
+    val labelsAdded: List<HistoryMessage> = emptyList(),
+    val labelsRemoved: List<HistoryMessage> = emptyList(),
+)
+
+@Serializable
+data class HistoryList(
+    val history: List<HistoryRecord> = emptyList(),
+    val nextPageToken: String? = null,
+    val historyId: String = "",
+)
+
+/** What changed in a mailbox since a history id: message ids to download, to re-read the labels of, and to drop. */
+data class MailboxChanges(
+    val added: Set<String>,
+    val relabelled: Set<String>,
+    val deleted: Set<String>,
+    val historyId: String,
+)

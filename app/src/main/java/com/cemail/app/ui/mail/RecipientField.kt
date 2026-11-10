@@ -6,6 +6,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import com.cemail.app.data.mail.Suggestion
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -69,6 +72,8 @@ fun RecipientField(
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     trailing: @Composable () -> Unit = {},
+    /** Addresses to offer for what is being typed (empty = none). */
+    suggest: suspend (String) -> List<Suggestion> = { emptyList() },
 ) {
     // The latest value is kept here as well, so fast typing never works from a stale one.
     var current by remember { mutableStateOf(value) }
@@ -89,7 +94,17 @@ fun RecipientField(
         list.joinToString(", ") + (if (list.isNotEmpty()) ", " else "") + typed
 
     var focused by remember { mutableStateOf(false) }
-    Row(modifier.fillMaxWidth().padding(start = 16.dp), verticalAlignment = Alignment.Top) {
+    var options by remember { mutableStateOf(emptyList<Suggestion>()) }
+    LaunchedEffect(typing, focused) {
+        options = if (focused && typing.length >= 2) {
+            delay(120) // not at every key
+            suggest(typing).filter { s -> chips.none { it.equals(s.email, ignoreCase = true) } }
+        } else {
+            emptyList()
+        }
+    }
+    Column(modifier.fillMaxWidth()) {
+    Row(Modifier.fillMaxWidth().padding(start = 16.dp), verticalAlignment = Alignment.Top) {
         Text(
             label,
             Modifier.padding(top = 16.dp).widthIn(min = 40.dp),
@@ -167,6 +182,26 @@ fun RecipientField(
             )
         }
         trailing()
+    }
+    options.forEach { s ->
+        Column(
+            Modifier.fillMaxWidth().clickable(role = Role.Button) {
+                options = emptyList()
+                emit(build(chips + s.email, ""))
+            }.padding(start = 56.dp, end = 16.dp, top = 6.dp, bottom = 6.dp),
+        ) {
+            if (s.name.isNotBlank()) {
+                Text(s.name, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Text(
+                s.email,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
     }
 }
 

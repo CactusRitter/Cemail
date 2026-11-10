@@ -238,4 +238,11 @@
     <string name="settings_signature_replace">Replace</string>
     <string name="settings_signature_remove">Remove</string>
     <string name="settings_signature_import_failed">No signature could be read from that file.</string>
+    <string name="action_labels">Labels</string>
+    <string name="labels_none">You have no labels yet. Create them in Gmail and they will appear here.</string>
+    <plurals name="thread_more">
+        <item quantity="one">%d more message in this conversation</item>
+        <item quantity="other">%d more messages in this conversation</item>
+    </plurals>
+    <string name="thread_you">You</string>
 </resources>

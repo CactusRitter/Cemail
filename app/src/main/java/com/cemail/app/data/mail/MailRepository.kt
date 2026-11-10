@@ -13,6 +13,9 @@ interface MailRepository {
     /** The Gmail labels the user created, shown as folders. */
     val labels: Flow<List<Label>>
 
+    /** The labels the user created in the account that owns a message (empty if that account is not this store's). */
+    suspend fun userLabels(accountId: String): List<Label>
+
     /** true while a sync with the server is running. */
     val syncing: StateFlow<Boolean>
 
@@ -54,8 +57,9 @@ interface MailRepository {
 }
 
 /** In-memory store seeded with example messages (used when no account is signed in). */
-class DemoMailRepository(seed: List<Mail>, demoLabels: List<Label> = emptyList()) : MailRepository {
+class DemoMailRepository(seed: List<Mail>, private val demoLabels: List<Label> = emptyList()) : MailRepository {
     override val labels: Flow<List<Label>> = kotlinx.coroutines.flow.flowOf(demoLabels)
+    override suspend fun userLabels(accountId: String): List<Label> = demoLabels
     private val state = MutableStateFlow(seed)
     override val mails: StateFlow<List<Mail>> = state.asStateFlow()
     override val syncing: StateFlow<Boolean> = MutableStateFlow(false)

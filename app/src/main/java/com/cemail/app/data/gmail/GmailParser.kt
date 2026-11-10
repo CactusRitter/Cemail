@@ -19,6 +19,8 @@ data class ParsedMessage(
     val labels: Set<String>,
     /** The HTML part as sent by the author (unsanitized: run it through HtmlSanitizer before showing it). */
     val html: String = "",
+    /** Gmail's conversation id; messages of one conversation share it. */
+    val threadId: String? = null,
 )
 
 /** Turns Gmail API messages into [ParsedMessage]. Pure Kotlin, covered by unit tests. */
@@ -64,6 +66,7 @@ object GmailParser {
             hasAttachment = attachment,
             labels = message.labelIds.toSet(),
             html = html.toString(),
+            threadId = message.threadId,
         )
     }
 

@@ -236,4 +236,11 @@
     <string name="settings_signature_replace">Cambiar</string>
     <string name="settings_signature_remove">Quitar</string>
     <string name="settings_signature_import_failed">No se pudo leer ninguna firma de ese archivo.</string>
+    <string name="action_labels">Etiquetas</string>
+    <string name="labels_none">Aún no tienes etiquetas. Créalas en Gmail y aparecerán aquí.</string>
+    <plurals name="thread_more">
+        <item quantity="one">%d mensaje más en esta conversación</item>
+        <item quantity="other">%d mensajes más en esta conversación</item>
+    </plurals>
+    <string name="thread_you">Tú</string>
 </resources>

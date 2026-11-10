@@ -73,7 +73,11 @@ import android.widget.Toast
 import kotlinx.coroutines.launch
 import com.cemail.app.R
 import com.cemail.app.data.gmail.HtmlSanitizer
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.ui.res.pluralStringResource
 import com.cemail.app.data.mail.Folder
+import com.cemail.app.data.mail.Label
 import com.cemail.app.data.mail.Mail
 import com.cemail.app.ui.glass.GlassIconButton
 import com.cemail.app.ui.glass.GlassKind
@@ -83,7 +87,13 @@ import com.cemail.app.ui.glass.glass
 import com.cemail.app.ui.icons.CemailIcons
 
 @Composable
-fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
+fun ReadScreen(
+    summary: Mail,
+    vm: MailViewModel,
+    alwaysShowImages: Boolean,
+    labels: List<Label> = emptyList(),
+    thread: List<Mail> = emptyList(),
+) {
     // The list only holds the start of each text: the whole message is read when it is opened. Flags
     // (read, star...) keep coming from the list so they stay current.
     val loaded by produceState<Mail?>(null, summary.id) { value = vm.full(summary.id) }
@@ -97,6 +107,8 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
     }
     val context = LocalContext.current
     val one = setOf(mail.id)
+    // The labels of the account that owns the message (in the unified inbox the drawer shows none).
+    val accountLabels by produceState(labels, summary.accountId) { value = vm.userLabels(summary.accountId).ifEmpty { labels } }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val quoteWhen = DateUtils.formatDateTime(
         context, mail.timeMillis, DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_SHOW_TIME or DateUtils.FORMAT_ABBREV_MONTH,
@@ -176,6 +188,7 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
                     }
                 }
             }
+            if (thread.isNotEmpty()) ThreadCard(thread, vm)
             Box(
                 Modifier
                     .weight(1f)
@@ -199,6 +212,7 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
         // Top: one floating pill with the back button, the subject over the sender, and the menu button.
         var panel by remember { mutableStateOf(false) }
         var attachPanel by remember { mutableStateOf(false) }
+        var labelPanel by remember { mutableStateOf(false) }
         Box(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 12.dp, vertical = 8.dp)) {
             GlassPill(Modifier.fillMaxWidth(), height = 64.dp) {
                 PillIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), vm::closeMail)
@@ -263,6 +277,7 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
         }
 
         if (attachPanel) AttachmentsPopup(mail.id, attachments, vm) { attachPanel = false }
+        if (labelPanel) LabelsPopup(mail, accountLabels, vm) { labelPanel = false }
         if (panel) {
             ActionGrid(
                 onDismiss = { panel = false },
@@ -283,6 +298,9 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
                     ) { vm.toggleStar(one) },
                     PanelItem(CemailIcons.Pin, if (mail.pinned) R.string.action_unpin else R.string.action_pin, selected = mail.pinned) { vm.togglePin(one) },
                     PanelItem(Icons.Filled.Email, R.string.action_mark_unread) { vm.markRead(one, false) },
+                    PanelItem(CemailIcons.Label, R.string.action_labels, selected = mail.labelIds.any { id -> accountLabels.any { it.id == id } }) {
+                        labelPanel = true
+                    },
                     PanelItem(CemailIcons.Download, R.string.action_save_eml) {
                         scope.launch {
                             val file = vm.emlFile(mail.id)
@@ -352,6 +370,111 @@ private fun ActionGrid(onDismiss: () -> Unit, items: List<PanelItem>) {
                         ) {
                             Icon(item.icon, stringResource(item.label), tint = tint)
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** The rest of the conversation: one line that opens into the other messages; a tap opens one of them. */
+@Composable
+private fun ThreadCard(thread: List<Mail>, vm: MailViewModel) {
+    var expanded by remember(thread.firstOrNull()?.threadId) { mutableStateOf(false) }
+    val context = LocalContext.current
+    Column(
+        Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card),
+    ) {
+        Text(
+            pluralStringResource(R.plurals.thread_more, thread.size, thread.size),
+            Modifier.fillMaxWidth().clickable(role = Role.Button) { expanded = !expanded }.padding(14.dp),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        if (expanded) {
+            Column(Modifier.heightIn(max = 220.dp).verticalScroll(rememberScrollState())) {
+                thread.forEach { m ->
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                    Column(Modifier.fillMaxWidth().clickable(role = Role.Button) { vm.open(m.id) }.padding(horizontal = 14.dp, vertical = 10.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                if (m.folder == Folder.SENT) stringResource(R.string.thread_you) else m.senderName,
+                                Modifier.weight(1f),
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = if (m.read) FontWeight.Normal else FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Text(
+                                DateUtils.formatDateTime(context, m.timeMillis, DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_ABBREV_MONTH),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Text(
+                            m.preview,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** The user's labels with a check for each one the message has; a tap puts it on or takes it off. */
+@Composable
+private fun LabelsPopup(mail: Mail, labels: List<Label>, vm: MailViewModel, onDismiss: () -> Unit) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.2f))
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss),
+    ) {
+        Column(
+            Modifier
+                .align(Alignment.BottomEnd)
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(bottom = 156.dp, end = 16.dp, start = 16.dp)
+                .widthIn(max = 320.dp)
+                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
+                .glass(RoundedCornerShape(28.dp), GlassKind.Menu, elevation = 12.dp)
+                .padding(12.dp),
+        ) {
+            Text(
+                stringResource(R.string.labels_title),
+                Modifier.padding(start = 8.dp, bottom = 6.dp),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            if (labels.isEmpty()) {
+                Text(stringResource(R.string.labels_none), Modifier.padding(8.dp), style = MaterialTheme.typography.bodyMedium)
+            }
+            Column(Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState())) {
+                labels.sortedBy { it.name.lowercase() }.forEach { label ->
+                    val on = label.id in mail.labelIds
+                    Row(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).clickable(role = Role.Checkbox) { vm.setLabel(setOf(mail.id), label.id, !on) }
+                            .padding(horizontal = 8.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Icon(
+                            CemailIcons.Label, null,
+                            tint = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            label.name,
+                            Modifier.weight(1f),
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = if (on) FontWeight.Bold else FontWeight.Normal,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        if (on) Icon(Icons.Filled.Check, null, tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             }

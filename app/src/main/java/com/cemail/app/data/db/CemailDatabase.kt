@@ -52,6 +52,8 @@ data class MessageEntity(
     @ColumnInfo(defaultValue = "") val labelIds: String = "",
     /** null = not downloaded yet, empty = the message has no HTML part. */
     val bodyHtml: String? = null,
+    /** Gmail's conversation id (null for messages saved before it was kept, and for local drafts). */
+    val threadId: String? = null,
 )
 
 @Dao
@@ -76,7 +78,7 @@ interface MessageDao {
     @Query(
         "SELECT localId, accountId, remoteId, folder, senderName, senderEmail, subject, " +
             "CASE WHEN folder = 'DRAFTS' THEN body ELSE substr(body, 1, 2000) END AS body, " +
-            "timeMillis, read, starred, pinned, snoozedUntil, hasAttachment, labelIds, NULL AS bodyHtml " +
+            "timeMillis, read, starred, pinned, snoozedUntil, hasAttachment, labelIds, NULL AS bodyHtml, threadId " +
             "FROM messages WHERE accountId = :accountId ORDER BY timeMillis DESC",
     )
     fun observe(accountId: String): Flow<List<MessageEntity>>
@@ -88,7 +90,7 @@ interface MessageDao {
     @Query(
         "SELECT localId, accountId, remoteId, folder, senderName, senderEmail, subject, '' AS body, " +
             "timeMillis, read, starred, pinned, snoozedUntil, hasAttachment, labelIds, " +
-            "CASE WHEN bodyHtml IS NULL THEN NULL ELSE '' END AS bodyHtml " +
+            "CASE WHEN bodyHtml IS NULL THEN NULL ELSE '' END AS bodyHtml, threadId " +
             "FROM messages WHERE accountId = :accountId AND remoteId IS NOT NULL",
     )
     suspend fun remoteOnes(accountId: String): List<MessageEntity>
@@ -96,7 +98,7 @@ interface MessageDao {
     /** One message without its texts (see [bodyChunk] and [htmlChunk] for those). */
     @Query(
         "SELECT localId, accountId, remoteId, folder, senderName, senderEmail, subject, '' AS body, " +
-            "timeMillis, read, starred, pinned, snoozedUntil, hasAttachment, labelIds, NULL AS bodyHtml " +
+            "timeMillis, read, starred, pinned, snoozedUntil, hasAttachment, labelIds, NULL AS bodyHtml, threadId " +
             "FROM messages WHERE localId = :localId",
     )
     suspend fun light(localId: Long): MessageEntity?
@@ -123,6 +125,9 @@ interface MessageDao {
     @Query("UPDATE messages SET folder = :folder, read = :read, starred = :starred, labelIds = :labelIds WHERE localId = :localId")
     suspend fun updateState(localId: Long, folder: String, read: Boolean, starred: Boolean, labelIds: String)
 
+    @Query("UPDATE messages SET labelIds = :labelIds WHERE localId = :localId")
+    suspend fun updateLabelIds(localId: Long, labelIds: String)
+
     @Query("UPDATE messages SET folder = :folder WHERE localId = :localId")
     suspend fun updateFolder(localId: Long, folder: String)
 
@@ -147,7 +152,7 @@ interface MessageDao {
     /** The newest Inbox messages of every account, without their texts (for the widgets). */
     @Query(
         "SELECT localId, accountId, remoteId, folder, senderName, senderEmail, subject, '' AS body, " +
-            "timeMillis, read, starred, pinned, snoozedUntil, hasAttachment, labelIds, NULL AS bodyHtml " +
+            "timeMillis, read, starred, pinned, snoozedUntil, hasAttachment, labelIds, NULL AS bodyHtml, threadId " +
             "FROM messages WHERE folder = 'INBOX' AND (snoozedUntil IS NULL OR snoozedUntil < :now) " +
             "ORDER BY timeMillis DESC LIMIT :limit",
     )
@@ -182,7 +187,7 @@ interface LabelDao {
 
 @Database(
     entities = [AccountEntity::class, MessageEntity::class, LabelEntity::class],
-    version = 4,
+    version = 5,
     exportSchema = true,
     autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
@@ -193,7 +198,7 @@ abstract class CemailDatabase : RoomDatabase() {
 
     companion object {
         fun create(context: Context): CemailDatabase =
-            Room.databaseBuilder(context, CemailDatabase::class.java, "cemail.db").addMigrations(MIGRATION_3_4).build()
+            Room.databaseBuilder(context, CemailDatabase::class.java, "cemail.db").addMigrations(MIGRATION_3_4, MIGRATION_4_5).build()
     }
 }
 
@@ -201,6 +206,14 @@ abstract class CemailDatabase : RoomDatabase() {
 val MIGRATION_3_4 = object : Migration(3, 4) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("UPDATE messages SET bodyHtml = NULL")
+    }
+}
+
+/** 0.25.0 keeps each message's conversation id: the cached messages are downloaded again once to fill it in. */
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE messages ADD COLUMN threadId TEXT")
+        db.execSQL("UPDATE messages SET bodyHtml = NULL WHERE remoteId IS NOT NULL")
     }
 }
 

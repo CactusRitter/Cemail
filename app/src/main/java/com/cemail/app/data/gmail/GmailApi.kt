@@ -34,6 +34,15 @@ interface GmailApi {
     /** The message exactly as RFC 822 text (what an .eml file holds). */
     suspend fun getRaw(id: String): ByteArray
     suspend fun send(raw: ByteArray, threadId: String? = null)
+
+    /** The mailbox's current history id: the starting point for [changesSince]. */
+    suspend fun currentHistoryId(): String
+
+    /**
+     * What changed since [historyId]. Throws [GmailHttpException] with code 404 when that id is too old
+     * (Gmail keeps about a week): the caller then does a full sync.
+     */
+    suspend fun changesSince(historyId: String): MailboxChanges
 }
 
 /** Gmail REST API over HTTPS with OkHttp. Network work always runs on [Dispatchers.IO]. */
@@ -108,6 +117,41 @@ class HttpGmailApi(
         val encoded = Base64.getUrlEncoder().withoutPadding().encodeToString(raw)
         val body = json.encodeToString(SendRequest(encoded, threadId)).toRequestBody(jsonType)
         call(Request.Builder().url(url).post(body).build())
+    }
+
+    override suspend fun currentHistoryId(): String {
+        val url = BASE.newBuilder().addPathSegment("profile").build()
+        return json.decodeFromString<Profile>(call(Request.Builder().url(url).build())).historyId
+    }
+
+    override suspend fun changesSince(historyId: String): MailboxChanges {
+        val added = linkedSetOf<String>()
+        val relabelled = linkedSetOf<String>()
+        val deleted = linkedSetOf<String>()
+        var latest = historyId
+        var page: String? = null
+        do {
+            val url = BASE.newBuilder().addPathSegment("history")
+                .addQueryParameter("startHistoryId", historyId)
+                .addQueryParameter("maxResults", "500")
+                .apply {
+                    listOf("messageAdded", "messageDeleted", "labelAdded", "labelRemoved").forEach { addQueryParameter("historyTypes", it) }
+                    page?.let { addQueryParameter("pageToken", it) }
+                }.build()
+            val list = json.decodeFromString<HistoryList>(call(Request.Builder().url(url).build()))
+            for (record in list.history) {
+                record.messagesAdded.forEach { added += it.message.id }
+                record.messagesDeleted.forEach { deleted += it.message.id }
+                (record.labelsAdded + record.labelsRemoved).forEach { relabelled += it.message.id }
+            }
+            if (list.historyId.isNotEmpty()) latest = list.historyId
+            page = list.nextPageToken
+        } while (page != null)
+        // A message deleted after it was added or relabelled needs neither download nor label check.
+        added -= deleted
+        relabelled -= deleted
+        relabelled -= added
+        return MailboxChanges(added, relabelled, deleted, latest)
     }
 
     private suspend fun call(request: Request): String {

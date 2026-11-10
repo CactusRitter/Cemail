@@ -34,6 +34,8 @@ object AppLog {
     }
 
     private fun append(level: String, tag: String, message: String) {
+        // Also to logcat (the entries never carry message text), so a cable test can follow the sync live.
+        Log.println(if (level == "E") Log.WARN else Log.INFO, "CemailLog", "$tag $message")
         val f = file() ?: return
         synchronized(lock) {
             try {

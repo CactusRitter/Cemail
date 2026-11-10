@@ -49,6 +49,7 @@ class CemailApplication : Application() {
                 java.io.File(cacheDir, "attachments/${accountId.filter { it.isLetterOrDigit() }}"),
                 selfEmail = { accountRepository.accounts.first().firstOrNull { it.id == accountId }?.email },
                 onNewMail = ::notifyNewMail,
+                marks = com.cemail.app.data.mail.SyncMarks.Prefs(this, accountId),
             )
         }
     }

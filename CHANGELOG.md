@@ -3,6 +3,20 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.25.1 — 2026-11-10
+- «Etiquetas» del mensaje: ahora usa las etiquetas de la cuenta a la que pertenece el mensaje también desde la bandeja unificada (antes salía vacío).
+- Firma HTML en la redacción: la ✕ para quitarla va en su propia fila encima, sin tapar los iconos.
+- El registro de actividad también se copia a logcat (sin textos de correo) para poder seguir la sincronización con el cable.
+
+## 0.25.0 — 2026-11-10
+Cierre del bloque B: sincronización incremental, conversaciones, etiquetas desde el mensaje y contactos.
+- **Sincronización incremental** con el historial de Gmail (`history`): solo se descarga lo que cambió (correos nuevos, etiquetas, borrados), en pocas peticiones. Cada 6 horas, o si Gmail ya no guarda tan atrás, se hace un listado completo. Los mensajes que pasan a spam se retiran de la copia local.
+- **Conversaciones**: cada mensaje guarda el hilo de Gmail (migración de la base de datos a la v5; los mensajes se vuelven a bajar una vez). Al abrir un mensaje aparece «N mensajes más en esta conversación»; se despliega y un toque abre cualquiera.
+- **Etiquetas desde el mensaje**: nueva acción «Etiquetas» en el menú ⋮ para poner y quitar tus etiquetas de Gmail (con deshacer implícito al cambiarlas de nuevo).
+- **Contactos**: al escribir un destinatario se sugieren direcciones de tus contactos (permiso pedido una sola vez) y de la gente que te ha escrito.
+- La causa de los dos cierres inesperados del registro del móvil (lectura de la base de datos con un correo enorme) ya estaba corregida desde antes; no ha habido más desde entonces.
+- Tests nuevos: etiquetas enviadas a Gmail y remitentes sugeridos.
+
 ## 0.24.1 — 2026-11-10
 Arreglos tras la prueba de envío real desde el móvil (correo con negrita y adjunto entre dos cuentas: llegó bien).
 - La parte de texto plano de un correo ya no lleva las marcas `*negrita*`: se saca del HTML del editor, con viñetas (`• `) y numeración (`1. `) en las listas. Se nota en la vista previa de la lista y en los clientes que enseñan el texto plano.
