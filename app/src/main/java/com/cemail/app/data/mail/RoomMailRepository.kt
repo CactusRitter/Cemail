@@ -13,6 +13,7 @@ import java.io.File
 import com.cemail.app.AppLog
 import com.cemail.app.data.gmail.AttachmentFinder
 import com.cemail.app.data.gmail.AttachmentInfo
+import com.cemail.app.data.gmail.ReplyInfo
 import java.util.Base64
 import kotlinx.coroutines.withContext
 import com.cemail.app.data.gmail.ParsedMessage
@@ -45,6 +46,8 @@ class RoomMailRepository(
     private val inlineDir: File,
     /** Where downloaded attachments are kept (the cache: Android may clear it). */
     private val attachmentsDir: File,
+    /** This account's own address (to leave it out of "reply all"); null if unknown. */
+    private val selfEmail: suspend () -> String? = { null },
     /** Called with the unread Inbox messages that a sync found for the first time (never on the first sync). */
     private val onNewMail: (accountId: String, mails: List<Mail>) -> Unit = { _, _ -> },
 ) : MailRepository {
@@ -92,7 +95,10 @@ class RoomMailRepository(
         scope.launch(Dispatchers.IO) {
             val localId = dao.insert(mail.toEntity(accountId, remoteId = null).copy(localId = 0, folder = Folder.SENT.name))
             try {
-                api.send(MimeBuilder.build(mail.senderName, mail.subject, mail.body, mail.outgoing, mail.cc, mail.bcc, mail.outgoingHtml))
+                api.send(MimeBuilder.build(
+                    mail.senderName, mail.subject, mail.body, mail.outgoing, mail.cc, mail.bcc, mail.outgoingHtml,
+                    mail.inReplyTo, mail.references,
+                ), mail.threadId)
                 AppLog.i("send", "sent, ${mail.outgoing.size} attachment(s)")
                 dao.delete(localId) // the real copy arrives with the next sync
                 refresh()
@@ -119,6 +125,16 @@ class RoomMailRepository(
             false
         } finally {
             _syncing.value = false
+        }
+    }
+
+    override suspend fun replyInfo(id: Long): Pair<ReplyInfo, String?>? = withContext(Dispatchers.IO) {
+        val remote = dao.remoteIdOf(id, accountId) ?: return@withContext null
+        try {
+            api.getReplyInfo(remote) to selfEmail()
+        } catch (e: Exception) {
+            AppLog.e("reply", "could not read the headers of the message", e)
+            null
         }
     }
 

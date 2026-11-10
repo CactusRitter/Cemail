@@ -44,6 +44,7 @@ class CemailApplication : Application() {
                 HttpGmailApi(AccountTokenProvider(accountId, tokenStore, googleAuth)), appScope,
                 java.io.File(filesDir, "inline/$accountId"),
                 java.io.File(cacheDir, "attachments/${accountId.filter { it.isLetterOrDigit() }}"),
+                selfEmail = { accountRepository.accounts.first().firstOrNull { it.id == accountId }?.email },
                 onNewMail = ::notifyNewMail,
             )
         }

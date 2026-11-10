@@ -20,6 +20,8 @@ object MimeBuilder {
         cc: String = "",
         bcc: String = "",
         html: String? = null,
+        inReplyTo: String? = null,
+        references: String? = null,
     ): ByteArray {
         val head = StringBuilder().apply {
             append("To: ").append(oneLine(to)).append("\r\n")
@@ -27,6 +29,9 @@ object MimeBuilder {
             // Gmail delivers to the Bcc addresses and removes the header from the copies it sends.
             if (bcc.isNotBlank()) append("Bcc: ").append(oneLine(bcc)).append("\r\n")
             append("Subject: ").append(encodeHeader(subject)).append("\r\n")
+            // A reply points at the message it answers, so the conversation stays together in every mail app.
+            if (!inReplyTo.isNullOrBlank()) append("In-Reply-To: ").append(oneLine(inReplyTo)).append("\r\n")
+            if (!references.isNullOrBlank()) append("References: ").append(oneLine(references)).append("\r\n")
             append("MIME-Version: 1.0\r\n")
         }
         val text = textPart(body)

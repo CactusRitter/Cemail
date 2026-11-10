@@ -10,6 +10,7 @@ import com.cemail.app.data.mail.Folder
 import com.cemail.app.data.mail.Label
 import com.cemail.app.data.gmail.AttachmentInfo
 import com.cemail.app.data.gmail.OutAttachment
+import com.cemail.app.data.gmail.ReplyInfoParser
 import com.cemail.app.data.mail.Mail
 import com.cemail.app.data.mail.MailBox
 import com.cemail.app.data.mail.MailRepository
@@ -37,6 +38,11 @@ data class Draft(
     /** The text with its formatting, as HTML (null while nothing is formatted or in plain replies). */
     val html: String? = null,
     val attachments: List<OutAttachment> = emptyList(),
+    /** Set while answering a message: which one, and the ids that keep the reply in its conversation. */
+    val replyToId: Long? = null,
+    val threadId: String? = null,
+    val inReplyTo: String? = null,
+    val references: String? = null,
 )
 
 private data class Ui(
@@ -183,8 +189,36 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
 
     // --- compose ---
     fun newDraft(draft: Draft = Draft()) = ui.update { it.copy(draft = draft) }
+
+    /**
+     * Opens the compose screen at once with [base] (quoted text, subject), then, if the message's headers can be
+     * read, fills in the real recipients and the ids that keep the reply in the same conversation.
+     * [all] = "reply all"; a forward ([forward]) starts a new conversation with nobody filled in.
+     */
+    fun startReply(base: Draft, messageId: Long, all: Boolean, forward: Boolean) {
+        ui.update { it.copy(draft = base.copy(replyToId = messageId)) }
+        if (forward) return
+        viewModelScope.launch {
+            val (info, me) = repo.replyInfo(messageId) ?: return@launch
+            val (to, cc) = ReplyInfoParser.recipients(info, me, all)
+            val chain = listOfNotNull(info.references, info.messageId).joinToString(" ").ifBlank { null }
+            ui.update { s ->
+                val d = s.draft?.takeIf { it.replyToId == messageId } ?: return@update s
+                s.copy(
+                    draft = d.copy(
+                        to = if (to.isEmpty()) d.to else committedRecipients(to.joinToString(", ")),
+                        cc = if (cc.isEmpty()) d.cc else committedRecipients(cc.joinToString(", ")),
+                        threadId = info.threadId, inReplyTo = info.messageId, references = chain,
+                    ),
+                )
+            }
+        }
+    }
     fun discardDraft() = ui.update { it.copy(draft = null) }
     fun updateDraft(draft: Draft) = ui.update { it.copy(draft = draft) }
+
+    /** Changes the draft being written from its latest state (several fields can be edited at the same time). */
+    fun editDraft(transform: (Draft) -> Draft) = ui.update { s -> s.draft?.let { s.copy(draft = transform(it)) } ?: s }
 
     /** Re-opens a saved draft for editing (the stored copy is removed; it is saved again on close). */
     fun editDraft(mail: Mail) {
@@ -213,7 +247,7 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
     private fun Draft.toMail(id: Long, me: String, folder: Folder) = Mail(
         id = id, senderName = cleanRecipients(to).joinToString(", "), senderEmail = me, subject = subject, body = body,
         timeMillis = System.currentTimeMillis(), folder = folder, read = true,
-        hasAttachment = attachments.isNotEmpty(), outgoing = attachments, cc = cleanRecipients(cc).joinToString(", "), bcc = cleanRecipients(bcc).joinToString(", "), outgoingHtml = html,
+        hasAttachment = attachments.isNotEmpty(), outgoing = attachments, cc = cleanRecipients(cc).joinToString(", "), bcc = cleanRecipients(bcc).joinToString(", "), outgoingHtml = html, threadId = threadId, inReplyTo = inReplyTo, references = references,
     )
 
     /** Adds files to the message being written, within Gmail's size limit; returns false if some did not fit. */

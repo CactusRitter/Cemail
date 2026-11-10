@@ -40,7 +40,7 @@ data class PartBody(val size: Int = 0, val data: String? = null, val attachmentI
 data class ModifyRequest(val addLabelIds: List<String> = emptyList(), val removeLabelIds: List<String> = emptyList())
 
 @Serializable
-data class SendRequest(val raw: String)
+data class SendRequest(val raw: String, val threadId: String? = null)
 
 @Serializable
 data class LabelList(val labels: List<GmailLabel> = emptyList())

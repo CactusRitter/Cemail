@@ -28,7 +28,9 @@ interface GmailApi {
     suspend fun listUserLabels(): List<GmailLabel>
     suspend fun getAttachment(messageId: String, attachmentId: String): ByteArray
     suspend fun modify(id: String, add: List<String>, remove: List<String>)
-    suspend fun send(raw: ByteArray)
+    /** The headers a reply needs (Message-ID, References, From, To, Cc...) and the thread id. */
+    suspend fun getReplyInfo(id: String): ReplyInfo
+    suspend fun send(raw: ByteArray, threadId: String? = null)
 }
 
 /** Gmail REST API over HTTPS with OkHttp. Network work always runs on [Dispatchers.IO]. */
@@ -85,10 +87,17 @@ class HttpGmailApi(
         call(Request.Builder().url(url).post(body).build())
     }
 
-    override suspend fun send(raw: ByteArray) {
+    override suspend fun getReplyInfo(id: String): ReplyInfo {
+        val url = BASE.newBuilder().addPathSegment("messages").addPathSegment(id)
+            .addQueryParameter("format", "metadata")
+            .apply { ReplyInfoParser.HEADERS.forEach { addQueryParameter("metadataHeaders", it) } }.build()
+        return ReplyInfoParser.parse(json.decodeFromString<GmailMessage>(call(Request.Builder().url(url).build())))
+    }
+
+    override suspend fun send(raw: ByteArray, threadId: String?) {
         val url = BASE.newBuilder().addPathSegment("messages").addPathSegment("send").build()
         val encoded = Base64.getUrlEncoder().withoutPadding().encodeToString(raw)
-        val body = json.encodeToString(SendRequest(encoded)).toRequestBody(jsonType)
+        val body = json.encodeToString(SendRequest(encoded, threadId)).toRequestBody(jsonType)
         call(Request.Builder().url(url).post(body).build())
     }
 

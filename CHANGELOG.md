@@ -3,6 +3,13 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.19.0 — 2026-11-10
+- Responder en el mismo hilo: la respuesta lleva `In-Reply-To`/`References` y el identificador de hilo de Gmail, así que queda dentro de la conversación (en Gmail y en cualquier otra app de correo). Hace falta conexión para leer las cabeceras; sin ella, la respuesta sale como mensaje nuevo.
+- «Responder» va a Reply-To (o al remitente); «Responder a todos» añade en CC a todos los demás destinatarios menos tú; si respondes a un mensaje tuyo, va a sus destinatarios.
+- El asunto no repite «Re:» ni «Fwd:» (también reconoce AW:, RV:, etc.).
+- Arreglo: al abrir una respuesta, los destinatarios podían quedarse como texto en vez de píldoras por un cambio simultáneo del borrador; ahora cada campo edita el borrador desde su último estado.
+- Plan completo en docs/ROADMAP.md: atajos del icono, dos widgets, IMAP y Microsoft, y funciones avanzadas.
+
 ## 0.18.0 — 2026-11-10
 - Varios destinatarios: Para, CC y CCO muestran cada dirección como una píldora con su X. La píldora se forma al escribir coma, espacio o Intro, o al salir del campo; Retroceso en un campo vacío recupera la última para editarla. Las direcciones no válidas salen en rojo.
 - Al enviar se comprueba que haya al menos un destinatario en «Para» y que todas las direcciones sean válidas.

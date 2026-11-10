@@ -36,6 +36,10 @@ data class Mail(
     val cc: String = "",
     val bcc: String = "",
     val outgoingHtml: String? = null,
+    /** Gmail thread and message ids of the message being answered (replies only). */
+    val threadId: String? = null,
+    val inReplyTo: String? = null,
+    val references: String? = null,
 ) {
     /** One-line summary for the list: no line breaks and no "[image: ...]" placeholders of text-only versions. */
     val preview: String get() = body.replace(IMAGE_PLACEHOLDER, " ").replace(WHITESPACE, " ").trim()

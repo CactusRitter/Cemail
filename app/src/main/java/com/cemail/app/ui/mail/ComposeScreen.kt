@@ -113,11 +113,11 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
     val currentDraft by rememberUpdatedState(draft)
     LaunchedEffect(rich) {
         // Addresses that arrive already filled in (a reply) show as pills from the start.
-        currentDraft.let { vm.updateDraft(it.copy(to = committedRecipients(it.to), cc = committedRecipients(it.cc), bcc = committedRecipients(it.bcc))) }
+        currentDraft.let { vm.editDraft { d -> d.copy(to = committedRecipients(d.to), cc = committedRecipients(d.cc), bcc = committedRecipients(d.bcc)) } }
         if (currentDraft.body.isNotEmpty()) rich.setText(currentDraft.body)
         snapshotFlow { rich.annotatedString }.collect {
             val html = rich.toMailHtml()
-            vm.updateDraft(currentDraft.copy(body = rich.toText(), html = html))
+            vm.editDraft { d -> d.copy(body = rich.toText(), html = html) }
         }
     }
     var showCopies by rememberSaveable { mutableStateOf(draft.cc.isNotBlank() || draft.bcc.isNotBlank()) }
@@ -135,7 +135,7 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
                 RecipientField(
                     label = stringResource(R.string.compose_to),
                     value = draft.to,
-                    onValueChange = { vm.updateDraft(draft.copy(to = it)) },
+                    onValueChange = { vm.editDraft { d -> d.copy(to = it) } },
                     trailing = {
                         Box(
                             Modifier.size(48.dp).clip(CircleShape).clickable(role = Role.Button) { showCopies = !showCopies },
@@ -158,20 +158,20 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
                         RecipientField(
                             label = stringResource(R.string.compose_cc),
                             value = draft.cc,
-                            onValueChange = { vm.updateDraft(draft.copy(cc = it)) },
+                            onValueChange = { vm.editDraft { d -> d.copy(cc = it) } },
                         )
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                         RecipientField(
                             label = stringResource(R.string.compose_bcc),
                             value = draft.bcc,
-                            onValueChange = { vm.updateDraft(draft.copy(bcc = it)) },
+                            onValueChange = { vm.editDraft { d -> d.copy(bcc = it) } },
                         )
                     }
                 }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 TextField(
                     value = draft.subject,
-                    onValueChange = { vm.updateDraft(draft.copy(subject = it)) },
+                    onValueChange = { vm.editDraft { d -> d.copy(subject = it) } },
                     label = { Text(stringResource(R.string.compose_subject)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,

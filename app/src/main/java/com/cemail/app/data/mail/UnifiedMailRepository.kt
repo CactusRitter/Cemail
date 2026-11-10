@@ -51,6 +51,11 @@ class UnifiedMailRepository(private val accounts: List<MailRepository>, scope: C
         return null
     }
 
+    override suspend fun replyInfo(id: Long): Pair<com.cemail.app.data.gmail.ReplyInfo, String?>? {
+        for (account in accounts) account.replyInfo(id)?.let { return it }
+        return null
+    }
+
     override suspend fun full(id: Long): Mail? {
         for (account in accounts) account.full(id)?.let { return it }
         return null

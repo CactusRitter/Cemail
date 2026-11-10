@@ -98,12 +98,19 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
     val quoteWhen = DateUtils.formatDateTime(
         context, mail.timeMillis, DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_SHOW_TIME or DateUtils.FORMAT_ABBREV_MONTH,
     )
-    fun reply(prefixRes: Int, to: String): Draft {
+    // Starts a reply, reply all or forward: quoted text and subject here, recipients and thread ids in the ViewModel.
+    fun reply(all: Boolean = false, forward: Boolean = false) {
         val quoted = mail.body.lines().joinToString("\n") { "> $it" }
-        return Draft(
-            to = to,
-            subject = context.getString(prefixRes, mail.subject),
-            body = "\n\n" + context.getString(R.string.quote_header, quoteWhen, mail.senderName) + "\n" + quoted,
+        val prefixRes = if (forward) R.string.forward_prefix else R.string.reply_prefix
+        // "Re: Re: x" never happens: a subject that already starts with a reply/forward prefix is kept as it is.
+        val subject = if (SUBJECT_PREFIX.containsMatchIn(mail.subject)) mail.subject else context.getString(prefixRes, mail.subject)
+        vm.startReply(
+            Draft(
+                to = if (forward) "" else mail.senderEmail,
+                subject = subject,
+                body = "\n\n" + context.getString(R.string.quote_header, quoteWhen, mail.senderName) + "\n" + quoted,
+            ),
+            mail.id, all, forward,
         )
     }
 
@@ -241,7 +248,7 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
                 Modifier
                     .size(60.dp)
                     .glass(CircleShape, GlassKind.Pinned, elevation = 10.dp)
-                    .clickable(role = Role.Button) { vm.newDraft(reply(R.string.reply_prefix, mail.senderEmail)) },
+                    .clickable(role = Role.Button) { reply() },
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(CemailIcons.Reply, stringResource(R.string.action_reply), tint = MaterialTheme.colorScheme.primary)
@@ -253,9 +260,9 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
             ActionGrid(
                 onDismiss = { panel = false },
                 items = listOf(
-                    PanelItem(CemailIcons.Reply, R.string.action_reply) { vm.newDraft(reply(R.string.reply_prefix, mail.senderEmail)) },
-                    PanelItem(CemailIcons.ReplyAll, R.string.action_reply_all) { vm.newDraft(reply(R.string.reply_prefix, mail.senderEmail)) },
-                    PanelItem(CemailIcons.Forward, R.string.action_forward) { vm.newDraft(reply(R.string.forward_prefix, "")) },
+                    PanelItem(CemailIcons.Reply, R.string.action_reply) { reply() },
+                    PanelItem(CemailIcons.ReplyAll, R.string.action_reply_all) { reply(all = true) },
+                    PanelItem(CemailIcons.Forward, R.string.action_forward) { reply(forward = true) },
                     // The same slot: archive from the inbox, or bring the message back to it from anywhere else.
                     if (mail.folder == Folder.INBOX) {
                         PanelItem(CemailIcons.Archive, R.string.action_archive) { vm.archive(one) }
@@ -411,3 +418,6 @@ private fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier, onSc
 
 
 
+
+/** Subjects that already start with a reply or forward prefix (in English, Spanish, German, French). */
+private val SUBJECT_PREFIX = Regex("""^\s*(re|rv|aw|sv|fwd?|wg|tr)\s*:""", RegexOption.IGNORE_CASE)
