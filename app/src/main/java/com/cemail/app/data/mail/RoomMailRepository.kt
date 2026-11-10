@@ -11,6 +11,8 @@ import com.cemail.app.data.gmail.InlineImages
 import com.cemail.app.data.gmail.MimeBuilder
 import java.io.File
 import com.cemail.app.AppLog
+import com.cemail.app.data.gmail.AttachmentFinder
+import com.cemail.app.data.gmail.AttachmentInfo
 import java.util.Base64
 import kotlinx.coroutines.withContext
 import com.cemail.app.data.gmail.ParsedMessage
@@ -41,6 +43,8 @@ class RoomMailRepository(
     private val scope: CoroutineScope,
     /** Folder where this account's embedded pictures are kept, one sub-folder per message. */
     private val inlineDir: File,
+    /** Where downloaded attachments are kept (the cache: Android may clear it). */
+    private val attachmentsDir: File,
     /** Called with the unread Inbox messages that a sync found for the first time (never on the first sync). */
     private val onNewMail: (accountId: String, mails: List<Mail>) -> Unit = { _, _ -> },
 ) : MailRepository {
@@ -88,10 +92,12 @@ class RoomMailRepository(
         scope.launch(Dispatchers.IO) {
             val localId = dao.insert(mail.toEntity(accountId, remoteId = null).copy(localId = 0, folder = Folder.SENT.name))
             try {
-                api.send(MimeBuilder.build(mail.senderName, mail.subject, mail.body))
+                api.send(MimeBuilder.build(mail.senderName, mail.subject, mail.body, mail.outgoing))
+                AppLog.i("send", "sent, ${mail.outgoing.size} attachment(s)")
                 dao.delete(localId) // the real copy arrives with the next sync
                 refresh()
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                AppLog.e("send", "could not send, kept as a draft", e)
                 // Keep it as a draft so the text is not lost.
                 dao.updateFolder(localId, Folder.DRAFTS.name)
             }
@@ -113,6 +119,35 @@ class RoomMailRepository(
             false
         } finally {
             _syncing.value = false
+        }
+    }
+
+    override suspend fun attachments(id: Long): List<AttachmentInfo> = withContext(Dispatchers.IO) {
+        val remote = dao.remoteIdOf(id, accountId) ?: return@withContext emptyList()
+        try {
+            AttachmentFinder.find(api.getMessage(remote))
+        } catch (e: Exception) {
+            AppLog.e("attach", "could not list attachments", e)
+            emptyList()
+        }
+    }
+
+    override suspend fun attachmentFile(id: Long, attachment: AttachmentInfo): File? = withContext(Dispatchers.IO) {
+        val remote = dao.remoteIdOf(id, accountId) ?: return@withContext null
+        try {
+            val dir = File(attachmentsDir, remote.filter { it.isLetterOrDigit() }).apply { mkdirs() }
+            val file = File(dir, AttachmentFinder.safeFileName(attachment.filename))
+            if (file.exists() && file.length() > 0) return@withContext file
+            // Gmail may hand out a new attachment id each time the message is read: look it up again.
+            val fresh = AttachmentFinder.find(api.getMessage(remote))
+                .firstOrNull { it.filename == attachment.filename && it.size == attachment.size }
+                ?: return@withContext null
+            file.writeBytes(api.getAttachment(remote, fresh.attachmentId))
+            AppLog.i("attach", "downloaded one file (${file.length()} bytes)")
+            file
+        } catch (e: Exception) {
+            AppLog.e("attach", "download failed", e)
+            null
         }
     }
 

@@ -3,6 +3,12 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.11.0 — 2026-11-10
+- **Enviar ahora envía de verdad**: hasta ahora el botón Enviar solo guardaba el mensaje en el teléfono, no llegaba a Gmail. Ahora se entrega por la API de Gmail; si falla, queda en Borradores (y el registro dice por qué).
+- Adjuntos al leer: aparecen como chips de cristal en la cabecera del mensaje. Tocar uno lo descarga (una vez) y lo abre con la app adecuada; el icono de compartir lo manda a Drive, Archivos, Telegram...
+- Adjuntar al redactar: botón del clip, varios archivos, hasta 10 MB en total; se quitan con la X. Aún no se guardan en los borradores.
+- Pendiente conocido: las respuestas salen como mensaje nuevo (sin conservar el hilo) y «Responder a todos» responde solo al remitente.
+
 ## 0.10.1 — 2026-11-10
 - Arreglado el cierre inesperado «Couldn't read row … from CursorWindow» (visto en el registro del móvil): la lista leía los correos enteros y uno muy grande (boletines con HTML enorme) rompía la lectura. Ahora la lista solo carga el principio del texto, sin el HTML, y el mensaje completo se lee al abrirlo, por trozos. Al guardar, los textos gigantes se recortan.
 - Probado en el emulador con un mensaje de 5 MB: la lista carga y el mensaje se abre entero.

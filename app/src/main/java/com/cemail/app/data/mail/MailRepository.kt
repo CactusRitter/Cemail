@@ -37,6 +37,12 @@ interface MailRepository {
      */
     suspend fun full(id: Long): Mail?
 
+    /** The files attached to a message (needs a connection; empty if there are none or it fails). */
+    suspend fun attachments(id: Long): List<com.cemail.app.data.gmail.AttachmentInfo>
+
+    /** Downloads one attachment to the phone's cache (once) and returns the file, or null if it fails. */
+    suspend fun attachmentFile(id: Long, attachment: com.cemail.app.data.gmail.AttachmentInfo): java.io.File?
+
     /** The pictures embedded in a message, as Content-ID → `data:` URI (downloaded once, then kept on the phone). */
     suspend fun inlineImages(id: Long): Map<String, String>
 }
@@ -64,5 +70,7 @@ class DemoMailRepository(seed: List<Mail>, demoLabels: List<Label> = emptyList()
     override fun remove(id: Long) = state.update { l -> l.filter { it.id != id } }
     override suspend fun refresh(quick: Boolean) = true
     override suspend fun full(id: Long): Mail? = state.value.firstOrNull { it.id == id }
+    override suspend fun attachments(id: Long) = emptyList<com.cemail.app.data.gmail.AttachmentInfo>()
+    override suspend fun attachmentFile(id: Long, attachment: com.cemail.app.data.gmail.AttachmentInfo): java.io.File? = null
     override suspend fun inlineImages(id: Long) = emptyMap<String, String>()
 }

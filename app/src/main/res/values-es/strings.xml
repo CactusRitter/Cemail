@@ -191,4 +191,12 @@
     <string name="settings_log_body">Un registro de lo que hace la app en este teléfono (sincronizaciones, notificaciones, errores), sin texto de los mensajes. Compártelo para poder leerlo cuando no hay cable.</string>
     <string name="settings_log_share">Compartir registro</string>
     <string name="settings_log_share_title">Compartir el registro</string>
+    <string name="attachments_label">Adjuntos</string>
+    <string name="attachment_open_failed">Ninguna app de este teléfono puede abrir este archivo. Prueba a compartirlo.</string>
+    <string name="attachment_download_failed">No se pudo descargar el adjunto. Comprueba tu conexión.</string>
+    <string name="attachment_share">Compartir</string>
+    <string name="compose_attach">Adjuntar archivos</string>
+    <string name="compose_attach_remove">Quitar adjunto</string>
+    <string name="compose_attach_too_big">Algunos archivos no se añadieron: los adjuntos pueden sumar hasta 10 MB.</string>
+    <string name="compose_attach_unsaved">Los adjuntos no se guardan en los borradores.</string>
 </resources>

@@ -43,6 +43,7 @@ class CemailApplication : Application() {
                 accountId, database.messages(), database.labels(),
                 HttpGmailApi(AccountTokenProvider(accountId, tokenStore, googleAuth)), appScope,
                 java.io.File(filesDir, "inline/$accountId"),
+                java.io.File(cacheDir, "attachments/${accountId.filter { it.isLetterOrDigit() }}"),
                 onNewMail = ::notifyNewMail,
             )
         }

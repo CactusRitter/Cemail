@@ -8,6 +8,8 @@ import com.cemail.app.R
 import com.cemail.app.data.mail.DateSection
 import com.cemail.app.data.mail.Folder
 import com.cemail.app.data.mail.Label
+import com.cemail.app.data.gmail.AttachmentInfo
+import com.cemail.app.data.gmail.OutAttachment
 import com.cemail.app.data.mail.Mail
 import com.cemail.app.data.mail.MailBox
 import com.cemail.app.data.mail.MailRepository
@@ -26,7 +28,12 @@ import java.util.Calendar
 data class UndoEvent(val id: Long, @StringRes val message: Int, val previous: List<Mail>)
 
 /** A message being written. */
-data class Draft(val to: String = "", val subject: String = "", val body: String = "")
+data class Draft(
+    val to: String = "",
+    val subject: String = "",
+    val body: String = "",
+    val attachments: List<OutAttachment> = emptyList(),
+)
 
 private data class Ui(
     val box: MailBox = MailBox.INBOX,
@@ -194,14 +201,30 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
     fun send(me: String) {
         val d = ui.value.draft ?: return
         ui.update { it.copy(draft = null) }
-        repo.add(d.toMail(repo.nextId(), me, Folder.SENT))
+        // send() puts it in Sent at once and delivers it through Gmail (a failure leaves it in Drafts).
+        repo.send(d.toMail(repo.nextId(), me, Folder.SENT))
         ui.update { it.copy(undo = UndoEvent(++undoCounter, R.string.done_sent, emptyList())) }
     }
 
     private fun Draft.toMail(id: Long, me: String, folder: Folder) = Mail(
         id = id, senderName = to, senderEmail = me, subject = subject, body = body,
         timeMillis = System.currentTimeMillis(), folder = folder, read = true,
+        hasAttachment = attachments.isNotEmpty(), outgoing = attachments,
     )
+
+    /** Adds files to the message being written, within Gmail's size limit; returns false if some did not fit. */
+    fun attach(files: List<OutAttachment>): Boolean {
+        val d = ui.value.draft ?: return true
+        var total = d.attachments.sumOf { it.size.toLong() }
+        val accepted = files.filter { f -> (total + f.size <= MAX_ATTACHMENT_BYTES).also { ok -> if (ok) total += f.size } }
+        ui.update { it.copy(draft = d.copy(attachments = d.attachments + accepted)) }
+        return accepted.size == files.size
+    }
+
+    fun detach(file: OutAttachment) = ui.update { s -> s.draft?.let { s.copy(draft = it.copy(attachments = it.attachments - file)) } ?: s }
+
+    suspend fun attachments(id: Long): List<AttachmentInfo> = repo.attachments(id)
+    suspend fun attachmentFile(id: Long, attachment: AttachmentInfo): java.io.File? = repo.attachmentFile(id, attachment)
 
     /** Automatic check for new mail: cheap and silent (a failure is simply retried at the next one). */
     fun poll() {
@@ -239,3 +262,6 @@ enum class SnoozeOption(@StringRes val label: Int) {
         return c.timeInMillis
     }
 }
+
+/** Gmail refuses messages over 25 MB; files grow by a third when encoded, so the files may add up to 10 MB. */
+const val MAX_ATTACHMENT_BYTES = 10L * 1024 * 1024

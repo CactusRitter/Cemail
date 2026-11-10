@@ -2,4 +2,6 @@
 <paths>
     <!-- Only the log that the user chooses to share (see AppLog.share) -->
     <cache-path name="shared" path="shared/" />
+    <!-- Attachments downloaded to be opened or shared (see MailRepository.attachmentFile) -->
+    <cache-path name="attachments" path="attachments/" />
 </paths>

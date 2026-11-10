@@ -193,4 +193,12 @@
     <string name="settings_log_body">A record of what the app does on this phone (syncs, notifications, errors), without message text. Share it so it can be read when you cannot connect a cable.</string>
     <string name="settings_log_share">Share log</string>
     <string name="settings_log_share_title">Share the log</string>
+    <string name="attachments_label">Attachments</string>
+    <string name="attachment_open_failed">No app on this phone can open this file. Try sharing it.</string>
+    <string name="attachment_download_failed">Could not download the attachment. Check your connection.</string>
+    <string name="attachment_share">Share</string>
+    <string name="compose_attach">Attach files</string>
+    <string name="compose_attach_remove">Remove attachment</string>
+    <string name="compose_attach_too_big">Some files were not added: attachments may add up to 10 MB.</string>
+    <string name="compose_attach_unsaved">Attachments are not kept in saved drafts.</string>
 </resources>

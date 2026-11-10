@@ -41,6 +41,16 @@ class UnifiedMailRepository(private val accounts: List<MailRepository>, scope: C
         accounts.map { async { it.refresh(quick) } }.awaitAll().all { it }
     }
 
+    override suspend fun attachments(id: Long): List<com.cemail.app.data.gmail.AttachmentInfo> {
+        for (account in accounts) account.attachments(id).takeIf { it.isNotEmpty() }?.let { return it }
+        return emptyList()
+    }
+
+    override suspend fun attachmentFile(id: Long, attachment: com.cemail.app.data.gmail.AttachmentInfo): java.io.File? {
+        for (account in accounts) account.attachmentFile(id, attachment)?.let { return it }
+        return null
+    }
+
     override suspend fun full(id: Long): Mail? {
         for (account in accounts) account.full(id)?.let { return it }
         return null

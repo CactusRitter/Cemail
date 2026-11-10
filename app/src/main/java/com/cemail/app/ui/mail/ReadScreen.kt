@@ -76,6 +76,10 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
         read = summary.read, starred = summary.starred, pinned = summary.pinned, folder = summary.folder,
         snoozedUntil = summary.snoozedUntil, labelIds = summary.labelIds, senderName = summary.senderName,
     ) ?: summary
+    // Attached files are listed from Gmail (needs a connection) and only for messages that have some.
+    val attachments by produceState(emptyList<com.cemail.app.data.gmail.AttachmentInfo>(), summary.id) {
+        value = if (summary.hasAttachment) vm.attachments(summary.id) else emptyList()
+    }
     val context = LocalContext.current
     val one = setOf(mail.id)
     val quoteWhen = DateUtils.formatDateTime(
@@ -235,6 +239,7 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
                         )
                     }
                 }
+                if (attachments.isNotEmpty()) AttachmentRow(mail.id, attachments, vm)
                 }
             }
             Box(
