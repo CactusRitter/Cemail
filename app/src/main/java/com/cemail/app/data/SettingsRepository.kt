@@ -20,6 +20,8 @@ data class AppSettings(
     val showSenderCircle: Boolean = true,
     /** Show a notification for mail that arrives while the app is closed. */
     val notifications: Boolean = true,
+    /** How the top of the reading screen looks: 0 = round back button + subject pill, 1 = one pill with both. */
+    val readHeader: Int = 0,
 )
 
 /** Small app preferences, kept in SharedPreferences and exposed as a StateFlow (same approach as Cenotes). */
@@ -38,7 +40,13 @@ class SettingsRepository(context: Context) {
         syncMinutes = prefs.getInt(KEY_SYNC, 15),
         showSenderCircle = prefs.getBoolean(KEY_CIRCLE, true),
         notifications = prefs.getBoolean(KEY_NOTIFICATIONS, true),
+        readHeader = prefs.getInt(KEY_READ_HEADER, 0),
     )
+
+    fun setReadHeader(value: Int) {
+        prefs.edit().putInt(KEY_READ_HEADER, value).apply()
+        _state.value = _state.value.copy(readHeader = value)
+    }
 
     fun setNotifications(value: Boolean) {
         prefs.edit().putBoolean(KEY_NOTIFICATIONS, value).apply()
@@ -83,6 +91,7 @@ class SettingsRepository(context: Context) {
     private companion object {
         const val KEY_CIRCLE = "show_sender_circle"
         const val KEY_NOTIFICATIONS = "notifications"
+        const val KEY_READ_HEADER = "read_header"
         const val KEY_ASKED = "asked_notification_permission"
         const val KEY_SYNC = "sync_minutes"
         const val KEY_IMAGES = "always_show_images"

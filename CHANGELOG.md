@@ -3,6 +3,11 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.13.0 — 2026-11-10
+- Lectura de correo, segunda versión: todo flotante. Arriba, el botón atrás y el asunto; abajo a la derecha, responder y un círculo «⋮» que abre el panel con todas las demás acciones (ahora incluye Mover a la papelera).
+- Para comparar, hay dos formas de la parte de arriba (Ajustes → Parte superior del mensaje): «Botón y píldora» (círculo de atrás + píldora con el asunto) o «Una sola píldora».
+- El panel sale justo encima de los botones, al alcance del pulgar.
+
 ## 0.12.0 — 2026-11-10
 - Lectura de correo con menos botones: arriba solo atrás, responder, archivar y un menú «⋮»; abajo a la derecha, un círculo para borrar (en el mismo sitio que el de redactar en la lista).
 - El menú «⋮» abre un panel de cristal con todas las acciones, con nombre bajo cada icono y agrupadas en «Responder» (responder, a todos, reenviar) y «Organizar» (archivar, posponer, destacar, fijar, marcar como no leído, mover a recibidos). Tocar fuera lo cierra.

@@ -203,4 +203,8 @@
     <string name="compose_attach_unsaved">Attachments are not kept in saved drafts.</string>
     <string name="panel_group_reply">Reply</string>
     <string name="panel_group_organize">Organize</string>
+    <string name="settings_readhdr_title">Top of a message</string>
+    <string name="settings_readhdr_body">Two ways to show the back button and the subject while reading. Try both.</string>
+    <string name="readhdr_separate">Button and pill</string>
+    <string name="readhdr_together">One pill</string>
 </resources>

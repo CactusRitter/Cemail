@@ -248,6 +248,34 @@ fun SettingsScreen(
                 )
             }
 
+            // Top of the reading screen: two layouts to compare, until one is chosen.
+            Column(
+                Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card).padding(horizontal = 18.dp, vertical = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(stringResource(R.string.settings_readhdr_title), style = MaterialTheme.typography.titleSmall)
+                Text(
+                    stringResource(R.string.settings_readhdr_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(0 to R.string.readhdr_separate, 1 to R.string.readhdr_together).forEach { (value, label) ->
+                        val selected = settings.readHeader == value
+                        Text(
+                            stringResource(label),
+                            Modifier
+                                .glass(CircleShape, if (selected) GlassKind.Pinned else GlassKind.Card)
+                                .clickable(role = Role.RadioButton) { repo.setReadHeader(value) }
+                                .padding(horizontal = 16.dp, vertical = 10.dp),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
+            }
+
             // --- Diagnostics: the activity log can always be shared; the last crash shows only if there was one ---
             SectionTitle(R.string.settings_section_diagnostics)
             Column(

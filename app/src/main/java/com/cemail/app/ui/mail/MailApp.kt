@@ -157,7 +157,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                 when {
                     draft != null -> ComposeScreen(draft, vm, me)
                     showSettings -> SettingsScreen(settings, settingsRepo, acc.accounts, accountVm::remove) { showSettings = false }
-                    open != null -> ReadScreen(open, vm, settings.alwaysShowImages)
+                    open != null -> ReadScreen(open, vm, settings.alwaysShowImages, settings.readHeader)
                     else -> ListScreen(state, vm, grouped = settings.groupByDate && state.query.isBlank(), stripeOf = stripeOf, showSenderCircle = settings.showSenderCircle, onOpenDrawer = { scope.launch { drawer.open() } })
                 }
                 UndoBar(state.undo, vm, Modifier.align(Alignment.BottomCenter))

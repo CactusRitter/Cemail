@@ -69,6 +69,7 @@ import androidx.compose.foundation.layout.size
 import com.cemail.app.R
 import com.cemail.app.data.gmail.HtmlSanitizer
 import com.cemail.app.data.mail.Mail
+import com.cemail.app.ui.glass.GlassIconButton
 import com.cemail.app.ui.glass.GlassKind
 import com.cemail.app.ui.glass.GlassPill
 import com.cemail.app.ui.glass.PillIcon
@@ -76,7 +77,7 @@ import com.cemail.app.ui.glass.glass
 import com.cemail.app.ui.icons.CemailIcons
 
 @Composable
-fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
+fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean, headerStyle: Int) {
     // The list only holds the start of each text: the whole message is read when it is opened. Flags
     // (read, star...) keep coming from the list so they stay current.
     val loaded by produceState<Mail?>(null, summary.id) { value = vm.full(summary.id) }
@@ -269,30 +270,54 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
             }
         }
 
-        // Top bar: back, the two actions used most (reply, archive) and the panel with everything else.
+        // Top: the back button and the subject, floating. headerStyle 0 = two separate pieces (a round button and
+        // a pill), 1 = everything together in one pill. (Both are kept until one is chosen.)
         var panel by remember { mutableStateOf(false) }
+        val subjectText = mail.subject.ifBlank { stringResource(R.string.no_subject) }
         Box(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 12.dp, vertical = 8.dp)) {
-            GlassPill(Modifier.fillMaxWidth()) {
-                PillIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), vm::closeMail)
-                Box(Modifier.weight(1f))
-                PillIcon(CemailIcons.Reply, stringResource(R.string.action_reply), { vm.newDraft(reply(R.string.reply_prefix, mail.senderEmail)) }, width = 48.dp)
-                PillIcon(CemailIcons.Archive, stringResource(R.string.action_archive), { vm.archive(one) }, width = 48.dp)
-                PillIcon(Icons.Filled.MoreVert, stringResource(R.string.action_more), { panel = true }, width = 48.dp)
+            if (headerStyle == 0) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    GlassIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), vm::closeMail)
+                    GlassPill(Modifier.weight(1f)) {
+                        Text(
+                            subjectText,
+                            Modifier.weight(1f).padding(horizontal = 16.dp),
+                            style = MaterialTheme.typography.titleSmall,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+            } else {
+                GlassPill(Modifier.fillMaxWidth()) {
+                    PillIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), vm::closeMail)
+                    Text(
+                        subjectText,
+                        Modifier.weight(1f).padding(horizontal = 8.dp),
+                        style = MaterialTheme.typography.titleSmall,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
 
-        // Delete: the round button in the bottom corner (the same place as "write" in the list).
-        Box(
-            Modifier
-                .align(Alignment.BottomEnd)
-                .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(16.dp)
-                .size(60.dp)
-                .glass(CircleShape, GlassKind.Chrome, elevation = 10.dp)
-                .clickable(role = Role.Button) { vm.trash(one) },
-            contentAlignment = Alignment.Center,
+        // Bottom corner: reply, and the round button that opens the panel with every other action.
+        Row(
+            Modifier.align(Alignment.BottomEnd).windowInsetsPadding(WindowInsets.safeDrawing).padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(Icons.Filled.Delete, stringResource(R.string.action_trash), tint = MaterialTheme.colorScheme.error)
+            GlassIconButton(CemailIcons.Reply, stringResource(R.string.action_reply), { vm.newDraft(reply(R.string.reply_prefix, mail.senderEmail)) })
+            Box(
+                Modifier
+                    .size(60.dp)
+                    .glass(CircleShape, GlassKind.Pinned, elevation = 10.dp)
+                    .clickable(role = Role.Button) { panel = true },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.MoreVert, stringResource(R.string.action_more), tint = MaterialTheme.colorScheme.primary)
+            }
         }
 
         if (panel) {
@@ -305,6 +330,7 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
                 ),
                 organize = listOf(
                     PanelItem(CemailIcons.Archive, R.string.action_archive) { vm.archive(one) },
+                    PanelItem(Icons.Filled.Delete, R.string.action_trash, danger = true) { vm.trash(one) },
                     PanelItem(CemailIcons.Snooze, R.string.action_snooze) { vm.askSnooze(one) },
                     PanelItem(
                         if (mail.starred) Icons.Filled.Star else CemailIcons.StarOutline,
@@ -319,7 +345,13 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
     }
 }
 
-private class PanelItem(val icon: ImageVector, val label: Int, val selected: Boolean = false, val onClick: () -> Unit)
+private class PanelItem(
+    val icon: ImageVector,
+    val label: Int,
+    val selected: Boolean = false,
+    val danger: Boolean = false,
+    val onClick: () -> Unit,
+)
 
 /**
  * Every action on the open message, in a glass panel with a name under each icon, grouped into
@@ -335,9 +367,9 @@ private fun ActionPanel(onDismiss: () -> Unit, reply: List<PanelItem>, organize:
     ) {
         Column(
             Modifier
-                .align(Alignment.TopEnd)
+                .align(Alignment.BottomEnd)
                 .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(top = 76.dp, end = 12.dp, start = 12.dp)
+                .padding(bottom = 96.dp, end = 12.dp, start = 12.dp)
                 .widthIn(max = 320.dp)
                 .fillMaxWidth()
                 // Swallows taps so only the area around the panel closes it.
@@ -346,14 +378,14 @@ private fun ActionPanel(onDismiss: () -> Unit, reply: List<PanelItem>, organize:
                 .padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            PanelGroup(R.string.panel_group_reply, reply, onDismiss)
-            PanelGroup(R.string.panel_group_organize, organize, onDismiss)
+            PanelGroup(R.string.panel_group_reply, reply, 3, onDismiss)
+            PanelGroup(R.string.panel_group_organize, organize, 4, onDismiss)
         }
     }
 }
 
 @Composable
-private fun PanelGroup(title: Int, items: List<PanelItem>, onDismiss: () -> Unit) {
+private fun PanelGroup(title: Int, items: List<PanelItem>, columns: Int, onDismiss: () -> Unit) {
     Text(
         stringResource(title),
         Modifier.padding(start = 6.dp, top = 4.dp),
@@ -361,10 +393,14 @@ private fun PanelGroup(title: Int, items: List<PanelItem>, onDismiss: () -> Unit
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.primary,
     )
-    items.chunked(3).forEach { row ->
+    items.chunked(columns).forEach { row ->
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             row.forEach { item ->
-                val tint = if (item.selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                val tint = when {
+                    item.danger -> MaterialTheme.colorScheme.error
+                    item.selected -> MaterialTheme.colorScheme.primary
+                    else -> MaterialTheme.colorScheme.onSurface
+                }
                 Column(
                     Modifier
                         .weight(1f)
@@ -385,6 +421,7 @@ private fun PanelGroup(title: Int, items: List<PanelItem>, onDismiss: () -> Unit
                     )
                 }
             }
+            repeat(columns - row.size) { Box(Modifier.weight(1f)) }
         }
     }
 }
