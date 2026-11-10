@@ -32,6 +32,10 @@ data class Mail(
     val accountId: String = "",
     /** Files attached while writing; only used to send (they are not kept in saved drafts). */
     val outgoing: List<com.cemail.app.data.gmail.OutAttachment> = emptyList(),
+    /** Copy and blind-copy recipients, and the formatted (HTML) text, used only when sending. */
+    val cc: String = "",
+    val bcc: String = "",
+    val outgoingHtml: String? = null,
 ) {
     /** One-line summary for the list: no line breaks and no "[image: ...]" placeholders of text-only versions. */
     val preview: String get() = body.replace(IMAGE_PLACEHOLDER, " ").replace(WHITESPACE, " ").trim()

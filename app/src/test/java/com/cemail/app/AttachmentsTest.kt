@@ -59,3 +59,32 @@ class AttachmentsTest {
         assertTrue(raw.trimEnd().endsWith("--$boundary--"))
     }
 }
+
+class MimeFormattingTest {
+    @Test
+    fun copiesAndFormattedTextAreSent() {
+        val raw = String(
+            MimeBuilder.build("a@b.com", "Hola", "texto", cc = "c@d.com", bcc = "e@f.com", html = "<p><b>texto</b></p>"),
+            Charsets.US_ASCII,
+        )
+        assertTrue(raw.contains("Cc: c@d.com"))
+        assertTrue(raw.contains("Bcc: e@f.com"))
+        assertTrue(raw.contains("Content-Type: multipart/alternative"))
+        assertTrue(raw.contains("Content-Type: text/plain; charset=UTF-8"))
+        assertTrue(raw.contains("Content-Type: text/html; charset=UTF-8"))
+    }
+
+    @Test
+    fun formattedTextWithFilesNestsAlternativeInsideMixed() {
+        val file = OutAttachment("a.txt", "text/plain", ByteArray(3))
+        val raw = String(MimeBuilder.build("a@b.com", "Hola", "texto", listOf(file), html = "<p><i>texto</i></p>"), Charsets.US_ASCII)
+        assertTrue(raw.indexOf("multipart/mixed") < raw.indexOf("multipart/alternative"))
+        assertTrue(raw.contains("filename=\"a.txt\""))
+    }
+
+    @Test
+    fun plainMessageHasNoCopyHeaders() {
+        val raw = String(MimeBuilder.build("a@b.com", "Hola", "texto"), Charsets.US_ASCII)
+        assertTrue(!raw.contains("Cc:") && !raw.contains("Bcc:") && !raw.contains("multipart"))
+    }
+}

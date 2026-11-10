@@ -7,60 +7,88 @@ import android.text.format.Formatter
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Icon
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.style.TextOverflow
-import com.cemail.app.AppLog
-import com.cemail.app.data.gmail.OutAttachment
-import com.cemail.app.ui.icons.CemailIcons
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.cemail.app.AppLog
 import com.cemail.app.R
+import com.cemail.app.data.gmail.OutAttachment
 import com.cemail.app.ui.glass.GlassKind
 import com.cemail.app.ui.glass.GlassPill
 import com.cemail.app.ui.glass.PillIcon
 import com.cemail.app.ui.glass.glass
+import com.cemail.app.ui.icons.CemailIcons
+import com.mohamedrejeb.richeditor.model.RichTextState
+import com.mohamedrejeb.richeditor.model.rememberRichTextState
+import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
+import com.mohamedrejeb.richeditor.ui.material3.RichTextEditorDefaults
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
     val colors = TextFieldDefaults.colors(
         focusedContainerColor = Color.Transparent,
@@ -78,13 +106,27 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
             if (!vm.attach(files)) Toast.makeText(context, R.string.compose_attach_too_big, Toast.LENGTH_LONG).show()
         }
     }
+
+    // The text is edited with formatting that shows at once (no **marks**). The draft keeps the plain text and
+    // the HTML; the editor itself is filled only once, from the text the draft started with.
+    val rich = rememberRichTextState()
+    val currentDraft by rememberUpdatedState(draft)
+    LaunchedEffect(rich) {
+        if (currentDraft.body.isNotEmpty()) rich.setText(currentDraft.body)
+        snapshotFlow { rich.annotatedString }.collect {
+            val html = rich.toMailHtml()
+            vm.updateDraft(currentDraft.copy(body = rich.toText(), html = html))
+        }
+    }
+    var showCopies by rememberSaveable { mutableStateOf(draft.cc.isNotBlank() || draft.bcc.isNotBlank()) }
+
     Box(Modifier.fillMaxSize().imePadding()) {
         Column(
             Modifier
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.safeDrawing)
                 .verticalScroll(rememberScrollState())
-                .padding(start = 12.dp, end = 12.dp, top = 80.dp, bottom = 16.dp),
+                .padding(start = 12.dp, end = 12.dp, top = 80.dp, bottom = 84.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Column(Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card)) {
@@ -96,7 +138,46 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     colors = colors,
+                    trailingIcon = {
+                        Box(
+                            Modifier.size(48.dp).clip(CircleShape).clickable(role = Role.Button) { showCopies = !showCopies },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                if (showCopies) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                                stringResource(R.string.compose_copies_toggle),
+                            )
+                        }
+                    },
                 )
+                AnimatedVisibility(
+                    visible = showCopies,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically(),
+                ) {
+                    Column {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        TextField(
+                            value = draft.cc,
+                            onValueChange = { vm.updateDraft(draft.copy(cc = it)) },
+                            label = { Text(stringResource(R.string.compose_cc)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                            colors = colors,
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        TextField(
+                            value = draft.bcc,
+                            onValueChange = { vm.updateDraft(draft.copy(bcc = it)) },
+                            label = { Text(stringResource(R.string.compose_bcc)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                            colors = colors,
+                        )
+                    }
+                }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 TextField(
                     value = draft.subject,
@@ -107,13 +188,15 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
                     colors = colors,
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                TextField(
-                    value = draft.body,
-                    onValueChange = { vm.updateDraft(draft.copy(body = it)) },
+                RichTextEditor(
+                    state = rich,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 240.dp),
                     placeholder = { Text(stringResource(R.string.compose_body)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 10,
-                    colors = colors,
+                    colors = RichTextEditorDefaults.richTextEditorColors(
+                        containerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                    ),
                 )
             }
             draft.attachments.forEach { file ->
@@ -137,15 +220,17 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
                     ) { Icon(Icons.Filled.Close, stringResource(R.string.compose_attach_remove)) }
                 }
             }
-            if (draft.attachments.isNotEmpty()) {
+            if (draft.attachments.isNotEmpty() || draft.cc.isNotBlank() || draft.bcc.isNotBlank() || draft.html != null) {
                 Text(
-                    stringResource(R.string.compose_attach_unsaved),
+                    stringResource(R.string.compose_unsaved),
                     Modifier.padding(horizontal = 8.dp),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
+
+        // Top bar: back, attach, discard, send.
         Box(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 12.dp, vertical = 8.dp)) {
             GlassPill(Modifier.fillMaxWidth()) {
                 PillIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), { vm.closeCompose(me) })
@@ -158,8 +243,73 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
                 )
             }
         }
+
+        // Formatting toolbar, floating over the keyboard.
+        Box(Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.safeDrawing).padding(12.dp)) {
+            FormatBar(rich)
+        }
     }
 }
+
+/** Bold, italic, underline, font, lists and "clear formatting" for the text being written. */
+@Composable
+private fun FormatBar(rich: RichTextState) {
+    var fonts by remember { mutableStateOf(false) }
+    val style = rich.currentSpanStyle
+    GlassPill {
+        PillIcon(
+            CemailIcons.Bold, stringResource(R.string.format_bold),
+            { rich.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.Bold)) },
+            selected = style.fontWeight == FontWeight.Bold, width = 44.dp,
+        )
+        PillIcon(
+            CemailIcons.Italic, stringResource(R.string.format_italic),
+            { rich.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic)) },
+            selected = style.fontStyle == FontStyle.Italic, width = 44.dp,
+        )
+        PillIcon(
+            CemailIcons.Underline, stringResource(R.string.format_underline),
+            { rich.toggleSpanStyle(SpanStyle(textDecoration = TextDecoration.Underline)) },
+            selected = style.textDecoration?.contains(TextDecoration.Underline) == true, width = 44.dp,
+        )
+        Box {
+            PillIcon(
+                CemailIcons.Font, stringResource(R.string.format_font), { fonts = true },
+                selected = style.fontFamily != null, width = 44.dp,
+            )
+            DropdownMenu(expanded = fonts, onDismissRequest = { fonts = false }) {
+                FONTS.forEach { (label, family) ->
+                    DropdownMenuItem(
+                        text = { Text(stringResource(label), fontFamily = family) },
+                        onClick = {
+                            fonts = false
+                            rich.addSpanStyle(SpanStyle(fontFamily = family))
+                        },
+                    )
+                }
+            }
+        }
+        PillIcon(
+            CemailIcons.ListBulleted, stringResource(R.string.format_bullets), { rich.toggleUnorderedList() },
+            selected = rich.isUnorderedList, width = 44.dp,
+        )
+        PillIcon(
+            CemailIcons.ListNumbered, stringResource(R.string.format_numbers), { rich.toggleOrderedList() },
+            selected = rich.isOrderedList, width = 44.dp,
+        )
+        PillIcon(
+            CemailIcons.ClearFormat, stringResource(R.string.format_clear),
+            { rich.removeSpanStyle(rich.currentSpanStyle) }, width = 44.dp,
+        )
+    }
+}
+
+private val FONTS = listOf(
+    R.string.font_sans to FontFamily.SansSerif,
+    R.string.font_serif to FontFamily.Serif,
+    R.string.font_mono to FontFamily.Monospace,
+    R.string.font_cursive to FontFamily.Cursive,
+)
 
 /** Reads a file chosen with the system picker (name, type and bytes); null if it cannot be read. */
 private fun readAttachment(context: Context, uri: Uri): OutAttachment? = try {

@@ -198,5 +198,19 @@
     <string name="compose_attach">Adjuntar archivos</string>
     <string name="compose_attach_remove">Quitar adjunto</string>
     <string name="compose_attach_too_big">Algunos archivos no se añadieron: los adjuntos pueden sumar hasta 10 MB.</string>
-    <string name="compose_attach_unsaved">Los adjuntos no se guardan en los borradores.</string>
+    <string name="compose_cc">CC</string>
+    <string name="compose_bcc">CCO</string>
+    <string name="compose_copies_toggle">Mostrar CC y CCO</string>
+    <string name="compose_unsaved">Los adjuntos, CC/CCO y el formato no se guardan en los borradores.</string>
+    <string name="format_bold">Negrita</string>
+    <string name="format_italic">Cursiva</string>
+    <string name="format_underline">Subrayado</string>
+    <string name="format_font">Fuente</string>
+    <string name="format_bullets">Lista con viñetas</string>
+    <string name="format_numbers">Lista numerada</string>
+    <string name="format_clear">Quitar formato</string>
+    <string name="font_sans">Sin serifa</string>
+    <string name="font_serif">Con serifa</string>
+    <string name="font_mono">Monoespaciada</string>
+    <string name="font_cursive">Cursiva manuscrita</string>
 </resources>

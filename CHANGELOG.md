@@ -3,6 +3,12 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.17.0 — 2026-11-10
+- Editor con formato al escribir: negrita, cursiva, subrayado, cuatro fuentes (sin serifa, con serifa, monoespaciada, manuscrita), listas con viñetas y numeradas, y «quitar formato». Se ve al instante (nada de asteriscos) y la barra flota sobre el teclado. Se envía como HTML con una copia en texto plano; si no hay formato, sale como texto plano de siempre.
+- CC y CCO desplegables bajo «Para» (flecha a la derecha del campo). Se abren solos si ya tienen contenido.
+- Se añade la librería compose-rich-editor (licencia Apache, gratuita).
+- Pendiente conocido: al guardar un borrador se pierden el formato, CC/CCO y los adjuntos.
+
 ## 0.16.0 — 2026-11-10
 - El botón «⋮» baja a la esquina, encima del de responder. La píldora de arriba se queda con atrás, asunto/remitente y (si hay) el clip de adjuntos.
 - El menú es una ventana cuadrada de 3 x 3 iconos, sin texto, que se abre encima del «⋮»: responder, a todos, reenviar · archivar, posponer, destacar · fijar, no leído, papelera (roja). Si el mensaje no está en Recibidos, el hueco de archivar pasa a «mover a Recibidos».

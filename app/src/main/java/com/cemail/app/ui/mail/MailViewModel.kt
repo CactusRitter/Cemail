@@ -32,6 +32,10 @@ data class Draft(
     val to: String = "",
     val subject: String = "",
     val body: String = "",
+    val cc: String = "",
+    val bcc: String = "",
+    /** The text with its formatting, as HTML (null while nothing is formatted or in plain replies). */
+    val html: String? = null,
     val attachments: List<OutAttachment> = emptyList(),
 )
 
@@ -209,7 +213,7 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
     private fun Draft.toMail(id: Long, me: String, folder: Folder) = Mail(
         id = id, senderName = to, senderEmail = me, subject = subject, body = body,
         timeMillis = System.currentTimeMillis(), folder = folder, read = true,
-        hasAttachment = attachments.isNotEmpty(), outgoing = attachments,
+        hasAttachment = attachments.isNotEmpty(), outgoing = attachments, cc = cc, bcc = bcc, outgoingHtml = html,
     )
 
     /** Adds files to the message being written, within Gmail's size limit; returns false if some did not fit. */

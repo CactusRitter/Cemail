@@ -92,7 +92,7 @@ class RoomMailRepository(
         scope.launch(Dispatchers.IO) {
             val localId = dao.insert(mail.toEntity(accountId, remoteId = null).copy(localId = 0, folder = Folder.SENT.name))
             try {
-                api.send(MimeBuilder.build(mail.senderName, mail.subject, mail.body, mail.outgoing))
+                api.send(MimeBuilder.build(mail.senderName, mail.subject, mail.body, mail.outgoing, mail.cc, mail.bcc, mail.outgoingHtml))
                 AppLog.i("send", "sent, ${mail.outgoing.size} attachment(s)")
                 dao.delete(localId) // the real copy arrives with the next sync
                 refresh()

@@ -25,8 +25,8 @@ android {
         applicationId = "com.cemail.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 18
-        versionName = "0.16.0"
+        versionCode = 19
+        versionName = "0.17.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -106,6 +106,7 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.material.icons.core)
     implementation(libs.haze)
+    implementation(libs.rich.editor)
 
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)

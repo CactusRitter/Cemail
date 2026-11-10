@@ -200,5 +200,19 @@
     <string name="compose_attach">Attach files</string>
     <string name="compose_attach_remove">Remove attachment</string>
     <string name="compose_attach_too_big">Some files were not added: attachments may add up to 10 MB.</string>
-    <string name="compose_attach_unsaved">Attachments are not kept in saved drafts.</string>
+    <string name="compose_cc">Cc</string>
+    <string name="compose_bcc">Bcc</string>
+    <string name="compose_copies_toggle">Show Cc and Bcc</string>
+    <string name="compose_unsaved">Attachments, Cc/Bcc and formatting are not kept in saved drafts.</string>
+    <string name="format_bold">Bold</string>
+    <string name="format_italic">Italic</string>
+    <string name="format_underline">Underline</string>
+    <string name="format_font">Font</string>
+    <string name="format_bullets">Bulleted list</string>
+    <string name="format_numbers">Numbered list</string>
+    <string name="format_clear">Clear formatting</string>
+    <string name="font_sans">Sans serif</string>
+    <string name="font_serif">Serif</string>
+    <string name="font_mono">Monospace</string>
+    <string name="font_cursive">Cursive</string>
 </resources>
