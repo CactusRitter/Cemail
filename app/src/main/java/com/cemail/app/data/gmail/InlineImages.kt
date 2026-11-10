@@ -28,12 +28,17 @@ object InlineImages {
     fun find(message: GmailMessage): List<InlinePart> {
         val found = mutableListOf<InlinePart>()
         fun walk(part: MessagePart) {
-            val cid = part.headers.firstOrNull { it.name.equals("Content-ID", true) }?.value
-                ?.trim()?.removePrefix("<")?.removeSuffix(">")
-            if (!cid.isNullOrEmpty() && part.mimeType.startsWith("image/", true) && MIME.matches(part.mimeType)) {
+            val cid = (
+                part.headers.firstOrNull { it.name.equals("Content-ID", true) }
+                    ?: part.headers.firstOrNull { it.name.equals("X-Attachment-Id", true) }
+                )?.value?.trim()?.removePrefix("<")?.removeSuffix(">")
+            // Some senders label pictures as generic files: then the file name says what they are.
+            val mime = part.mimeType.lowercase().takeIf { MIME.matches(it) }
+                ?: EXTENSIONS[part.filename.substringAfterLast('.', "").lowercase()]
+            if (!cid.isNullOrEmpty() && mime != null) {
                 val data = part.body?.data?.let { Base64.getUrlDecoder().decode(it) }
                 if (data != null || part.body?.attachmentId != null) {
-                    found += InlinePart(cid, part.mimeType.lowercase(), data, part.body?.attachmentId)
+                    found += InlinePart(cid, mime, data, part.body?.attachmentId)
                 }
             }
             part.parts.forEach(::walk)
@@ -42,5 +47,9 @@ object InlineImages {
         return found
     }
 
-    private val MIME = Regex("""image/[A-Za-z0-9.+-]+""")
+    private val MIME = Regex("""image/[a-z0-9.+-]+""")
+    private val EXTENSIONS = mapOf(
+        "png" to "image/png", "jpg" to "image/jpeg", "jpeg" to "image/jpeg",
+        "gif" to "image/gif", "webp" to "image/webp", "bmp" to "image/bmp",
+    )
 }

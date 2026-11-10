@@ -2,6 +2,7 @@ package com.cemail.app.data.gmail
 
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
+import org.jsoup.nodes.TextNode
 import org.jsoup.safety.Safelist
 
 /**
@@ -22,7 +23,8 @@ object HtmlSanitizer {
 
     private val CSS_URL = Regex("""url\s*\([^)]*\)""", RegexOption.IGNORE_CASE)
     private val REMOTE_CSS_URL = Regex("""url\s*\(\s*['"]?https?://""", RegexOption.IGNORE_CASE)
-    private val IMPORT = Regex("""@import[^;]*;?""", RegexOption.IGNORE_CASE)
+    private val FONT_FACE = Regex("""@font-face\s*\{[^}]*\}""", RegexOption.IGNORE_CASE)
+    private val IMPORT =Regex("""@import[^;]*;?""", RegexOption.IGNORE_CASE)
 
     /**
      * @param inline pictures that travel inside the message: Content-ID → `data:` URI. An image that points
@@ -42,8 +44,16 @@ object HtmlSanitizer {
         doc.select("img[src]").forEach { img ->
             val src = img.attr("src")
             if (src.startsWith("cid:", ignoreCase = true)) {
-                val data = inline[src.substring(4)]
+                val cid = src.substring(4)
+                val data = inline[cid] ?: inline[decode(cid)]
                 if (data != null) img.attr("src", data) else img.removeAttr("src")
+            }
+        }
+        // A picture left without a source would show a "broken image" icon: show its description instead.
+        doc.select("img").forEach { img ->
+            if (img.attr("src").isBlank()) {
+                val alt = img.attr("alt").trim()
+                if (alt.isEmpty()) img.remove() else img.replaceWith(TextNode(alt))
             }
         }
         doc.select("a[href]").forEach { it.attr("rel", "noopener noreferrer") }
@@ -60,10 +70,32 @@ object HtmlSanitizer {
     /** true if the message has pictures of its own (`cid:`) that must be fetched from Gmail to be shown. */
     fun hasInlineImages(html: String): Boolean = html.contains("cid:", ignoreCase = true)
 
-    /** The page the WebView loads: viewport, readable defaults and the sanitized message. */
-    fun page(cleanHtml: String, bottomSpacePx: Int = 0): String =
+    private fun decode(value: String): String = try {
+        java.net.URLDecoder.decode(value, "UTF-8")
+    } catch (_: Exception) {
+        value
+    }
+
+    /**
+     * The message's own style sheets (many emails need them to lay out buttons and columns), made safe:
+     * no imports, no downloadable fonts, no `url(...)` other than http/https pictures (blocked like any
+     * remote image until the user allows them), and nothing that could close the style element.
+     */
+    fun styles(html: String): String =
+        Jsoup.parse(html).select("style").joinToString("\n") { it.data() }
+            .replace(IMPORT, "")
+            .replace(FONT_FACE, "")
+            .replace(CSS_URL) { m -> if (REMOTE_CSS_URL.containsMatchIn(m.value)) m.value else "none" }
+            .replace("<", "")
+
+    /**
+     * The page the WebView loads: viewport, readable defaults, the message's (safe) [css] and the sanitized
+     * message, followed by [bottomSpacePx] of empty room.
+     */
+    fun page(cleanHtml: String, bottomSpacePx: Int = 0, css: String = ""): String =
         "<!doctype html><html><head><meta charset=\"utf-8\">" +
             "<meta name=\"viewport\" content=\"width=device-width, minimum-scale=0.1\">" +
-            "<style>body{margin:12px 12px ${12 + bottomSpacePx}px;font-family:sans-serif;word-wrap:break-word;overflow-wrap:anywhere}" +
-            "img{max-width:100%;height:auto}</style></head><body>$cleanHtml</body></html>"
+            "<style>body{margin:12px;font-family:sans-serif;overflow-wrap:break-word}" +
+            "img{max-width:100%;height:auto}</style><style>$css</style></head>" +
+            "<body>$cleanHtml<div style=\"height:${bottomSpacePx}px\"></div></body></html>"
 }

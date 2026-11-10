@@ -144,4 +144,28 @@
     <string name="settings_transparency_body">How see-through the cards and bars are.</string>
     <string name="account_all">All accounts</string>
     <string name="account_all_body">Unified inbox</string>
+    <string name="settings_section_accounts">Accounts</string>
+    <string name="settings_remove_account">Remove</string>
+    <string name="settings_remove_title">Remove this account?</string>
+    <string name="settings_remove_body">%1$s will be signed out and its messages deleted from this phone. Nothing changes in Gmail.</string>
+    <string name="cancel">Cancel</string>
+    <string name="settings_no_accounts">No account signed in.</string>
+    <string name="settings_section_sync">New mail</string>
+    <string name="settings_sync_title">Check for new mail</string>
+    <string name="settings_sync_body">How often Cemail looks for new messages on its own. Notifications will use this too. With Manual, mail only arrives when you tap refresh.</string>
+    <string name="sync_manual">Manual</string>
+    <plurals name="sync_minutes">
+        <item quantity="one">%d min</item>
+        <item quantity="other">%d min</item>
+    </plurals>
+    <plurals name="sync_hours">
+        <item quantity="one">%d h</item>
+        <item quantity="other">%d h</item>
+    </plurals>
+    <string name="settings_section_diagnostics">Diagnostics</string>
+    <string name="settings_crash_title">Last unexpected error</string>
+    <string name="settings_crash_body">Saved only on this phone. Copy it to send it to whoever maintains the app.</string>
+    <string name="copy">Copy</string>
+    <string name="clear">Clear</string>
+    <string name="copied">Copied</string>
 </resources>

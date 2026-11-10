@@ -14,6 +14,7 @@ import com.cemail.app.data.db.CemailDatabase
 import com.cemail.app.data.mail.DemoData
 import com.cemail.app.data.mail.DemoMailRepository
 import com.cemail.app.data.mail.MailRepository
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -55,9 +56,14 @@ class CemailApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        SyncWorker.schedule(this)
+        CrashLog.install(this)
+        SyncWorker.schedule(this, settings.state.value.syncMinutes)
     }
 
     /** Lives as long as the process: work started while leaving a screen always finishes. */
-    val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    val appScope = CoroutineScope(
+        SupervisorJob() + Dispatchers.Default +
+            // Background work (sync, sending) must never close the app: the error is kept for Settings instead.
+            CoroutineExceptionHandler { _, error -> CrashLog.write(this, error) },
+    )
 }

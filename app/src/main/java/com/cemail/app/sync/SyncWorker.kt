@@ -13,8 +13,8 @@ import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.first
 
 /**
- * Looks for new mail in every account while the app is closed. Android runs it about every 15 minutes
- * (the shortest period it allows) when there is a connection.
+ * Looks for new mail in every account while the app is closed, as often as the user chose in Settings
+ * (15 minutes is the shortest period Android allows) and only when there is a connection.
  *
  * Phase 6 (notifications): this is where a notification will be posted for the messages that arrived.
  * Instant delivery ("real" push) needs a server that Gmail can call; see docs/ROADMAP.md.
@@ -30,11 +30,21 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
     companion object {
         private const val NAME = "background-sync"
 
-        fun schedule(context: Context) {
-            val request = PeriodicWorkRequestBuilder<SyncWorker>(15, TimeUnit.MINUTES)
+        /** The choices offered in Settings, in minutes; [MANUAL] means "never check on its own". */
+        const val MANUAL = 0
+        val INTERVALS = listOf(15, 30, 60, 120, MANUAL)
+
+        /** Applies the chosen interval: replaces the scheduled check, or cancels it for [MANUAL]. */
+        fun schedule(context: Context, minutes: Int) {
+            val manager = WorkManager.getInstance(context)
+            if (minutes <= 0) {
+                manager.cancelUniqueWork(NAME)
+                return
+            }
+            val request = PeriodicWorkRequestBuilder<SyncWorker>(minutes.coerceAtLeast(15).toLong(), TimeUnit.MINUTES)
                 .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
                 .build()
-            WorkManager.getInstance(context).enqueueUniquePeriodicWork(NAME, ExistingPeriodicWorkPolicy.KEEP, request)
+            manager.enqueueUniquePeriodicWork(NAME, ExistingPeriodicWorkPolicy.UPDATE, request)
         }
     }
 }

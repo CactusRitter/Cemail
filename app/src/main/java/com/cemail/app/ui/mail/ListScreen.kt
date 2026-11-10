@@ -48,7 +48,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.remember
 import com.cemail.app.R
 import com.cemail.app.data.mail.DateSection
+import com.cemail.app.data.mail.Mail
 import com.cemail.app.data.mail.MailBox
+import androidx.compose.ui.graphics.Color
 import com.cemail.app.data.mail.dateSectionOf
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -75,6 +77,7 @@ fun ListScreen(
     state: MailUiState,
     vm: MailViewModel,
     grouped: Boolean,
+    stripeOf: (Mail) -> Color?,
     onOpenDrawer: () -> Unit,
 ) {
     val haze = rememberHazeState()
@@ -119,7 +122,7 @@ fun ListScreen(
             }
             if (state.pinned.isNotEmpty()) {
                 item(key = "h-pinned") { SectionHeader(stringResource(R.string.section_pinned)) }
-                items(state.pinned, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive) }
+                items(state.pinned, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, stripeOf(mail)) }
                 if (state.others.isNotEmpty() && !grouped) item(key = "h-mail") { SectionHeader(stringResource(R.string.section_mail)) }
             }
             if (grouped) {
@@ -129,10 +132,10 @@ fun ListScreen(
                     val list = groups[section] ?: return@forEach
                     val collapsed = section in state.collapsedSections
                     item(key = "d-$section") { DateHeader(section, list.size, collapsed) { vm.toggleSection(section) } }
-                    if (!collapsed) items(list, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive) }
+                    if (!collapsed) items(list, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, stripeOf(mail)) }
                 }
             } else {
-                items(state.others, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive) }
+                items(state.others, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, stripeOf(mail)) }
             }
         }
 
@@ -182,7 +185,7 @@ fun ListScreen(
 }
 
 @Composable
-private fun MailItem(mail: com.cemail.app.data.mail.Mail, state: MailUiState, vm: MailViewModel, startIsArchive: Boolean) {
+private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsArchive: Boolean, stripe: Color?) {
     val one = setOf(mail.id)
     MailRow(
         mail = mail,
@@ -194,6 +197,7 @@ private fun MailItem(mail: com.cemail.app.data.mail.Mail, state: MailUiState, vm
         onSwipeStart = { if (startIsArchive) vm.archive(one) else vm.moveToInbox(one) },
         onSwipeEnd = { vm.trash(one) },
         startIsArchive = startIsArchive,
+        stripe = stripe,
     )
 }
 

@@ -114,7 +114,7 @@ fun ReadScreen(mail: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
     // Extra room at the end of the message, so its last lines can always be scrolled into view.
     val bottomSpace = (detailsDp.value + with(density) { (subjectPx - subjectMinPx).toDp() }.value).roundToInt()
     val cleanPage = remember(mail.id, html, inline, bottomSpace) {
-        if (html.isBlank()) null else HtmlSanitizer.page(HtmlSanitizer.clean(html, inline), bottomSpace)
+        if (html.isBlank()) null else HtmlSanitizer.page(HtmlSanitizer.clean(html, inline), bottomSpace, HtmlSanitizer.styles(html))
     }
     val fixedBody = Modifier.layout { measurable, constraints ->
         // The height the body has once the header is fully collapsed.

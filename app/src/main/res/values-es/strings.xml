@@ -142,4 +142,28 @@
     <string name="settings_transparency_body">Cuánto se transparentan las tarjetas y las barras.</string>
     <string name="account_all">Todas las cuentas</string>
     <string name="account_all_body">Bandeja unificada</string>
+    <string name="settings_section_accounts">Cuentas</string>
+    <string name="settings_remove_account">Quitar</string>
+    <string name="settings_remove_title">¿Quitar esta cuenta?</string>
+    <string name="settings_remove_body">Se cerrará la sesión de %1$s y sus mensajes se borrarán de este teléfono. En Gmail no cambia nada.</string>
+    <string name="cancel">Cancelar</string>
+    <string name="settings_no_accounts">No hay ninguna cuenta con sesión iniciada.</string>
+    <string name="settings_section_sync">Correo nuevo</string>
+    <string name="settings_sync_title">Comprobar correo nuevo</string>
+    <string name="settings_sync_body">Cada cuánto busca Cemail mensajes nuevos por su cuenta. Las notificaciones usarán también este ajuste. Con Manual, el correo solo llega al pulsar actualizar.</string>
+    <string name="sync_manual">Manual</string>
+    <plurals name="sync_minutes">
+        <item quantity="one">%d min</item>
+        <item quantity="other">%d min</item>
+    </plurals>
+    <plurals name="sync_hours">
+        <item quantity="one">%d h</item>
+        <item quantity="other">%d h</item>
+    </plurals>
+    <string name="settings_section_diagnostics">Diagnóstico</string>
+    <string name="settings_crash_title">Último error inesperado</string>
+    <string name="settings_crash_body">Se guarda solo en este teléfono. Cópialo para enviárselo a quien mantiene la app.</string>
+    <string name="copy">Copiar</string>
+    <string name="clear">Borrar</string>
+    <string name="copied">Copiado</string>
 </resources>

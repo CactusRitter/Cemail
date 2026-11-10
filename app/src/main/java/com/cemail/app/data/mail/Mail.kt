@@ -4,6 +4,7 @@ package com.cemail.app.data.mail
 enum class Folder { INBOX, SENT, DRAFTS, ARCHIVE, TRASH }
 
 private val WHITESPACE = Regex("""\s+""")
+private val IMAGE_PLACEHOLDER = Regex("""\[(image|cid):[^\]]*\]""", RegexOption.IGNORE_CASE)
 
 /** What the list screen can show: the folders plus the two virtual views. */
 enum class MailBox { INBOX, STARRED, SNOOZED, SENT, DRAFTS, ARCHIVE, TRASH }
@@ -27,8 +28,11 @@ data class Mail(
     val labelIds: Set<String> = emptySet(),
     /** Original HTML of the message, or empty when it only has plain text; null if not downloaded yet. */
     val bodyHtml: String? = null,
+    /** The account the message belongs to (empty for the demo store). */
+    val accountId: String = "",
 ) {
-    val preview: String get() = body.replace(WHITESPACE, " ").trim()
+    /** One-line summary for the list: no line breaks and no "[image: ...]" placeholders of text-only versions. */
+    val preview: String get() = body.replace(IMAGE_PLACEHOLDER, " ").replace(WHITESPACE, " ").trim()
     fun isSnoozed(now: Long) = snoozedUntil != null && snoozedUntil > now
 }
 

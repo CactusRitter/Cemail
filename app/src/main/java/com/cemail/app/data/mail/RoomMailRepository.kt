@@ -121,7 +121,7 @@ class RoomMailRepository(
         val dir = File(inlineDir, remote)
         try {
             saveInlineImages(remote, null) // normally already done by the sync: then this returns at once
-            File(dir, "index").readLines().filter { it.isNotBlank() }.associate { line ->
+            File(dir, INLINE_INDEX).readLines().filter { it.isNotBlank() }.associate { line ->
                 val (cid, mime, file) = line.split("\t")
                 cid to "data:$mime;base64," + Base64.getEncoder().encodeToString(File(dir, file).readBytes())
             }
@@ -136,7 +136,7 @@ class RoomMailRepository(
      */
     private suspend fun saveInlineImages(remote: String, message: GmailMessage?) {
         val dir = File(inlineDir, remote)
-        val index = File(dir, "index")
+        val index = File(dir, INLINE_INDEX)
         if (index.exists()) return
         val parts = InlineImages.find(message ?: api.getMessage(remote))
         dir.mkdirs()
@@ -219,6 +219,9 @@ class RoomMailRepository(
         const val QUERY = "in:anywhere -in:spam -in:chats"
         const val LIMIT = 120
         const val MAX_INLINE_BYTES = 4 * 1024 * 1024
+
+        /** Renamed whenever the way embedded pictures are found changes, so they are fetched again. */
+        const val INLINE_INDEX = "index.v2"
     }
 }
 
@@ -226,7 +229,7 @@ private fun MessageEntity.toMail() = Mail(
     id = localId, senderName = senderName, senderEmail = senderEmail, subject = subject, body = body,
     timeMillis = timeMillis, folder = Folder.valueOf(folder), read = read, starred = starred, pinned = pinned,
     snoozedUntil = snoozedUntil, hasAttachment = hasAttachment,
-    labelIds = labelIds.split(" ").filter { it.isNotEmpty() }.toSet(), bodyHtml = bodyHtml,
+    labelIds = labelIds.split(" ").filter { it.isNotEmpty() }.toSet(), bodyHtml = bodyHtml, accountId = accountId,
 )
 
 private fun Mail.toEntity(accountId: String, remoteId: String?) = MessageEntity(

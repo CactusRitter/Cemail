@@ -9,6 +9,8 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -91,6 +93,8 @@ fun MailRow(
     onSwipeStart: () -> Unit,
     onSwipeEnd: () -> Unit,
     startIsArchive: Boolean,
+    /** Colour of the account the message belongs to (unified inbox only). */
+    stripe: Color? = null,
 ) {
     val state = rememberSwipeToDismissBoxState(confirmValueChange = { value ->
         when (value) {
@@ -137,6 +141,7 @@ fun MailRow(
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            if (stripe != null) Box(Modifier.width(4.dp).height(44.dp).background(stripe, CircleShape))
             Box(Modifier.clickable(onClick = onLongClick)) { Avatar(mail.senderName, selected) }
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {

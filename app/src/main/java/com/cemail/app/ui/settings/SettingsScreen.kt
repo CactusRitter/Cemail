@@ -1,8 +1,13 @@
 package com.cemail.app.ui.settings
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -18,25 +24,49 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
-import java.text.NumberFormat
-import kotlin.math.roundToInt
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import com.cemail.app.CrashLog
 import com.cemail.app.R
 import com.cemail.app.data.AppSettings
 import com.cemail.app.data.SettingsRepository
+import com.cemail.app.data.db.AccountEntity
+import com.cemail.app.sync.SyncWorker
 import com.cemail.app.ui.glass.GlassKind
 import com.cemail.app.ui.glass.GlassPill
 import com.cemail.app.ui.glass.PillIcon
 import com.cemail.app.ui.glass.glass
+import com.cemail.app.ui.mail.Avatar
+import java.text.NumberFormat
+import kotlin.math.roundToInt
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun SettingsScreen(settings: AppSettings, repo: SettingsRepository, onBack: () -> Unit) {
+fun SettingsScreen(
+    settings: AppSettings,
+    repo: SettingsRepository,
+    accounts: List<AccountEntity>,
+    onRemoveAccount: (String) -> Unit,
+    onBack: () -> Unit,
+) {
+    val context = LocalContext.current
+    var removing by remember { mutableStateOf<AccountEntity?>(null) }
+    var crash by remember { mutableStateOf(CrashLog.read(context)) }
+
     Column(
         Modifier
             .fillMaxSize()
@@ -58,12 +88,45 @@ fun SettingsScreen(settings: AppSettings, repo: SettingsRepository, onBack: () -
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text(
-                stringResource(R.string.settings_section_messages),
-                Modifier.padding(start = 8.dp, top = 8.dp),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            // --- Accounts ---
+            SectionTitle(R.string.settings_section_accounts)
+            if (accounts.isEmpty()) {
+                Text(
+                    stringResource(R.string.settings_no_accounts),
+                    Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card).padding(18.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            accounts.forEach { account ->
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .glass(CircleShape, GlassKind.Card)
+                        .padding(start = 8.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Avatar(account.displayName ?: account.email, size = 40)
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            account.displayName ?: account.email,
+                            style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            account.email,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    TextAction(R.string.settings_remove_account, MaterialTheme.colorScheme.error) { removing = account }
+                }
+            }
+
+            // --- Messages ---
+            SectionTitle(R.string.settings_section_messages)
             SwitchRow(
                 title = R.string.settings_images_title,
                 body = R.string.settings_images_body,
@@ -76,12 +139,46 @@ fun SettingsScreen(settings: AppSettings, repo: SettingsRepository, onBack: () -
                 checked = settings.groupByDate,
                 onChange = repo::setGroupByDate,
             )
-            Text(
-                stringResource(R.string.settings_section_appearance),
-                Modifier.padding(start = 8.dp, top = 8.dp),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
+
+            // --- New mail (and, later, notifications) ---
+            SectionTitle(R.string.settings_section_sync)
+            Column(
+                Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card).padding(horizontal = 18.dp, vertical = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(stringResource(R.string.settings_sync_title), style = MaterialTheme.typography.titleSmall)
+                Text(
+                    stringResource(R.string.settings_sync_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SyncWorker.INTERVALS.forEach { minutes ->
+                        val selected = settings.syncMinutes == minutes
+                        val label = when {
+                            minutes == SyncWorker.MANUAL -> stringResource(R.string.sync_manual)
+                            minutes % 60 == 0 -> pluralStringResource(R.plurals.sync_hours, minutes / 60, minutes / 60)
+                            else -> pluralStringResource(R.plurals.sync_minutes, minutes, minutes)
+                        }
+                        Text(
+                            label,
+                            Modifier
+                                .glass(CircleShape, if (selected) GlassKind.Pinned else GlassKind.Card)
+                                .clickable(role = Role.RadioButton) {
+                                    repo.setSyncMinutes(minutes)
+                                    SyncWorker.schedule(context, minutes)
+                                }
+                                .padding(horizontal = 16.dp, vertical = 10.dp),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
+            }
+
+            // --- Appearance ---
+            SectionTitle(R.string.settings_section_appearance)
             Column(
                 Modifier
                     .fillMaxWidth()
@@ -107,8 +204,85 @@ fun SettingsScreen(settings: AppSettings, repo: SettingsRepository, onBack: () -
                     valueRange = 0f..100f,
                 )
             }
+
+            // --- Diagnostics: only shown when something went wrong ---
+            crash?.let { text ->
+                SectionTitle(R.string.settings_section_diagnostics)
+                Column(
+                    Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card).padding(horizontal = 18.dp, vertical = 14.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text(stringResource(R.string.settings_crash_title), style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        stringResource(R.string.settings_crash_body),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 6,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        val copiedLabel = stringResource(R.string.copied)
+                        TextAction(R.string.copy, MaterialTheme.colorScheme.primary) {
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            clipboard.setPrimaryClip(ClipData.newPlainText(copiedLabel, text))
+                        }
+                        TextAction(R.string.clear, MaterialTheme.colorScheme.onSurfaceVariant) {
+                            CrashLog.clear(context)
+                            crash = null
+                        }
+                    }
+                }
+            }
         }
     }
+
+    removing?.let { account ->
+        Dialog(onDismissRequest = { removing = null }) {
+            Column(
+                Modifier.fillMaxWidth().glass(RoundedCornerShape(28.dp), GlassKind.Menu, elevation = 12.dp).padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(stringResource(R.string.settings_remove_title), style = MaterialTheme.typography.titleMedium)
+                Text(
+                    stringResource(R.string.settings_remove_body, account.email),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextAction(R.string.cancel, MaterialTheme.colorScheme.onSurface) { removing = null }
+                    TextAction(R.string.settings_remove_account, MaterialTheme.colorScheme.error) {
+                        removing = null
+                        onRemoveAccount(account.id)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SectionTitle(text: Int) {
+    Text(
+        stringResource(text),
+        Modifier.padding(start = 8.dp, top = 8.dp),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.primary,
+    )
+}
+
+@Composable
+private fun TextAction(label: Int, color: androidx.compose.ui.graphics.Color, onClick: () -> Unit) {
+    Text(
+        stringResource(label),
+        Modifier.clickable(role = Role.Button, onClick = onClick).padding(horizontal = 12.dp, vertical = 10.dp),
+        style = MaterialTheme.typography.labelLarge,
+        color = color,
+    )
 }
 
 @Composable

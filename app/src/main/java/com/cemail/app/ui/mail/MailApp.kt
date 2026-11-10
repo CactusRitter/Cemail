@@ -59,6 +59,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import com.cemail.app.data.mail.Mail
 import com.cemail.app.data.mail.MailBox
 import com.cemail.app.ui.glass.GlassBackground
 import com.cemail.app.ui.glass.GlassKind
@@ -102,9 +103,18 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
     val drawer = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
+    // In the unified inbox every message carries a thin line in the colour of its account.
+    val palette = accountPalette()
+    val unifiedView = acc.accounts.size > 1 && acc.selectedId == null
+    val stripeOf: (Mail) -> Color? = { mail ->
+        if (!unifiedView) null else acc.accounts.indexOfFirst { it.id == mail.accountId }.takeIf { it >= 0 }?.let { palette[it % palette.size] }
+    }
+
     // While the app is on screen, look for new mail every minute (in the background SyncWorker does it).
     val lifecycleOwner = LocalLifecycleOwner.current
-    LaunchedEffect(vm, lifecycleOwner) {
+    val autoCheck = settings.syncMinutes > 0 // "Manual" turns every automatic check off
+    LaunchedEffect(vm, lifecycleOwner, autoCheck) {
+        if (!autoCheck) return@LaunchedEffect
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             while (true) {
                 delay(POLL_MILLIS)
@@ -126,7 +136,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
             gesturesEnabled = state.draft == null && state.open == null,
             drawerContent = {
                 ModalDrawerSheet(drawerContainerColor = Color.Transparent, windowInsets = WindowInsets(0)) {
-                    DrawerContent(state, acc, onAddAccount = startSignIn, onRemoveAccount = accountVm::remove, onSelectAccount = { id ->
+                    DrawerContent(state, acc, onAddAccount = startSignIn, onSelectAccount = { id ->
                         accountVm.select(id)
                         scope.launch { drawer.close() }
                     }, onToggleLabel = vm::toggleExpanded, onOpenSettings = {
@@ -146,9 +156,9 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
             Box(Modifier.fillMaxSize()) {
                 when {
                     draft != null -> ComposeScreen(draft, vm, me)
-                    showSettings -> SettingsScreen(settings, settingsRepo) { showSettings = false }
+                    showSettings -> SettingsScreen(settings, settingsRepo, acc.accounts, accountVm::remove) { showSettings = false }
                     open != null -> ReadScreen(open, vm, settings.alwaysShowImages)
-                    else -> ListScreen(state, vm, grouped = settings.groupByDate && state.query.isBlank(), onOpenDrawer = { scope.launch { drawer.open() } })
+                    else -> ListScreen(state, vm, grouped = settings.groupByDate && state.query.isBlank(), stripeOf = stripeOf, onOpenDrawer = { scope.launch { drawer.open() } })
                 }
                 UndoBar(state.undo, vm, Modifier.align(Alignment.BottomCenter))
             }
@@ -163,7 +173,6 @@ private fun DrawerContent(
     state: MailUiState,
     acc: AccountUiState,
     onAddAccount: () -> Unit,
-    onRemoveAccount: (String) -> Unit,
     onSelectAccount: (String?) -> Unit,
     onPickLabel: (String) -> Unit,
     onToggleLabel: (String) -> Unit,
@@ -181,67 +190,7 @@ private fun DrawerContent(
             .padding(vertical = 16.dp, horizontal = 12.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        if (accounts.isEmpty()) {
-            Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Avatar(stringResource(R.string.demo_account), size = 40)
-                Column(Modifier.padding(start = 12.dp)) {
-                    Text(stringResource(R.string.demo_account), style = MaterialTheme.typography.titleSmall)
-                    Text(DEMO_ME, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-        } else {
-            if (accounts.size > 1) {
-                // The unified inbox: every account together.
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .glass(RoundedCornerShape(24.dp), if (acc.selectedId == null) GlassKind.Pinned else GlassKind.Card)
-                        .clickable(role = Role.Button) { onSelectAccount(null) }
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
-                        Icon(CemailIcons.Inbox, null, tint = MaterialTheme.colorScheme.primary)
-                    }
-                    Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                        Text(stringResource(R.string.account_all), style = MaterialTheme.typography.titleSmall)
-                        Text(
-                            stringResource(R.string.account_all_body),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            }
-            accounts.forEach { account ->
-                val selected = acc.selectedId == account.id || accounts.size == 1
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .glass(RoundedCornerShape(24.dp), if (selected) GlassKind.Pinned else GlassKind.Card)
-                        .clickable(role = Role.Button) { onSelectAccount(account.id) }
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Avatar(account.displayName ?: account.email, size = 40)
-                    Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                        Text(account.displayName ?: account.email, style = MaterialTheme.typography.titleSmall, maxLines = 1)
-                        Text(
-                            account.email,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                        )
-                    }
-                    Icon(
-                        Icons.Filled.Close,
-                        stringResource(R.string.account_remove),
-                        Modifier.clickable(role = Role.Button) { onRemoveAccount(account.id) }.padding(8.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-        }
+        AccountSwitcher(acc, onSelectAccount, onAddAccount)
         if (accounts.isEmpty()) {
             Text(
                 stringResource(R.string.demo_banner),
@@ -275,21 +224,6 @@ private fun DrawerContent(
             }
         }
         LabelSection(state, onPickLabel, onToggleLabel)
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .clickable(role = Role.Button, onClick = onAddAccount)
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Icon(Icons.Filled.Add, null, tint = MaterialTheme.colorScheme.primary)
-            Text(
-                stringResource(R.string.account_add),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
         Row(
             Modifier
                 .fillMaxWidth()

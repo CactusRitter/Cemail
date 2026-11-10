@@ -67,7 +67,7 @@ class InlineAndEncodingTest {
         )
         assertTrue(out.contains("data:image/png;base64,AAAA"))
         assertFalse(out.contains("cid:"))
-        assertTrue(out.contains("alt=\"M\""))
+        assertTrue(out.contains("M") && !out.contains("alt=\"M\"")) // no source: its description is shown as text
     }
 
     @Test fun pageTitleAndStyleSheetsAreNotShownAsText() {
