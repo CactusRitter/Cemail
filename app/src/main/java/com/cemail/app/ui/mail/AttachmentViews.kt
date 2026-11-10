@@ -66,12 +66,7 @@ fun AttachmentRow(messageId: Long, attachments: List<AttachmentInfo>, vm: MailVi
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(
-            stringResource(R.string.attachments_label),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             attachments.forEach { a ->
                 Row(
                     Modifier.glass(CircleShape, GlassKind.Pinned).clip(CircleShape).padding(start = 12.dp),
@@ -87,7 +82,7 @@ fun AttachmentRow(messageId: Long, attachments: List<AttachmentInfo>, vm: MailVi
                         } else {
                             Icon(CemailIcons.Attachment, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
                         }
-                        Column(Modifier.widthIn(max = 150.dp)) {
+                        Column(Modifier.widthIn(max = 200.dp)) {
                             Text(a.filename, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(
                                 Formatter.formatShortFileSize(context, a.size.toLong()),

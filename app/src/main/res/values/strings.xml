@@ -201,6 +201,4 @@
     <string name="compose_attach_remove">Remove attachment</string>
     <string name="compose_attach_too_big">Some files were not added: attachments may add up to 10 MB.</string>
     <string name="compose_attach_unsaved">Attachments are not kept in saved drafts.</string>
-    <string name="panel_group_reply">Reply</string>
-    <string name="panel_group_organize">Organize</string>
 </resources>

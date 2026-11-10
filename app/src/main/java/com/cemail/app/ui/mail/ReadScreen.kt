@@ -67,6 +67,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.layout.width
 import com.cemail.app.R
 import com.cemail.app.data.gmail.HtmlSanitizer
 import com.cemail.app.data.mail.Mail
@@ -118,7 +120,7 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
         if (html.isBlank()) null else HtmlSanitizer.page(HtmlSanitizer.clean(html, inline), 76, HtmlSanitizer.styles(html))
     }
     val snoozedUntil = mail.snoozedUntil?.takeIf { mail.isSnoozed(System.currentTimeMillis()) }
-    val notices = snoozedUntil != null || (hasRemoteImages && !showImages) || attachments.isNotEmpty()
+    val notices = snoozedUntil != null || (hasRemoteImages && !showImages)
 
     Box(Modifier.fillMaxSize()) {
         Column(
@@ -161,7 +163,6 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
                             )
                         }
                     }
-                    if (attachments.isNotEmpty()) AttachmentRow(mail.id, attachments, vm)
                 }
             }
             Box(
@@ -186,6 +187,7 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
 
         // Top: one floating pill with the back button, the subject over the sender, and the menu button.
         var panel by remember { mutableStateOf(false) }
+        var attachPanel by remember { mutableStateOf(false) }
         Box(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 12.dp, vertical = 8.dp)) {
             GlassPill(Modifier.fillMaxWidth(), height = 64.dp) {
                 PillIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), vm::closeMail)
@@ -203,6 +205,18 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
+                }
+                if (attachments.isNotEmpty()) {
+                    Box {
+                        PillIcon(CemailIcons.Attachment, stringResource(R.string.attachments_label), { attachPanel = true })
+                        Text(
+                            attachments.size.toString(),
+                            Modifier.align(Alignment.TopEnd).padding(top = 4.dp, end = 4.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
                 }
                 PillIcon(Icons.Filled.MoreVert, stringResource(R.string.action_more), { panel = true })
             }
@@ -222,8 +236,9 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
             Icon(CemailIcons.Reply, stringResource(R.string.action_reply), tint = MaterialTheme.colorScheme.primary)
         }
 
+        if (attachPanel) AttachmentsPopup(mail.id, attachments, vm) { attachPanel = false }
         if (panel) {
-            ActionPanel(
+            ActionStrip(
                 onDismiss = { panel = false },
                 reply = listOf(
                     PanelItem(CemailIcons.Reply, R.string.action_reply) { vm.newDraft(reply(R.string.reply_prefix, mail.senderEmail)) },
@@ -256,90 +271,80 @@ private class PanelItem(
 )
 
 /**
- * Every action on the open message, in a glass panel just above the buttons: all the tiles are the same size,
- * in three columns, with a name under each icon, grouped into "Reply" and "Organize"; trashing sits alone at the
- * bottom. Tapping outside closes it.
+ * Every action on the open message as a slim vertical glass strip of icons (no text) that drops down from the
+ * menu button, in three groups: reply, organize, and trash on its own at the end. Tapping outside closes it.
  */
 @Composable
-private fun ActionPanel(onDismiss: () -> Unit, reply: List<PanelItem>, organize: List<PanelItem>, trash: PanelItem) {
+private fun ActionStrip(onDismiss: () -> Unit, reply: List<PanelItem>, organize: List<PanelItem>, trash: PanelItem) {
     Box(
         Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.28f))
+            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.2f))
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss),
     ) {
         Column(
             Modifier
-                .align(Alignment.BottomEnd)
+                .align(Alignment.TopEnd)
                 .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(bottom = 96.dp, end = 12.dp, start = 12.dp)
-                .widthIn(max = 320.dp)
-                .fillMaxWidth()
-                // Swallows taps so only the area around the panel closes it.
+                .padding(top = 80.dp, end = 12.dp)
+                // Swallows taps so only the area around the strip closes it.
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
                 .glass(RoundedCornerShape(28.dp), GlassKind.Menu, elevation = 12.dp)
-                .padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+                .verticalScroll(rememberScrollState())
+                .padding(vertical = 6.dp, horizontal = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            PanelTitle(R.string.panel_group_reply)
-            PanelRows(reply, onDismiss)
-            PanelTitle(R.string.panel_group_organize)
-            PanelRows(organize, onDismiss)
-            PanelRows(listOf(trash), onDismiss, columns = 1)
+            StripItems(reply, onDismiss)
+            StripDivider()
+            StripItems(organize, onDismiss)
+            StripDivider()
+            StripItems(listOf(trash), onDismiss)
         }
     }
 }
 
 @Composable
-private fun PanelTitle(title: Int) {
-    Text(
-        stringResource(title),
-        Modifier.padding(start = 6.dp, top = 4.dp),
-        style = MaterialTheme.typography.labelMedium,
-        fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.primary,
-    )
-}
-
-/** Tiles of one fixed size ([columns] per row), so every icon and label lines up. */
-@Composable
-private fun PanelRows(items: List<PanelItem>, onDismiss: () -> Unit, columns: Int = 3) {
-    items.chunked(columns).forEach { row ->
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            row.forEach { item ->
-                val tint = when {
-                    item.danger -> MaterialTheme.colorScheme.error
-                    item.selected -> MaterialTheme.colorScheme.primary
-                    else -> MaterialTheme.colorScheme.onSurface
-                }
-                Column(
-                    Modifier
-                        .weight(1f)
-                        .height(PANEL_TILE_HEIGHT)
-                        .clip(RoundedCornerShape(18.dp))
-                        .background(if (item.selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
-                        .clickable(role = Role.Button) { onDismiss(); item.onClick() }
-                        .padding(horizontal = 4.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    Icon(item.icon, null, tint = tint)
-                    Text(
-                        stringResource(item.label),
-                        Modifier.padding(top = 4.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = tint,
-                        maxLines = 2,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            }
-            repeat(columns - row.size) { Box(Modifier.weight(1f)) }
-        }
+private fun StripItems(items: List<PanelItem>, onDismiss: () -> Unit) {
+    items.forEach { item ->
+        PillIcon(
+            item.icon,
+            stringResource(item.label),
+            { onDismiss(); item.onClick() },
+            selected = item.selected,
+            width = 52.dp,
+            tintOverride = if (item.danger) MaterialTheme.colorScheme.error else null,
+        )
     }
 }
 
-private val PANEL_TILE_HEIGHT = 84.dp
+@Composable
+private fun StripDivider() {
+    HorizontalDivider(Modifier.width(28.dp).padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)
+}
+
+/** The attached files of the open message, in a small glass card that drops down from the paperclip. */
+@Composable
+private fun AttachmentsPopup(messageId: Long, attachments: List<com.cemail.app.data.gmail.AttachmentInfo>, vm: MailViewModel, onDismiss: () -> Unit) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.2f))
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss),
+    ) {
+        Column(
+            Modifier
+                .align(Alignment.TopEnd)
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(top = 80.dp, end = 12.dp, start = 12.dp)
+                .widthIn(max = 320.dp)
+                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
+                .glass(RoundedCornerShape(28.dp), GlassKind.Menu, elevation = 12.dp)
+                .padding(12.dp),
+        ) {
+            AttachmentRow(messageId, attachments, vm)
+        }
+    }
+}
 
 /**
  * Shows sanitized email HTML. JavaScript is off, files and content providers are unreachable, remote images
