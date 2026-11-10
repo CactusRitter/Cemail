@@ -47,7 +47,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.remember
 import com.cemail.app.R
+import com.cemail.app.data.mail.DateSection
 import com.cemail.app.data.mail.MailBox
+import com.cemail.app.data.mail.dateSectionOf
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import com.cemail.app.ui.glass.GlassKind
 import com.cemail.app.ui.glass.GlassPill
 import com.cemail.app.ui.glass.PillIcon
@@ -70,6 +74,7 @@ fun MailBox.labelRes(): Int = when (this) {
 fun ListScreen(
     state: MailUiState,
     vm: MailViewModel,
+    grouped: Boolean,
     onOpenDrawer: () -> Unit,
 ) {
     val haze = rememberHazeState()
@@ -115,9 +120,20 @@ fun ListScreen(
             if (state.pinned.isNotEmpty()) {
                 item(key = "h-pinned") { SectionHeader(stringResource(R.string.section_pinned)) }
                 items(state.pinned, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive) }
-                if (state.others.isNotEmpty()) item(key = "h-mail") { SectionHeader(stringResource(R.string.section_mail)) }
+                if (state.others.isNotEmpty() && !grouped) item(key = "h-mail") { SectionHeader(stringResource(R.string.section_mail)) }
             }
-            items(state.others, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive) }
+            if (grouped) {
+                val now = System.currentTimeMillis()
+                val groups = state.others.groupBy { dateSectionOf(it.timeMillis, now) }
+                DateSection.entries.forEach { section ->
+                    val list = groups[section] ?: return@forEach
+                    val collapsed = section in state.collapsedSections
+                    item(key = "d-$section") { DateHeader(section, list.size, collapsed) { vm.toggleSection(section) } }
+                    if (!collapsed) items(list, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive) }
+                }
+            } else {
+                items(state.others, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive) }
+            }
         }
 
         // Top bar: glass pill over the list (menu, title or search field, search).
@@ -235,5 +251,34 @@ private fun SearchBar(state: MailUiState, vm: MailViewModel, haze: dev.chrisbane
             )
         }
         if (state.query.isNotEmpty()) PillIcon(Icons.Filled.Close, stringResource(R.string.close), { vm.setQuery("") })
+    }
+}
+
+/** Tappable header of a date section: name, how many messages, and an arrow that opens or closes it. */
+@Composable
+private fun DateHeader(section: DateSection, count: Int, collapsed: Boolean, onClick: () -> Unit) {
+    val label = when (section) {
+        DateSection.TODAY -> R.string.section_today
+        DateSection.YESTERDAY -> R.string.section_yesterday
+        DateSection.LAST_WEEK -> R.string.section_last_week
+        DateSection.OLDER -> R.string.section_older
+    }
+    Row(
+        Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).padding(start = 8.dp, top = 8.dp, bottom = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            stringResource(label),
+            Modifier.weight(1f),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Text(count.toString(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Icon(
+            if (collapsed) Icons.Filled.KeyboardArrowDown else Icons.Filled.KeyboardArrowUp,
+            stringResource(if (collapsed) R.string.label_expand else R.string.label_collapse),
+            Modifier.padding(horizontal = 8.dp),
+            tint = MaterialTheme.colorScheme.primary,
+        )
     }
 }

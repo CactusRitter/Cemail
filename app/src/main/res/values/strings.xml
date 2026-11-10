@@ -129,4 +129,14 @@
     <string name="label_collapse">Collapse</string>
     <string name="show_images">Show images</string>
     <string name="images_blocked">Remote images are blocked to protect your privacy.</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_messages">Messages</string>
+    <string name="settings_images_title">Always show external images</string>
+    <string name="settings_images_body">Load pictures from the internet in every message. Senders can use them to know you opened the email.</string>
+    <string name="settings_group_title">Group messages by date</string>
+    <string name="settings_group_body">Split the list into Today, Yesterday, Last week and Older, each one collapsible.</string>
+    <string name="section_today">Today</string>
+    <string name="section_yesterday">Yesterday</string>
+    <string name="section_last_week">Last week</string>
+    <string name="section_older">Older</string>
 </resources>

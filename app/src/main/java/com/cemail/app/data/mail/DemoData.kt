@@ -25,7 +25,7 @@ object DemoData {
             Mail(6, s(R.string.demo_6_name), "statements@banco.example", s(R.string.demo_6_subject), s(R.string.demo_6_body), now - 4 * d, pinned = true, read = true, hasAttachment = true, labelIds = setOf("L_work")),
             Mail(7, s(R.string.demo_7_name), "mateo@example.com", s(R.string.demo_7_subject), s(R.string.demo_7_body), now - 6 * d, labelIds = setOf("L_amazon")),
             Mail(8, s(R.string.demo_8_name), "hello@cemail.example", s(R.string.demo_8_subject), s(R.string.demo_8_body), now - 9 * d, read = true,
-                bodyHtml = "<div style=\"background:#003580;color:#fff;padding:16px\"><b>" + s(R.string.demo_8_subject) + "</b></div>" +
+                bodyHtml = "<div style=\"background:#003580;color:#fff;padding:16px;width:700px\"><b>" + s(R.string.demo_8_subject) + "</b></div>" +
                     "<p>" + s(R.string.demo_8_body) + "</p><table border=\"1\" cellpadding=\"8\"><tr><td><b>1</b></td><td>2</td></tr></table>" +
                     "<img src=\"https://example.com/pixel.png\" width=\"1\" height=\"1\">",
             ),

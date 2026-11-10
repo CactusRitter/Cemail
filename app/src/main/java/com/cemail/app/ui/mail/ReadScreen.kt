@@ -56,7 +56,7 @@ import com.cemail.app.ui.glass.glass
 import com.cemail.app.ui.icons.CemailIcons
 
 @Composable
-fun ReadScreen(mail: Mail, vm: MailViewModel) {
+fun ReadScreen(mail: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
     val context = LocalContext.current
     val one = setOf(mail.id)
     val quoteWhen = DateUtils.formatDateTime(
@@ -75,7 +75,7 @@ fun ReadScreen(mail: Mail, vm: MailViewModel) {
     val html = mail.bodyHtml.orEmpty()
     val cleanPage = remember(mail.id, html) { if (html.isBlank()) null else HtmlSanitizer.page(HtmlSanitizer.clean(html)) }
     val hasRemoteImages = remember(mail.id, html) { html.isNotBlank() && HtmlSanitizer.hasRemoteImages(html) }
-    var showImages by remember(mail.id) { mutableStateOf(false) }
+    var showImages by remember(mail.id, alwaysShowImages) { mutableStateOf(alwaysShowImages) }
 
     Box(Modifier.fillMaxSize()) {
         Column(

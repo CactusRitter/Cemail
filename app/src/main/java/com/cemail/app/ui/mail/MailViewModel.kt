@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.cemail.app.R
+import com.cemail.app.data.mail.DateSection
 import com.cemail.app.data.mail.Folder
 import com.cemail.app.data.mail.Label
 import com.cemail.app.data.mail.Mail
@@ -37,6 +38,7 @@ private data class Ui(
     val undo: UndoEvent? = null,
     val labelId: String? = null,
     val expanded: Set<String> = emptySet(),
+    val collapsedSections: Set<DateSection> = emptySet(),
 )
 
 data class MailUiState(
@@ -56,6 +58,7 @@ data class MailUiState(
     val labelId: String? = null,
     val expanded: Set<String> = emptySet(),
     val unreadByLabel: Map<String, Int> = emptyMap(),
+    val collapsedSections: Set<DateSection> = emptySet(),
 )
 
 class MailViewModel(private val repo: MailRepository) : ViewModel() {
@@ -70,7 +73,7 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
         val showPinned = u.box == MailBox.INBOX && u.labelId == null && u.query.isBlank()
         MailUiState(
             box = u.box, query = u.query, searching = u.searching, selection = u.selection, syncing = syncing,
-            labels = labels, labelId = u.labelId, expanded = u.expanded,
+            labels = labels, labelId = u.labelId, expanded = u.expanded, collapsedSections = u.collapsedSections,
             unreadByLabel = labels.associate { l -> l.id to mails.count { !it.read && l.id in it.labelIds && it.folder != Folder.TRASH } },
             open = u.openId?.let { id -> mails.firstOrNull { it.id == id } },
             draft = u.draft, snoozeTargets = u.snoozeTargets, undo = u.undo,
@@ -104,6 +107,9 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
     // --- navigation ---
     fun selectBox(box: MailBox) = ui.update { it.copy(box = box, labelId = null, query = "", searching = false, selection = emptySet()) }
     fun selectLabel(id: String) = ui.update { it.copy(labelId = id, query = "", searching = false, selection = emptySet()) }
+    fun toggleSection(section: DateSection) = ui.update {
+        it.copy(collapsedSections = if (section in it.collapsedSections) it.collapsedSections - section else it.collapsedSections + section)
+    }
     fun toggleExpanded(fullName: String) = ui.update {
         it.copy(expanded = if (fullName in it.expanded) it.expanded - fullName else it.expanded + fullName)
     }

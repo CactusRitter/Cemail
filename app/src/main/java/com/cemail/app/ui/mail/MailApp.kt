@@ -48,6 +48,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.cemail.app.R
+import com.cemail.app.data.AppSettings
+import com.cemail.app.data.SettingsRepository
+import com.cemail.app.ui.settings.SettingsScreen
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import com.cemail.app.data.mail.MailBox
 import com.cemail.app.ui.glass.GlassBackground
 import com.cemail.app.ui.glass.GlassKind
@@ -70,7 +77,8 @@ private fun MailBox.icon(): ImageVector = when (this) {
 }
 
 @Composable
-fun MailApp(vm: MailViewModel, accountVm: AccountViewModel) {
+fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSettings, settingsRepo: SettingsRepository) {
+    var showSettings by rememberSaveable { mutableStateOf(false) }
     val acc by accountVm.state.collectAsStateWithLifecycle()
     val me = acc.accounts.firstOrNull()?.email ?: DEMO_ME
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { accountVm.onSignInResult(it.data) }
@@ -90,6 +98,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel) {
     val scope = rememberCoroutineScope()
 
     BackHandler(enabled = drawer.isOpen) { scope.launch { drawer.close() } }
+    BackHandler(enabled = showSettings && !drawer.isOpen) { showSettings = false }
     BackHandler(enabled = state.draft != null) { vm.closeCompose(me) }
     BackHandler(enabled = state.draft == null && state.open != null) { vm.closeMail() }
     BackHandler(enabled = state.draft == null && state.open == null && state.selection.isNotEmpty()) { vm.clearSelection() }
@@ -101,7 +110,10 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel) {
             gesturesEnabled = state.draft == null && state.open == null,
             drawerContent = {
                 ModalDrawerSheet(drawerContainerColor = Color.Transparent, windowInsets = WindowInsets(0)) {
-                    DrawerContent(state, acc, onAddAccount = startSignIn, onRemoveAccount = accountVm::remove, onToggleLabel = vm::toggleExpanded, onPickLabel = { id ->
+                    DrawerContent(state, acc, onAddAccount = startSignIn, onRemoveAccount = accountVm::remove, onToggleLabel = vm::toggleExpanded, onOpenSettings = {
+                        showSettings = true
+                        scope.launch { drawer.close() }
+                    }, onPickLabel = { id ->
                         vm.selectLabel(id)
                         scope.launch { drawer.close() }
                     }, onPick = { box ->
@@ -115,8 +127,9 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel) {
             Box(Modifier.fillMaxSize()) {
                 when {
                     draft != null -> ComposeScreen(draft, vm, me)
-                    open != null -> ReadScreen(open, vm)
-                    else -> ListScreen(state, vm, onOpenDrawer = { scope.launch { drawer.open() } })
+                    showSettings -> SettingsScreen(settings, settingsRepo) { showSettings = false }
+                    open != null -> ReadScreen(open, vm, settings.alwaysShowImages)
+                    else -> ListScreen(state, vm, grouped = settings.groupByDate && state.query.isBlank(), onOpenDrawer = { scope.launch { drawer.open() } })
                 }
                 UndoBar(state.undo, vm, Modifier.align(Alignment.BottomCenter))
             }
@@ -134,6 +147,7 @@ private fun DrawerContent(
     onRemoveAccount: (String) -> Unit,
     onPickLabel: (String) -> Unit,
     onToggleLabel: (String) -> Unit,
+    onOpenSettings: () -> Unit,
     onPick: (MailBox) -> Unit,
 ) {
     val accounts = acc.accounts
@@ -224,6 +238,17 @@ private fun DrawerContent(
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.primary,
             )
+        }
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clickable(role = Role.Button, onClick = onOpenSettings)
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Icon(Icons.Filled.Settings, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.bodyLarge)
         }
     }
 }

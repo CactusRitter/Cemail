@@ -38,7 +38,7 @@ object HtmlSanitizer {
     /** The page the WebView loads: viewport, readable defaults and the sanitized message. */
     fun page(cleanHtml: String): String =
         "<!doctype html><html><head><meta charset=\"utf-8\">" +
-            "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">" +
+            "<meta name=\"viewport\" content=\"width=device-width, minimum-scale=0.1\">" +
             "<style>body{margin:12px;font-family:sans-serif;word-wrap:break-word;overflow-wrap:anywhere}" +
             "img{max-width:100%;height:auto}</style></head><body>$cleanHtml</body></html>"
 }

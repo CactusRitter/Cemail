@@ -27,7 +27,7 @@ class MainActivity : ComponentActivity() {
                 val active = accounts.accounts.firstOrNull()?.id
                 val repo = remember(active) { if (active != null) app.mailRepositoryFor(active) else app.demoRepository }
                 val vm: MailViewModel = viewModel(key = active ?: "demo", factory = MailViewModel.Factory(repo))
-                MailApp(vm, accountVm)
+                MailApp(vm, accountVm, settings, app.settings)
             }
         }
     }
