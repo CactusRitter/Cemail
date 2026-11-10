@@ -34,6 +34,7 @@ class CemailApplication : Application() {
 
     val database: CemailDatabase by lazy { CemailDatabase.create(this) }
     val googleAuth: GoogleAuth by lazy { GoogleAuth(this) }
+    val microsoftAuth: com.cemail.app.data.auth.MicrosoftAuth by lazy { com.cemail.app.data.auth.MicrosoftAuth(this) }
     val tokenStore: TokenStore by lazy { TokenStore(this) }
     val accountRepository: AccountRepository by lazy { AccountRepository(database.accounts(), database.messages(), tokenStore, java.io.File(filesDir, "inline")) }
 
@@ -42,9 +43,31 @@ class CemailApplication : Application() {
     /** The cached Gmail account with this id (created once, lives as long as the process). */
     fun mailRepositoryFor(accountId: String): MailRepository = synchronized(repositories) {
         repositories.getOrPut(accountId) {
+            val provider = kotlinx.coroutines.runBlocking(Dispatchers.IO) { accountRepository.providerOf(accountId) }
+            if (provider == "MICROSOFT") {
+                return@getOrPut com.cemail.app.data.graph.MicrosoftMailRepository(
+                    accountId,
+                    com.cemail.app.data.graph.GraphApi(AccountTokenProvider(accountId, tokenStore) { microsoftAuth.freshAccessToken(it) }),
+                    database.messages(), appScope,
+                    java.io.File(cacheDir, "attachments/${accountId.filter { it.isLetterOrDigit() }}"),
+                    selfEmail = { accountRepository.accounts.first().firstOrNull { it.id == accountId }?.email },
+                    onNewMail = ::notifyNewMail,
+                )
+            }
+            if (provider == "IMAP") {
+                val config = accountRepository.imapConfig(accountId)
+                    ?: com.cemail.app.data.imap.ImapConfig("", "", "", "invalid.invalid", smtpHost = "invalid.invalid")
+                return@getOrPut com.cemail.app.data.imap.ImapMailRepository(
+                    accountId, com.cemail.app.data.imap.ImapClient(config), database.messages(), appScope,
+                    java.io.File(cacheDir, "attachments/${accountId.filter { it.isLetterOrDigit() }}"),
+                    selfEmail = { accountRepository.accounts.first().firstOrNull { it.id == accountId }?.email },
+                    onNewMail = ::notifyNewMail,
+                    marks = com.cemail.app.data.mail.SyncMarks.Prefs(this, accountId),
+                )
+            }
             RoomMailRepository(
                 accountId, database.messages(), database.labels(),
-                HttpGmailApi(AccountTokenProvider(accountId, tokenStore, googleAuth)), appScope,
+                HttpGmailApi(AccountTokenProvider(accountId, tokenStore) { googleAuth.freshAccessToken(it) }), appScope,
                 java.io.File(filesDir, "inline/$accountId"),
                 java.io.File(cacheDir, "attachments/${accountId.filter { it.isLetterOrDigit() }}"),
                 selfEmail = { accountRepository.accounts.first().firstOrNull { it.id == accountId }?.email },

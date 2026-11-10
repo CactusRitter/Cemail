@@ -26,6 +26,8 @@ data class AccountEntity(
     val email: String,
     val displayName: String?,
     val addedAtMillis: Long,
+    /** GMAIL, IMAP or MICROSOFT: which kind of server the account talks to. */
+    @ColumnInfo(defaultValue = "GMAIL") val provider: String = "GMAIL",
 )
 
 /**
@@ -66,6 +68,9 @@ interface AccountDao {
 
     @Query("DELETE FROM accounts WHERE id = :id")
     suspend fun delete(id: String)
+
+    @Query("SELECT provider FROM accounts WHERE id = :id")
+    suspend fun providerOf(id: String): String?
 }
 
 @Dao
@@ -187,7 +192,7 @@ interface LabelDao {
 
 @Database(
     entities = [AccountEntity::class, MessageEntity::class, LabelEntity::class],
-    version = 5,
+    version = 6,
     exportSchema = true,
     autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
@@ -198,7 +203,7 @@ abstract class CemailDatabase : RoomDatabase() {
 
     companion object {
         fun create(context: Context): CemailDatabase =
-            Room.databaseBuilder(context, CemailDatabase::class.java, "cemail.db").addMigrations(MIGRATION_3_4, MIGRATION_4_5).build()
+            Room.databaseBuilder(context, CemailDatabase::class.java, "cemail.db").addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).build()
     }
 }
 
@@ -214,6 +219,13 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE messages ADD COLUMN threadId TEXT")
         db.execSQL("UPDATE messages SET bodyHtml = NULL WHERE remoteId IS NOT NULL")
+    }
+}
+
+/** 0.26.0: accounts can be IMAP (or Microsoft), not only Google. */
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE accounts ADD COLUMN provider TEXT NOT NULL DEFAULT 'GMAIL'")
     }
 }
 

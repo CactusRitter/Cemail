@@ -25,8 +25,8 @@ android {
         applicationId = "com.cemail.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 30
-        versionName = "0.25.2"
+        versionCode = 32
+        versionName = "0.27.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -34,6 +34,7 @@ android {
         // El ID de cliente es "<ID>.apps.googleusercontent.com". Vacío hasta registrar la app (docs/OAUTH_SETUP.md).
         val googleClientId = localProp("cemail.oauth.google.clientId")
         buildConfigField("String", "GOOGLE_OAUTH_CLIENT_ID", "\"$googleClientId\"")
+        buildConfigField("String", "MICROSOFT_OAUTH_CLIENT_ID", "\"${localProp("cemail.oauth.microsoft.clientId")}\"")
         manifestPlaceholders["appAuthRedirectScheme"] =
             "com.googleusercontent.apps." + googleClientId.removeSuffix(".apps.googleusercontent.com").ifEmpty { "unset" }
     }
@@ -52,6 +53,13 @@ android {
                 keyAlias = keystoreProps.getProperty("keyAlias")
                 keyPassword = keystoreProps.getProperty("keyPassword")
             }
+        }
+    }
+
+    // Las librerias de correo (android-mail y android-activation) traen el mismo archivo de licencia: se descartan.
+    packaging {
+        resources {
+            excludes += setOf("META-INF/LICENSE.md", "META-INF/NOTICE.md", "META-INF/LICENSE", "META-INF/NOTICE", "META-INF/DEPENDENCIES")
         }
     }
 
@@ -120,8 +128,11 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.appauth)
     implementation(libs.jsoup)
+    implementation(libs.android.mail)
+    implementation(libs.android.activation)
 
     testImplementation(libs.junit)
+    testImplementation(libs.org.json)
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

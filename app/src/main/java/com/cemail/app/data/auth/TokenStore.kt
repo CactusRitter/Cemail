@@ -40,7 +40,19 @@ class TokenStore(context: Context) {
     }
 
     fun clear(accountId: String) {
-        prefs.edit().remove("$accountId.refresh").remove("$accountId.access").remove("$accountId.expires").apply()
+        prefs.edit().remove("$accountId.refresh").remove("$accountId.access").remove("$accountId.expires")
+            .remove("$accountId.secret").apply()
+    }
+
+    /** One more encrypted value for an account (the IMAP settings with the password). */
+    fun saveSecret(accountId: String, value: String) {
+        prefs.edit().putString("$accountId.secret", encrypt(value)).apply()
+    }
+
+    fun loadSecret(accountId: String): String? = try {
+        prefs.getString("$accountId.secret", null)?.let(::decrypt)
+    } catch (_: Exception) {
+        null
     }
 
     private fun key(): SecretKey {

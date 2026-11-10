@@ -3,6 +3,23 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.27.0 — 2026-11-10
+Cuentas Microsoft (Outlook.com, Hotmail, Microsoft 365) con Microsoft Graph, e IMAP (ver 0.26.0). Primera versión: sin probar todavía con una cuenta real.
+- App registrada en Azure («Cemail», cuentas personales y de empresa, cliente público con PKCE y sin secreto). El identificador va en `local.properties` (`cemail.oauth.microsoft.clientId`) y llega por `BuildConfig`.
+- Nuevas opciones «Microsoft» en el menú de cuentas y «Iniciar sesión con Microsoft» en la pantalla de inicio. Permisos: leer y escribir el correo, enviar correo y perfil básico.
+- Sincronización por carpetas (Entrada, Enviados, Borradores, Papelera, Archivo), con los hilos de Microsoft (`conversationId`) en la tarjeta de conversación; leer, destacar, archivar y borrar; enviar (se guarda en Enviados), responder, guardar como .eml y adjuntos.
+- Aún sin: imágenes incrustadas, categorías como etiquetas y sincronización con consultas delta.
+- AppAuth atiende ahora dos esquemas de retorno (Google y Microsoft).
+
+## 0.26.0 — 2026-11-10 (no repartida: va dentro de la 0.27.0)
+Cuentas IMAP/SMTP (Yahoo, iCloud, GMX, servidores propios…). Primera versión: sin probar todavía con una cuenta real.
+- Nueva opción «Otra cuenta (IMAP)» en el menú de cuentas y en la pantalla de inicio: correo y contraseña (o contraseña de aplicación); los servidores de los proveedores conocidos se rellenan solos y, si no se reconocen, se pueden escribir a mano (servidor, puerto, SSL/TLS o STARTTLS). La conexión se comprueba antes de guardar la cuenta.
+- Los ajustes y la contraseña se guardan cifrados con el Keystore. La base de datos pasa a la v6 (tipo de proveedor por cuenta).
+- Sincronización por carpetas (Entrada, Enviados, Borradores, Papelera, Archivo, detectadas por SPECIAL-USE o por nombre), por UID y UIDVALIDITY; lee, marca, destaca, archiva y borra moviendo entre carpetas.
+- Enviar por SMTP con copia en Enviados, responder (con los encabezados del original), guardar como .eml y ver/abrir adjuntos.
+- Aún sin: imágenes incrustadas, etiquetas, hilos y búsqueda en el servidor para IMAP.
+- Tests nuevos de los servidores conocidos y del cifrado de ajustes.
+
 ## 0.25.2 — 2026-11-10
 - Lint sin errores: textos leídos con los recursos que respetan el cambio de idioma/configuración (responder, ajustes) y limpieza de una marca de orden de bytes en el importador de firma.
 

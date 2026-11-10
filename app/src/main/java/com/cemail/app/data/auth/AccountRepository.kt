@@ -15,7 +15,7 @@ class AccountRepository(
 ) {
     val accounts: Flow<List<AccountEntity>> = dao.observeAll()
 
-    suspend fun add(result: SignInResult) {
+    suspend fun add(result: SignInResult, provider: String = "GMAIL") {
         // Google only returns a refresh token the first time; keep the old one if this sign-in has none.
         val merged = if (result.tokens.refreshToken == null) {
             result.tokens.copy(refreshToken = tokens.load(result.accountId)?.refreshToken)
@@ -23,7 +23,7 @@ class AccountRepository(
             result.tokens
         }
         tokens.save(result.accountId, merged)
-        dao.upsert(AccountEntity(result.accountId, result.email, result.name, System.currentTimeMillis()))
+        dao.upsert(AccountEntity(result.accountId, result.email, result.name, System.currentTimeMillis(), provider))
         com.cemail.app.AppLog.i("account", "added ...${result.accountId.takeLast(4)} (refresh token: ${merged.refreshToken != null})")
     }
 
@@ -36,4 +36,17 @@ class AccountRepository(
     }
 
     fun tokensOf(accountId: String): Tokens? = tokens.load(accountId)
+
+    /** Adds (or updates) an IMAP account; its settings and password are kept encrypted. */
+    suspend fun addImap(config: com.cemail.app.data.imap.ImapConfig) {
+        val id = "imap:" + config.email.lowercase()
+        tokens.saveSecret(id, config.toJson())
+        dao.upsert(AccountEntity(id, config.email, config.displayName, System.currentTimeMillis(), "IMAP"))
+        com.cemail.app.AppLog.i("account", "added IMAP account ...${id.takeLast(4)}")
+    }
+
+    fun imapConfig(accountId: String): com.cemail.app.data.imap.ImapConfig? =
+        tokens.loadSecret(accountId)?.let(com.cemail.app.data.imap.ImapConfig::fromJson)
+
+    suspend fun providerOf(accountId: String): String = dao.providerOf(accountId) ?: "GMAIL"
 }

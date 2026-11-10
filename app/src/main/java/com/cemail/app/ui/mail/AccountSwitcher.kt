@@ -50,7 +50,8 @@ fun accountPalette(): List<Color> {
  * account being shown unfolds the list of accounts and "Add account". Removing an account is in Settings.
  */
 @Composable
-fun AccountSwitcher(acc: AccountUiState, onSelect: (String?) -> Unit, onAdd: () -> Unit) {
+fun AccountSwitcher(acc: AccountUiState, onSelect: (String?) -> Unit, onAdd: () -> Unit, onAddMicrosoft: () -> Unit, onAddImap: () -> Unit) {
+    var adding by rememberSaveable { mutableStateOf(false) }
     val accounts = acc.accounts
     val palette = accountPalette()
     val several = accounts.size > 1
@@ -97,7 +98,7 @@ fun AccountSwitcher(acc: AccountUiState, onSelect: (String?) -> Unit, onAdd: () 
         Modifier
             .fillMaxWidth()
             .glass(CircleShape, GlassKind.Card)
-            .clickable(role = Role.Button) { open = false; onAdd() }
+            .clickable(role = Role.Button) { adding = !adding }
             .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -106,6 +107,24 @@ fun AccountSwitcher(acc: AccountUiState, onSelect: (String?) -> Unit, onAdd: () 
             Icon(Icons.Filled.Add, null, tint = MaterialTheme.colorScheme.primary)
         }
         Text(stringResource(R.string.account_add), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+    }
+    if (adding) {
+        listOf(
+            R.string.account_add_google to onAdd,
+            R.string.account_add_microsoft to onAddMicrosoft,
+            R.string.account_add_other to onAddImap,
+        ).forEach { (label, action) ->
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = 24.dp)
+                    .glass(CircleShape, GlassKind.Card)
+                    .clickable(role = Role.Button) { open = false; adding = false; action() }
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
+            ) {
+                Text(stringResource(label), style = MaterialTheme.typography.titleSmall)
+            }
+        }
     }
 }
 

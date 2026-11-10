@@ -40,7 +40,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val settings by app.settings.state.collectAsStateWithLifecycle()
             CemailTheme(settings) {
-                val accountVm: AccountViewModel = viewModel(factory = AccountViewModel.Factory(app.accountRepository, app.googleAuth))
+                val accountVm: AccountViewModel = viewModel(factory = AccountViewModel.Factory(app.accountRepository, app.googleAuth, app.microsoftAuth))
                 val accounts by accountVm.state.collectAsStateWithLifecycle()
                 // What is on screen: the demo store (no account), one account, or all of them together.
                 val ids = accounts.accounts.map { it.id }

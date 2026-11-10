@@ -243,4 +243,28 @@
         <item quantity="other">%d mensajes más en esta conversación</item>
     </plurals>
     <string name="thread_you">Tú</string>
+    <string name="account_add_google">Google</string>
+    <string name="account_add_other">Otra cuenta (IMAP)</string>
+    <string name="sign_in_other">Otra cuenta (IMAP)</string>
+    <string name="imap_title">Otra cuenta</string>
+    <string name="imap_body">Funciona con Yahoo, iCloud, GMX y la mayoría de proveedores. Muchos piden una contraseña de aplicación: créala en los ajustes de seguridad de tu proveedor. Se guarda cifrada en este teléfono.</string>
+    <string name="imap_email">Correo electrónico</string>
+    <string name="imap_password">Contraseña o contraseña de aplicación</string>
+    <string name="imap_name">Tu nombre (lo ven los destinatarios)</string>
+    <string name="imap_advanced">Ajustes del servidor</string>
+    <string name="imap_username">Usuario</string>
+    <string name="imap_server_in">Servidor de entrada (IMAP)</string>
+    <string name="imap_server_out">Servidor de salida (SMTP)</string>
+    <string name="imap_host">Servidor</string>
+    <string name="imap_port">Puerto</string>
+    <string name="imap_security_ssl">SSL/TLS</string>
+    <string name="imap_security_starttls">STARTTLS</string>
+    <string name="imap_add">Añadir cuenta</string>
+    <string name="imap_checking">Comprobando la conexión…</string>
+    <string name="imap_error_auth">El servidor rechazó el usuario o la contraseña. Muchos proveedores piden una contraseña de aplicación.</string>
+    <string name="imap_error_connect">No se pudo conectar con el servidor. Revisa el nombre del servidor, el puerto y la seguridad.</string>
+    <string name="imap_error_other">Algo falló al comprobar la cuenta.</string>
+    <string name="imap_server_unknown">Proveedor no reconocido: revisa los ajustes del servidor de abajo.</string>
+    <string name="account_add_microsoft">Microsoft</string>
+    <string name="sign_in_microsoft">Iniciar sesión con Microsoft</string>
 </resources>

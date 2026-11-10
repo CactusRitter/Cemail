@@ -37,7 +37,11 @@ private data class Local(
     val selectedId: String? = null,
 )
 
-class AccountViewModel(private val repo: AccountRepository, private val auth: GoogleAuth) : ViewModel() {
+class AccountViewModel(
+    private val repo: AccountRepository,
+    private val auth: GoogleAuth,
+    private val microsoft: com.cemail.app.data.auth.MicrosoftAuth,
+) : ViewModel() {
     private val local = MutableStateFlow(Local())
 
     val state: StateFlow<AccountUiState> = combine(repo.accounts, local) { accounts, l ->
@@ -50,6 +54,27 @@ class AccountViewModel(private val repo: AccountRepository, private val auth: Go
         val intent = auth.signInIntent()
         local.update { if (intent == null) it.copy(error = R.string.sign_in_not_configured) else it.copy(signingIn = true, error = null) }
         return intent
+    }
+
+    /** The intent to start Microsoft's sign-in, or null (and an error shown) if the app has no client id. */
+    fun startMicrosoftSignIn(): Intent? {
+        val intent = microsoft.signInIntent()
+        local.update { if (intent == null) it.copy(error = R.string.sign_in_not_configured) else it.copy(signingIn = true, error = null) }
+        return intent
+    }
+
+    fun onMicrosoftResult(data: Intent?) {
+        viewModelScope.launch {
+            when (val outcome = microsoft.handleResult(data)) {
+                is SignInOutcome.Success -> {
+                    repo.add(outcome.result, "MICROSOFT")
+                    local.update { it.copy(signingIn = false, error = null, demo = false) }
+                }
+                SignInOutcome.Cancelled -> local.update { it.copy(signingIn = false) }
+                SignInOutcome.NotConfigured -> local.update { it.copy(signingIn = false, error = R.string.sign_in_not_configured) }
+                is SignInOutcome.Failed -> local.update { it.copy(signingIn = false, error = R.string.sign_in_failed) }
+            }
+        }
     }
 
     fun onSignInResult(data: Intent?) {
@@ -70,14 +95,35 @@ class AccountViewModel(private val repo: AccountRepository, private val auth: Go
         viewModelScope.launch { repo.remove(accountId) }
     }
 
+    /** Checks the connection and saves the account; returns the text to show if something is wrong, null if all went well. */
+    suspend fun addImap(config: com.cemail.app.data.imap.ImapConfig): Int? = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        try {
+            com.cemail.app.data.imap.ImapClient(config).check()
+            repo.addImap(config)
+            local.update { it.copy(error = null, demo = false) }
+            null
+        } catch (e: javax.mail.AuthenticationFailedException) {
+            R.string.imap_error_auth
+        } catch (e: javax.mail.MessagingException) {
+            R.string.imap_error_connect
+        } catch (e: Exception) {
+            com.cemail.app.AppLog.e("account", "could not check the IMAP account", e)
+            R.string.imap_error_other
+        }
+    }
+
     /** Shows one account's mail, or all accounts together when [accountId] is null. */
     fun select(accountId: String?) = local.update { it.copy(selectedId = accountId) }
 
     fun useDemo() = local.update { it.copy(demo = true, error = null) }
     fun dismissError() = local.update { it.copy(error = null) }
 
-    class Factory(private val repo: AccountRepository, private val auth: GoogleAuth) : ViewModelProvider.Factory {
+    class Factory(
+        private val repo: AccountRepository,
+        private val auth: GoogleAuth,
+        private val microsoft: com.cemail.app.data.auth.MicrosoftAuth,
+    ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = AccountViewModel(repo, auth) as T
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = AccountViewModel(repo, auth, microsoft) as T
     }
 }

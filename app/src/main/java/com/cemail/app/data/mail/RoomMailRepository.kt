@@ -431,9 +431,9 @@ class RoomMailRepository(
 }
 
 /** No single row may come close to Android's 2 MB cursor window: very long texts are cut. */
-private fun MessageEntity.capped() = copy(body = body.take(400_000), bodyHtml = bodyHtml?.take(1_200_000))
+internal fun MessageEntity.capped() = copy(body = body.take(400_000), bodyHtml = bodyHtml?.take(1_200_000))
 
-private fun MessageEntity.toMail() = Mail(
+internal fun MessageEntity.toMail() = Mail(
     id = localId, senderName = senderName, senderEmail = senderEmail, subject = subject, body = body,
     timeMillis = timeMillis, folder = Folder.valueOf(folder), read = read, starred = starred, pinned = pinned,
     snoozedUntil = snoozedUntil, hasAttachment = hasAttachment,
@@ -441,7 +441,7 @@ private fun MessageEntity.toMail() = Mail(
     threadId = threadId,
 )
 
-private fun Mail.toEntity(accountId: String, remoteId: String?) = MessageEntity(
+internal fun Mail.toEntity(accountId: String, remoteId: String?) = MessageEntity(
     localId = id, accountId = accountId, remoteId = remoteId, folder = folder.name, senderName = senderName,
     senderEmail = senderEmail, subject = subject, body = body, timeMillis = timeMillis, read = read,
     starred = starred, pinned = pinned, snoozedUntil = snoozedUntil, hasAttachment = hasAttachment,

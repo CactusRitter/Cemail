@@ -245,4 +245,28 @@
         <item quantity="other">%d more messages in this conversation</item>
     </plurals>
     <string name="thread_you">You</string>
+    <string name="account_add_google">Google</string>
+    <string name="account_add_other">Other account (IMAP)</string>
+    <string name="sign_in_other">Other account (IMAP)</string>
+    <string name="imap_title">Other account</string>
+    <string name="imap_body">Works with Yahoo, iCloud, GMX and most providers. Many ask for an app password: create one in your provider\'s security settings. It is stored encrypted on this phone.</string>
+    <string name="imap_email">Email address</string>
+    <string name="imap_password">Password or app password</string>
+    <string name="imap_name">Your name (shown to recipients)</string>
+    <string name="imap_advanced">Server settings</string>
+    <string name="imap_username">Username</string>
+    <string name="imap_server_in">Incoming server (IMAP)</string>
+    <string name="imap_server_out">Outgoing server (SMTP)</string>
+    <string name="imap_host">Server</string>
+    <string name="imap_port">Port</string>
+    <string name="imap_security_ssl">SSL/TLS</string>
+    <string name="imap_security_starttls">STARTTLS</string>
+    <string name="imap_add">Add account</string>
+    <string name="imap_checking">Checking the connection…</string>
+    <string name="imap_error_auth">The server rejected the username or password. Many providers need an app password.</string>
+    <string name="imap_error_connect">Could not connect to the server. Check the server name, port and security.</string>
+    <string name="imap_error_other">Something went wrong while checking the account.</string>
+    <string name="imap_server_unknown">Provider not recognised: check the server settings below.</string>
+    <string name="account_add_microsoft">Microsoft</string>
+    <string name="sign_in_microsoft">Sign in with Microsoft</string>
 </resources>

@@ -92,12 +92,19 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
     val me = (acc.accounts.firstOrNull { it.id == acc.selectedId } ?: acc.accounts.firstOrNull())?.email ?: DEMO_ME
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { accountVm.onSignInResult(it.data) }
     val startSignIn = { accountVm.startSignIn()?.let { launcher.launch(it) }; Unit }
+    val microsoftLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { accountVm.onMicrosoftResult(it.data) }
+    val startMicrosoft = { accountVm.startMicrosoftSignIn()?.let { microsoftLauncher.launch(it) }; Unit }
+    var imapForm by rememberSaveable { mutableStateOf(false) }
+    if (imapForm) {
+        com.cemail.app.ui.account.ImapSetupScreen(accountVm) { imapForm = false }
+        return
+    }
     if (!acc.loaded) {
         GlassBackground {}
         return
     }
     if (acc.accounts.isEmpty() && !acc.demo) {
-        SignInScreen(acc, startSignIn, accountVm::useDemo)
+        SignInScreen(acc, startSignIn, accountVm::useDemo, onMicrosoft = startMicrosoft, onImap = { imapForm = true })
         return
     }
     val state by vm.state.collectAsStateWithLifecycle()
@@ -176,7 +183,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                     DrawerContent(state, acc, unified = unifiedView, onOpenSettings = {
                         showSettings = true
                         scope.launch { drawer.close() }
-                    }, onAddAccount = startSignIn, onSelectAccount = { id ->
+                    }, onAddAccount = startSignIn, onAddMicrosoft = startMicrosoft, onAddImap = { imapForm = true }, onSelectAccount = { id ->
                         accountVm.select(id)
                         scope.launch { drawer.close() }
                     }, onToggleLabel = vm::toggleExpanded, onPickLabel = { id ->
@@ -212,6 +219,8 @@ private fun DrawerContent(
     unified: Boolean,
     onOpenSettings: () -> Unit,
     onAddAccount: () -> Unit,
+    onAddMicrosoft: () -> Unit,
+    onAddImap: () -> Unit,
     onSelectAccount: (String?) -> Unit,
     onPickLabel: (String) -> Unit,
     onToggleLabel: (String) -> Unit,
@@ -243,7 +252,7 @@ private fun DrawerContent(
             Icon(Icons.Filled.Settings, null)
             Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.bodyLarge)
         }
-        AccountSwitcher(acc, onSelectAccount, onAddAccount)
+        AccountSwitcher(acc, onSelectAccount, onAddAccount, onAddMicrosoft, onAddImap)
         if (accounts.isEmpty()) {
             Text(
                 stringResource(R.string.demo_banner),
