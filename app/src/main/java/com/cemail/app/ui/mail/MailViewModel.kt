@@ -12,6 +12,7 @@ import com.cemail.app.data.mail.Mail
 import com.cemail.app.data.mail.MailBox
 import com.cemail.app.data.mail.MailRepository
 import com.cemail.app.data.mail.matches
+import com.cemail.app.data.mail.withKnownNames
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -65,7 +66,8 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
     private val ui = MutableStateFlow(Ui())
     private var undoCounter = 0L
 
-    val state: StateFlow<MailUiState> = combine(repo.mails, ui, repo.syncing, repo.labels) { mails, u, syncing, labels ->
+    val state: StateFlow<MailUiState> = combine(repo.mails, ui, repo.syncing, repo.labels) { rawMails, u, syncing, labels ->
+        val mails = withKnownNames(rawMails)
         val now = System.currentTimeMillis()
         val inBox = if (u.labelId != null) mails.filter { u.labelId in it.labelIds && it.folder != Folder.TRASH } else mails.filter { it.inBox(u.box, now) }
         val shown = (if (u.query.isBlank()) inBox else mails.filter { it.folder != Folder.TRASH && it.matches(u.query) })
@@ -200,6 +202,11 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
         id = id, senderName = to, senderEmail = me, subject = subject, body = body,
         timeMillis = System.currentTimeMillis(), folder = folder, read = true,
     )
+
+    /** Automatic check for new mail: cheap and silent (a failure is simply retried at the next one). */
+    fun poll() {
+        viewModelScope.launch { repo.refresh(quick = true) }
+    }
 
     suspend fun inlineImages(id: Long): Map<String, String> = repo.inlineImages(id)
 

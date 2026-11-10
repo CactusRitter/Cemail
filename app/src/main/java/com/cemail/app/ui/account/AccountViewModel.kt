@@ -26,15 +26,23 @@ data class AccountUiState(
     @StringRes val error: Int? = null,
     /** The user chose to look around with example messages instead of signing in. */
     val demo: Boolean = false,
+    /** The account whose mail is shown, or null for all of them together (the unified inbox). */
+    val selectedId: String? = null,
 )
 
-private data class Local(val signingIn: Boolean = false, val error: Int? = null, val demo: Boolean = false)
+private data class Local(
+    val signingIn: Boolean = false,
+    val error: Int? = null,
+    val demo: Boolean = false,
+    val selectedId: String? = null,
+)
 
 class AccountViewModel(private val repo: AccountRepository, private val auth: GoogleAuth) : ViewModel() {
     private val local = MutableStateFlow(Local())
 
     val state: StateFlow<AccountUiState> = combine(repo.accounts, local) { accounts, l ->
-        AccountUiState(true, accounts, l.signingIn, l.error, l.demo)
+        // A removed account can no longer be the selected one.
+        AccountUiState(true, accounts, l.signingIn, l.error, l.demo, l.selectedId?.takeIf { id -> accounts.any { it.id == id } })
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AccountUiState())
 
     /** The intent to start Google's sign-in, or null (and an error shown) if the app has no client id. */
@@ -61,6 +69,9 @@ class AccountViewModel(private val repo: AccountRepository, private val auth: Go
     fun remove(accountId: String) {
         viewModelScope.launch { repo.remove(accountId) }
     }
+
+    /** Shows one account's mail, or all accounts together when [accountId] is null. */
+    fun select(accountId: String?) = local.update { it.copy(selectedId = accountId) }
 
     fun useDemo() = local.update { it.copy(demo = true, error = null) }
     fun dismissError() = local.update { it.copy(error = null) }

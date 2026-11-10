@@ -7,6 +7,8 @@ import com.cemail.app.data.auth.AccountTokenProvider
 import com.cemail.app.data.auth.GoogleAuth
 import com.cemail.app.data.gmail.HttpGmailApi
 import com.cemail.app.data.mail.RoomMailRepository
+import com.cemail.app.data.mail.UnifiedMailRepository
+import com.cemail.app.sync.SyncWorker
 import com.cemail.app.data.auth.TokenStore
 import com.cemail.app.data.db.CemailDatabase
 import com.cemail.app.data.mail.DemoData
@@ -43,6 +45,18 @@ class CemailApplication : Application() {
 
     /** Demo store until Gmail sync + Room arrive (phases 1-2). */
     val demoRepository: MailRepository by lazy { DemoMailRepository(DemoData.seed(this), DemoData.labels(this)) }
+
+    private val unified = HashMap<String, MailRepository>()
+
+    /** All these accounts as one mailbox (the unified inbox). */
+    fun unifiedRepository(accountIds: List<String>): MailRepository = synchronized(unified) {
+        unified.getOrPut(accountIds.joinToString(" ")) { UnifiedMailRepository(accountIds.map(::mailRepositoryFor), appScope) }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        SyncWorker.schedule(this)
+    }
 
     /** Lives as long as the process: work started while leaving a screen always finishes. */
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)

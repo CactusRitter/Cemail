@@ -15,5 +15,7 @@ Versión sencilla: solo Gmail. Cada fase termina con la app compilando, sus test
 ## Para después
 - Outlook / Hotmail y otros proveedores (IMAP).
 - Bandeja unificada de varias cuentas, envío programado, deshacer envío (el deshacer de acciones sobre mensajes ya está).
-- Avisos instantáneos (requiere servidor propio), widgets al estilo de Celander.
+- **Push real (avisos instantáneos)**: Gmail solo avisa al momento a un servidor (Cloud Pub/Sub → servidor → Firebase Cloud Messaging → móvil). Requiere activar facturación en Google Cloud aunque el uso quepa en la capa gratuita, por eso no está hecho. Mientras tanto: comprobación cada minuto con la app abierta y cada ~15 min en segundo plano (`sync/SyncWorker.kt`).
+- **Notificaciones (fase 6, planeadas)**: se publicarán desde `SyncWorker` cuando la comprobación en segundo plano encuentre mensajes nuevos; falta el canal, pedir el permiso `POST_NOTIFICATIONS` y las acciones (archivar, responder).
+- Widgets al estilo de Celander.
 - Más idiomas (solo hay que añadir `values-xx/strings.xml`).

@@ -23,10 +23,24 @@ class MainActivity : ComponentActivity() {
             CemailTheme(settings) {
                 val accountVm: AccountViewModel = viewModel(factory = AccountViewModel.Factory(app.accountRepository, app.googleAuth))
                 val accounts by accountVm.state.collectAsStateWithLifecycle()
-                // One account is shown at a time (no unified inbox); no account means the demo store.
-                val active = accounts.accounts.firstOrNull()?.id
-                val repo = remember(active) { if (active != null) app.mailRepositoryFor(active) else app.demoRepository }
-                val vm: MailViewModel = viewModel(key = active ?: "demo", factory = MailViewModel.Factory(repo))
+                // What is on screen: the demo store (no account), one account, or all of them together.
+                val ids = accounts.accounts.map { it.id }
+                val selected = accounts.selectedId
+                val scopeKey = when {
+                    ids.isEmpty() -> "demo"
+                    selected != null -> selected
+                    ids.size == 1 -> ids.first()
+                    else -> "all:" + ids.joinToString(" ")
+                }
+                val repo = remember(scopeKey) {
+                    when {
+                        ids.isEmpty() -> app.demoRepository
+                        selected != null -> app.mailRepositoryFor(selected)
+                        ids.size == 1 -> app.mailRepositoryFor(ids.first())
+                        else -> app.unifiedRepository(ids)
+                    }
+                }
+                val vm: MailViewModel = viewModel(key = scopeKey, factory = MailViewModel.Factory(repo))
                 MailApp(vm, accountVm, settings, app.settings)
             }
         }

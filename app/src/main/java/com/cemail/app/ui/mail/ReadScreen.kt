@@ -39,10 +39,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import kotlin.math.roundToInt
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -96,15 +99,27 @@ fun ReadScreen(mail: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
     val textScroll = rememberScrollState()
     var detailsPx by remember(mail.id) { mutableIntStateOf(0) }
     val density = LocalDensity.current
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val detailsDp = with(density) { detailsPx.toDp() }
     val hiddenPx = (if (html.isNotBlank()) scrollPx else textScroll.value).coerceIn(0, detailsPx)
     val progress = if (detailsPx > 0) hiddenPx / detailsPx.toFloat() else 0f
+    // While the details go away the subject shrinks (it is scaled, so its lines never re-wrap) and the
+    // sender's name fades in under it, in soft grey.
+    var subjectPx by remember(mail.id) { mutableIntStateOf(0) }
+    var namePx by remember(mail.id) { mutableIntStateOf(0) }
+    val subjectScale = 1f - (1f - SUBJECT_MIN_SCALE) * progress
+    val subjectShownPx = (subjectPx * subjectScale).roundToInt()
+    val subjectMinPx = (subjectPx * SUBJECT_MIN_SCALE).roundToInt()
+    val nameShownPx = (namePx * progress).roundToInt()
     // Extra room at the end of the message, so its last lines can always be scrolled into view.
-    val cleanPage = remember(mail.id, html, inline, detailsDp) {
-        if (html.isBlank()) null else HtmlSanitizer.page(HtmlSanitizer.clean(html, inline), detailsDp.value.roundToInt())
+    val bottomSpace = (detailsDp.value + with(density) { (subjectPx - subjectMinPx).toDp() }.value).roundToInt()
+    val cleanPage = remember(mail.id, html, inline, bottomSpace) {
+        if (html.isBlank()) null else HtmlSanitizer.page(HtmlSanitizer.clean(html, inline), bottomSpace)
     }
     val fixedBody = Modifier.layout { measurable, constraints ->
-        val height = constraints.maxHeight + (detailsPx - hiddenPx)
+        // The height the body has once the header is fully collapsed.
+        val height = (constraints.maxHeight + (detailsPx - hiddenPx) + (subjectShownPx - subjectMinPx) + (nameShownPx - namePx))
+            .coerceAtLeast(constraints.maxHeight)
         val placeable = measurable.measure(constraints.copy(minHeight = height, maxHeight = height))
         layout(placeable.width, constraints.maxHeight) { placeable.place(0, 0) }
     }
@@ -125,8 +140,35 @@ fun ReadScreen(mail: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
             ) {
                 Text(
                     mail.subject.ifBlank { stringResource(R.string.no_subject) },
+                    modifier = Modifier
+                        .layout { measurable, constraints ->
+                            val placeable = measurable.measure(constraints)
+                            val height = if (subjectPx == 0) placeable.height else subjectShownPx
+                            layout(placeable.width, height) { placeable.place(0, 0) }
+                        }
+                        .graphicsLayer {
+                            scaleX = subjectScale
+                            scaleY = subjectScale
+                            transformOrigin = TransformOrigin(if (rtl) 1f else 0f, 0f)
+                        }
+                        .onSizeChanged { subjectPx = it.height },
                     style = MaterialTheme.typography.titleLarge,
                     maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    mail.senderName,
+                    modifier = Modifier
+                        .clipToBounds()
+                        .layout { measurable, constraints ->
+                            val placeable = measurable.measure(constraints)
+                            layout(placeable.width, nameShownPx) { placeable.place(0, 0) }
+                        }
+                        .graphicsLayer { alpha = progress }
+                        .onSizeChanged { namePx = it.height },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 // Everything but the subject: its height and opacity follow the scroll.
@@ -326,3 +368,6 @@ private fun androidx.compose.foundation.layout.RowScope.ReplyAction(
     }
 }
 
+
+/** How small the subject gets once the header is collapsed (1 = its full size). */
+private const val SUBJECT_MIN_SCALE = 0.72f

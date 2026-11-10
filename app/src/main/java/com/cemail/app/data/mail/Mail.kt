@@ -73,3 +73,18 @@ fun buildLabelTree(labels: List<Label>): List<LabelNode> {
         .map { path -> LabelNode(path.substringAfterLast("/"), path, idByName[path], childrenOf(path)) }
     return childrenOf(null)
 }
+
+/**
+ * Messages that arrived with a bare address get the name other messages use for that address, so a
+ * friend shows up by name everywhere once any of their messages carries it.
+ */
+fun withKnownNames(mails: List<Mail>): List<Mail> {
+    fun received(m: Mail) = m.folder != Folder.SENT && m.folder != Folder.DRAFTS
+    fun nameless(m: Mail) = m.senderName.isBlank() || m.senderName.equals(m.senderEmail, ignoreCase = true)
+    val names = HashMap<String, String>()
+    for (m in mails) if (received(m) && !nameless(m)) names.putIfAbsent(m.senderEmail.lowercase(), m.senderName)
+    if (names.isEmpty()) return mails
+    return mails.map { m ->
+        if (received(m) && nameless(m)) names[m.senderEmail.lowercase()]?.let { m.copy(senderName = it) } ?: m else m
+    }
+}

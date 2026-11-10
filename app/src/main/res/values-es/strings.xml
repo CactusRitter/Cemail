@@ -140,4 +140,6 @@
     <string name="settings_section_appearance">Apariencia</string>
     <string name="settings_transparency_title">Transparencia del cristal</string>
     <string name="settings_transparency_body">Cuánto se transparentan las tarjetas y las barras.</string>
+    <string name="account_all">Todas las cuentas</string>
+    <string name="account_all_body">Bandeja unificada</string>
 </resources>

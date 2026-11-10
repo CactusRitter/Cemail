@@ -3,6 +3,13 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.5.0 — 2026-11-10
+- Varias cuentas: bandeja unificada («Todas las cuentas») y cada cuenta por separado, desde el menú lateral. Las etiquetas se ven al elegir una cuenta.
+- Correo nuevo automático: cada minuto con la app abierta y cada ~15 minutos en segundo plano (WorkManager). Aún sin notificaciones.
+- Las imágenes incrustadas se descargan durante la sincronización, no al abrir el correo.
+- Cabecera del correo: al desplazar, el asunto se reduce y debajo aparece el remitente en gris.
+- Un remitente que llega solo con su dirección se muestra con el nombre que tenga en otros correos.
+
 ## 0.4.0 — 2026-11-10
 - Caracteres raros corregidos (ü, é, ñ…): el texto se lee como UTF-8 y solo si no lo es se usa la codificación declarada. La primera sincronización vuelve a descargar los mensajes guardados.
 - Las imágenes incrustadas en el correo (logos como el de Booking) se descargan de Gmail y se muestran siempre; no son imágenes externas.

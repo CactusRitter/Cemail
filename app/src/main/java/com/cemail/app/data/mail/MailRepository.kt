@@ -29,7 +29,7 @@ interface MailRepository {
     fun remove(id: Long)
 
     /** Brings the local copy up to date with the server. Returns false if it failed. */
-    suspend fun refresh(): Boolean
+    suspend fun refresh(quick: Boolean = false): Boolean
 
     /** The pictures embedded in a message, as Content-ID → `data:` URI (downloaded once, then kept on the phone). */
     suspend fun inlineImages(id: Long): Map<String, String>
@@ -56,6 +56,6 @@ class DemoMailRepository(seed: List<Mail>, demoLabels: List<Label> = emptyList()
     override fun send(mail: Mail) = add(mail)
     override fun nextId() = counter++
     override fun remove(id: Long) = state.update { l -> l.filter { it.id != id } }
-    override suspend fun refresh() = true
+    override suspend fun refresh(quick: Boolean) = true
     override suspend fun inlineImages(id: Long) = emptyMap<String, String>()
 }

@@ -5,6 +5,7 @@ import com.cemail.app.data.db.LabelEntity
 import com.cemail.app.data.db.MessageDao
 import com.cemail.app.data.db.MessageEntity
 import com.cemail.app.data.gmail.GmailApi
+import com.cemail.app.data.gmail.GmailMessage
 import com.cemail.app.data.gmail.GmailParser
 import com.cemail.app.data.gmail.InlineImages
 import com.cemail.app.data.gmail.MimeBuilder
@@ -102,10 +103,10 @@ class RoomMailRepository(
         scope.launch(Dispatchers.IO) { dao.delete(id) }
     }
 
-    override suspend fun refresh(): Boolean {
+    override suspend fun refresh(quick: Boolean): Boolean {
         if (!_syncing.compareAndSet(expect = false, update = true)) return true
         return try {
-            sync()
+            sync(quick)
             true
         } catch (_: Exception) {
             false
@@ -115,22 +116,12 @@ class RoomMailRepository(
     }
 
     override suspend fun inlineImages(id: Long): Map<String, String> = withContext(Dispatchers.IO) {
-        val remote = dao.get(id)?.remoteId ?: return@withContext emptyMap()
+        val entity = dao.get(id)?.takeIf { it.accountId == accountId } ?: return@withContext emptyMap()
+        val remote = entity.remoteId ?: return@withContext emptyMap()
         val dir = File(inlineDir, remote)
-        val index = File(dir, "index")
         try {
-            if (!index.exists()) {
-                dir.mkdirs()
-                val lines = mutableListOf<String>()
-                InlineImages.find(api.getMessage(remote)).forEachIndexed { n, part ->
-                    val bytes = part.data ?: part.attachmentId?.let { api.getAttachment(remote, it) } ?: return@forEachIndexed
-                    if (bytes.size > MAX_INLINE_BYTES) return@forEachIndexed
-                    File(dir, "$n").writeBytes(bytes)
-                    lines += "${part.cid}\t${part.mimeType}\t$n"
-                }
-                index.writeText(lines.joinToString("\n"))
-            }
-            index.readLines().filter { it.isNotBlank() }.associate { line ->
+            saveInlineImages(remote, null) // normally already done by the sync: then this returns at once
+            File(dir, "index").readLines().filter { it.isNotBlank() }.associate { line ->
                 val (cid, mime, file) = line.split("\t")
                 cid to "data:$mime;base64," + Base64.getEncoder().encodeToString(File(dir, file).readBytes())
             }
@@ -139,8 +130,38 @@ class RoomMailRepository(
         }
     }
 
-    private suspend fun sync() {
-        syncLabels()
+    /**
+     * Downloads the pictures embedded in a message and keeps them on the phone, unless that was done before.
+     * [message] is the full message when the caller already has it (saves one request).
+     */
+    private suspend fun saveInlineImages(remote: String, message: GmailMessage?) {
+        val dir = File(inlineDir, remote)
+        val index = File(dir, "index")
+        if (index.exists()) return
+        val parts = InlineImages.find(message ?: api.getMessage(remote))
+        dir.mkdirs()
+        val lines = coroutineScope {
+            parts.mapIndexed { n, part ->
+                async(Dispatchers.IO) {
+                    val bytes = part.data ?: part.attachmentId?.let { api.getAttachment(remote, it) }
+                    if (bytes == null || bytes.size > MAX_INLINE_BYTES) {
+                        null
+                    } else {
+                        File(dir, "$n").writeBytes(bytes)
+                        "${part.cid}\t${part.mimeType}\t$n"
+                    }
+                }
+            }.awaitAll().filterNotNull()
+        }
+        index.writeText(lines.joinToString("\n"))
+    }
+
+    /**
+     * @param quick only looks for new and removed messages (one request when nothing changed); used by the
+     * automatic checks. A full sync also brings label, read and star changes made elsewhere.
+     */
+    private suspend fun sync(quick: Boolean) {
+        if (!quick) syncLabels()
         val remoteIds = api.listMessageIds(QUERY, LIMIT)
         val cached = dao.remoteOnes(accountId).associateBy { it.remoteId!! }
         val gate = Semaphore(6)
@@ -151,13 +172,18 @@ class RoomMailRepository(
                         val old = cached[id]
                         if (old == null || old.bodyHtml == null) {
                             // New message, or one saved before HTML was kept: download it whole.
-                            val entity = GmailParser.parse(api.getMessage(id)).toEntity(accountId, id)
+                            val message = api.getMessage(id)
+                            val entity = GmailParser.parse(message).toEntity(accountId, id)
+                            // Embedded pictures first, so they are already there when the message shows up.
+                            if (entity.bodyHtml?.contains("cid:", ignoreCase = true) == true) {
+                                try { saveInlineImages(id, message) } catch (_: Exception) { /* retried when the message is opened */ }
+                            }
                             if (old == null) {
                                 dao.insert(entity)
                             } else {
                                 dao.update(entity.copy(localId = old.localId, pinned = old.pinned, snoozedUntil = old.snoozedUntil))
                             }
-                        } else {
+                        } else if (!quick) {
                             val labels = api.getLabels(id).toSet()
                             val state = LabelDiff.stateOf(labels)
                             val joined = labels.sorted().joinToString(" ")
@@ -173,6 +199,14 @@ class RoomMailRepository(
         }
         val gone = cached.filterKeys { it !in remoteIds }.values.map { it.localId }
         gone.chunked(500).forEach { dao.deleteAll(accountId, it) }
+        if (!quick) {
+            // Messages saved by an older version may still lack their embedded pictures: fetch them in the background.
+            scope.launch(Dispatchers.IO) {
+                dao.remoteOnes(accountId)
+                    .filter { it.bodyHtml?.contains("cid:", ignoreCase = true) == true }
+                    .forEach { try { saveInlineImages(it.remoteId!!, null) } catch (_: Exception) { /* next time */ } }
+            }
+        }
     }
 
     private suspend fun syncLabels() {

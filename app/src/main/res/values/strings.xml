@@ -142,4 +142,6 @@
     <string name="settings_section_appearance">Appearance</string>
     <string name="settings_transparency_title">Glass transparency</string>
     <string name="settings_transparency_body">How see-through the cards and bars are.</string>
+    <string name="account_all">All accounts</string>
+    <string name="account_all_body">Unified inbox</string>
 </resources>

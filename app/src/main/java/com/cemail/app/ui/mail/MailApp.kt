@@ -48,6 +48,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.cemail.app.R
+import androidx.compose.foundation.layout.size
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.cemail.app.data.AppSettings
 import com.cemail.app.data.SettingsRepository
 import com.cemail.app.ui.settings.SettingsScreen
@@ -80,7 +84,8 @@ private fun MailBox.icon(): ImageVector = when (this) {
 fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSettings, settingsRepo: SettingsRepository) {
     var showSettings by rememberSaveable { mutableStateOf(false) }
     val acc by accountVm.state.collectAsStateWithLifecycle()
-    val me = acc.accounts.firstOrNull()?.email ?: DEMO_ME
+    // New messages are written from the selected account (the first one in the unified view).
+    val me = (acc.accounts.firstOrNull { it.id == acc.selectedId } ?: acc.accounts.firstOrNull())?.email ?: DEMO_ME
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { accountVm.onSignInResult(it.data) }
     val startSignIn = { accountVm.startSignIn()?.let { launcher.launch(it) }; Unit }
     if (!acc.loaded) {
@@ -97,6 +102,17 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
     val drawer = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
+    // While the app is on screen, look for new mail every minute (in the background SyncWorker does it).
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(vm, lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            while (true) {
+                delay(POLL_MILLIS)
+                vm.poll()
+            }
+        }
+    }
+
     BackHandler(enabled = drawer.isOpen) { scope.launch { drawer.close() } }
     BackHandler(enabled = showSettings && !drawer.isOpen) { showSettings = false }
     BackHandler(enabled = state.draft != null) { vm.closeCompose(me) }
@@ -110,7 +126,10 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
             gesturesEnabled = state.draft == null && state.open == null,
             drawerContent = {
                 ModalDrawerSheet(drawerContainerColor = Color.Transparent, windowInsets = WindowInsets(0)) {
-                    DrawerContent(state, acc, onAddAccount = startSignIn, onRemoveAccount = accountVm::remove, onToggleLabel = vm::toggleExpanded, onOpenSettings = {
+                    DrawerContent(state, acc, onAddAccount = startSignIn, onRemoveAccount = accountVm::remove, onSelectAccount = { id ->
+                        accountVm.select(id)
+                        scope.launch { drawer.close() }
+                    }, onToggleLabel = vm::toggleExpanded, onOpenSettings = {
                         showSettings = true
                         scope.launch { drawer.close() }
                     }, onPickLabel = { id ->
@@ -145,6 +164,7 @@ private fun DrawerContent(
     acc: AccountUiState,
     onAddAccount: () -> Unit,
     onRemoveAccount: (String) -> Unit,
+    onSelectAccount: (String?) -> Unit,
     onPickLabel: (String) -> Unit,
     onToggleLabel: (String) -> Unit,
     onOpenSettings: () -> Unit,
@@ -170,8 +190,39 @@ private fun DrawerContent(
                 }
             }
         } else {
+            if (accounts.size > 1) {
+                // The unified inbox: every account together.
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .glass(RoundedCornerShape(24.dp), if (acc.selectedId == null) GlassKind.Pinned else GlassKind.Card)
+                        .clickable(role = Role.Button) { onSelectAccount(null) }
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+                        Icon(CemailIcons.Inbox, null, tint = MaterialTheme.colorScheme.primary)
+                    }
+                    Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                        Text(stringResource(R.string.account_all), style = MaterialTheme.typography.titleSmall)
+                        Text(
+                            stringResource(R.string.account_all_body),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
             accounts.forEach { account ->
-                Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                val selected = acc.selectedId == account.id || accounts.size == 1
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .glass(RoundedCornerShape(24.dp), if (selected) GlassKind.Pinned else GlassKind.Card)
+                        .clickable(role = Role.Button) { onSelectAccount(account.id) }
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Avatar(account.displayName ?: account.email, size = 40)
                     Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
                         Text(account.displayName ?: account.email, style = MaterialTheme.typography.titleSmall, maxLines = 1)
@@ -307,3 +358,6 @@ private fun SnoozeDialog(onPick: (SnoozeOption) -> Unit, onDismiss: () -> Unit) 
         }
     }
 }
+
+/** How often new mail is looked for while the app is on screen. */
+private const val POLL_MILLIS = 60_000L
