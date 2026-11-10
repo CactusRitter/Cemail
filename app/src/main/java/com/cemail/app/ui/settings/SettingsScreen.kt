@@ -45,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.cemail.app.AppLog
 import com.cemail.app.CrashLog
 import com.cemail.app.R
 import com.cemail.app.data.AppSettings
@@ -247,9 +248,33 @@ fun SettingsScreen(
                 )
             }
 
-            // --- Diagnostics: only shown when something went wrong ---
+            // --- Diagnostics: the activity log can always be shared; the last crash shows only if there was one ---
+            SectionTitle(R.string.settings_section_diagnostics)
+            Column(
+                Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card).padding(horizontal = 18.dp, vertical = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text(stringResource(R.string.settings_log_title), style = MaterialTheme.typography.titleSmall)
+                Text(
+                    stringResource(R.string.settings_log_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val shareTitle = stringResource(R.string.settings_log_share_title)
+                    TextAction(R.string.settings_log_share, MaterialTheme.colorScheme.primary) { AppLog.share(context, shareTitle) }
+                    val copiedLabel = stringResource(R.string.copied)
+                    TextAction(R.string.copy, MaterialTheme.colorScheme.primary) {
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        clipboard.setPrimaryClip(ClipData.newPlainText(copiedLabel, AppLog.text(context)))
+                    }
+                    TextAction(R.string.clear, MaterialTheme.colorScheme.onSurfaceVariant) {
+                        AppLog.clear(context)
+                        crash = null
+                    }
+                }
+            }
             crash?.let { text ->
-                SectionTitle(R.string.settings_section_diagnostics)
                 Column(
                     Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card).padding(horizontal = 18.dp, vertical = 14.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),

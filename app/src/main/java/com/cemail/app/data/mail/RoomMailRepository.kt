@@ -10,6 +10,7 @@ import com.cemail.app.data.gmail.GmailParser
 import com.cemail.app.data.gmail.InlineImages
 import com.cemail.app.data.gmail.MimeBuilder
 import java.io.File
+import com.cemail.app.AppLog
 import java.util.Base64
 import kotlinx.coroutines.withContext
 import com.cemail.app.data.gmail.ParsedMessage
@@ -110,7 +111,8 @@ class RoomMailRepository(
         return try {
             sync(quick)
             true
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            AppLog.e("sync", "...${accountId.takeLast(4)} ${if (quick) "quick" else "full"} sync failed", e)
             false
         } finally {
             _syncing.value = false
@@ -205,6 +207,7 @@ class RoomMailRepository(
         }
         val gone = cached.filterKeys { it !in remoteIds }.values.map { it.localId }
         gone.chunked(500).forEach { dao.deleteAll(accountId, it) }
+        AppLog.i("sync", "...${accountId.takeLast(4)} ${if (quick) "quick" else "full"} ok: ${remoteIds.size} listed, ${cached.size} cached, ${arrived.size} new unread, ${gone.size} removed")
         // The first sync of an account brings in its whole history: that is not "new mail".
         if (cached.isNotEmpty() && arrived.isNotEmpty()) {
             onNewMail(accountId, arrived.sortedByDescending { it.timeMillis }.map { it.toMail() })

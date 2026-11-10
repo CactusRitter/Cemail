@@ -136,7 +136,10 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
             gesturesEnabled = state.draft == null && state.open == null,
             drawerContent = {
                 ModalDrawerSheet(drawerContainerColor = Color.Transparent, windowInsets = WindowInsets(0)) {
-                    DrawerContent(state, acc, onAddAccount = startSignIn, onSelectAccount = { id ->
+                    DrawerContent(state, acc, unified = unifiedView, onOpenSettings = {
+                        showSettings = true
+                        scope.launch { drawer.close() }
+                    }, onAddAccount = startSignIn, onSelectAccount = { id ->
                         accountVm.select(id)
                         scope.launch { drawer.close() }
                     }, onToggleLabel = vm::toggleExpanded, onPickLabel = { id ->
@@ -155,7 +158,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                     draft != null -> ComposeScreen(draft, vm, me)
                     showSettings -> SettingsScreen(settings, settingsRepo, acc.accounts, accountVm::remove) { showSettings = false }
                     open != null -> ReadScreen(open, vm, settings.alwaysShowImages)
-                    else -> ListScreen(state, vm, grouped = settings.groupByDate && state.query.isBlank(), stripeOf = stripeOf, showSenderCircle = settings.showSenderCircle, onOpenSettings = { showSettings = true }, onOpenDrawer = { scope.launch { drawer.open() } })
+                    else -> ListScreen(state, vm, grouped = settings.groupByDate && state.query.isBlank(), stripeOf = stripeOf, showSenderCircle = settings.showSenderCircle, onOpenDrawer = { scope.launch { drawer.open() } })
                 }
                 UndoBar(state.undo, vm, Modifier.align(Alignment.BottomCenter))
             }
@@ -169,6 +172,8 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
 private fun DrawerContent(
     state: MailUiState,
     acc: AccountUiState,
+    unified: Boolean,
+    onOpenSettings: () -> Unit,
     onAddAccount: () -> Unit,
     onSelectAccount: (String?) -> Unit,
     onPickLabel: (String) -> Unit,
@@ -186,6 +191,19 @@ private fun DrawerContent(
             .padding(vertical = 16.dp, horizontal = 12.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
+        // Settings sits at the top of the menu, so it never needs a scroll to be reached.
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .glass(RoundedCornerShape(50), GlassKind.Card)
+                .clickable(role = Role.Button, onClick = onOpenSettings)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Icon(Icons.Filled.Settings, null)
+            Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.bodyLarge)
+        }
         AccountSwitcher(acc, onSelectAccount, onAddAccount)
         if (accounts.isEmpty()) {
             Text(
@@ -195,7 +213,10 @@ private fun DrawerContent(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        MailBox.entries.forEach { box ->
+        // All accounts together: only what makes sense across accounts. Drafts, sent, snoozed, archive, trash
+        // and labels belong to each account, so they appear once an account is chosen.
+        val boxes = if (unified) MailBox.entries.filter { it == MailBox.INBOX || it == MailBox.STARRED } else MailBox.entries
+        boxes.forEach { box ->
             val selected = box == state.box && state.labelId == null
             val unread = state.unreadByBox[box] ?: 0
             Row(
@@ -219,7 +240,7 @@ private fun DrawerContent(
                 }
             }
         }
-        LabelSection(state, onPickLabel, onToggleLabel)
+        if (!unified) LabelSection(state, onPickLabel, onToggleLabel)
     }
 }
 

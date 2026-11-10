@@ -60,6 +60,7 @@ import androidx.compose.ui.graphics.Color
 import com.cemail.app.data.mail.dateSectionOf
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import com.cemail.app.ui.glass.GlassBackground
 import com.cemail.app.ui.glass.GlassKind
 import com.cemail.app.ui.glass.GlassPill
 import com.cemail.app.ui.glass.PillIcon
@@ -85,7 +86,6 @@ fun ListScreen(
     grouped: Boolean,
     stripeOf: (Mail) -> Color?,
     showSenderCircle: Boolean,
-    onOpenSettings: () -> Unit,
     onOpenDrawer: () -> Unit,
 ) {
     val haze = rememberHazeState()
@@ -93,6 +93,9 @@ fun ListScreen(
     val startIsArchive = state.box != MailBox.ARCHIVE && state.box != MailBox.TRASH
 
     Box(Modifier.fillMaxSize()) {
+        // The background is a blur source too (as in Cenotes), so the buttons over it get real frosted glass
+        // instead of a flat white fill.
+        GlassBackground(Modifier.hazeSource(haze)) {}
         val empty = state.pinned.isEmpty() && state.others.isEmpty()
         LazyColumn(
             Modifier.fillMaxSize().hazeSource(haze),
@@ -156,21 +159,20 @@ fun ListScreen(
                 state.searching -> SearchBar(state, vm, haze)
                 // Same header as Celander and Cenotes: round button on the left, the title in big bold
                 // letters in the middle, and a pill with the actions on the right.
-                else -> Box(Modifier.fillMaxWidth().height(56.dp), contentAlignment = Alignment.Center) {
-                    GlassIconButton(
-                        Icons.Filled.Menu, stringResource(R.string.menu_open), onOpenDrawer,
-                        Modifier.align(Alignment.CenterStart), hazeState = haze,
-                    )
-                    Text(
-                        state.labelId?.let { id -> state.labels.firstOrNull { it.id == id }?.name?.substringAfterLast("/") }
-                            ?: stringResource(state.box.labelRes()),
-                        Modifier.padding(horizontal = 84.dp),
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    GlassPill(Modifier.align(Alignment.CenterEnd), hazeState = haze) {
+                else -> Row(Modifier.fillMaxWidth().height(56.dp), verticalAlignment = Alignment.CenterVertically) {
+                    GlassIconButton(Icons.Filled.Menu, stringResource(R.string.menu_open), onOpenDrawer, hazeState = haze)
+                    // The title is centred in the room between the two ends, so it never touches them.
+                    Box(Modifier.weight(1f).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
+                        Text(
+                            state.labelId?.let { id -> state.labels.firstOrNull { it.id == id }?.name?.substringAfterLast("/") }
+                                ?: stringResource(state.box.labelRes()),
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    GlassPill(hazeState = haze) {
                         if (state.syncing) {
                             Box(Modifier.size(width = 44.dp, height = 48.dp), contentAlignment = Alignment.Center) {
                                 CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
@@ -179,7 +181,6 @@ fun ListScreen(
                             PillIcon(Icons.Filled.Refresh, stringResource(R.string.refresh), vm::refresh, width = 44.dp)
                         }
                         PillIcon(Icons.Filled.Search, stringResource(R.string.search), { vm.setSearching(true) }, width = 44.dp)
-                        PillIcon(Icons.Filled.Settings, stringResource(R.string.settings_title), onOpenSettings, width = 44.dp)
                     }
                 }
             }
@@ -187,19 +188,17 @@ fun ListScreen(
 
         // Compose button (Thunderbird has a floating "write" button).
         if (!selecting && !state.searching) {
-            Row(
+            Box(
                 Modifier
                     .align(Alignment.BottomEnd)
                     .windowInsetsPadding(WindowInsets.safeDrawing)
                     .padding(16.dp)
+                    .size(60.dp)
                     .glass(CircleShape, GlassKind.Pinned, elevation = 10.dp, hazeState = haze)
-                    .clickable(role = Role.Button) { vm.newDraft() }
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    .clickable(role = Role.Button, onClickLabel = stringResource(R.string.compose)) { vm.newDraft() },
+                contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Filled.Create, null, tint = MaterialTheme.colorScheme.primary)
-                Text(stringResource(R.string.compose), style = MaterialTheme.typography.titleSmall)
+                Icon(Icons.Filled.Create, stringResource(R.string.compose), tint = MaterialTheme.colorScheme.primary)
             }
         }
     }

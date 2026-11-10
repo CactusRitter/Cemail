@@ -50,6 +50,8 @@ class MailNotifier(private val context: Context) {
             .setCategory(NotificationCompat.CATEGORY_EMAIL)
             .setWhen(mails.maxOf { it.timeMillis })
             .setSubText(accountLabel)
+            .addAction(0, context.getString(R.string.notif_action_read), action(MailActionReceiver.ACTION_READ, accountId, mails, 1))
+            .addAction(0, context.getString(R.string.notif_action_delete), action(MailActionReceiver.ACTION_DELETE, accountId, mails, 2))
         val first = mails.first()
         if (mails.size == 1) {
             builder.setContentTitle(first.senderName)
@@ -65,6 +67,14 @@ class MailNotifier(private val context: Context) {
                 .setStyle(style)
         }
         NotificationManagerCompat.from(context).notify(accountId.hashCode(), builder.build())
+    }
+
+    /** A button that acts on every message the notification shows. */
+    private fun action(name: String, accountId: String, mails: List<Mail>, n: Int): PendingIntent {
+        val intent = Intent(context, MailActionReceiver::class.java).setAction(name)
+            .putExtra(MailActionReceiver.EXTRA_ACCOUNT, accountId)
+            .putExtra(MailActionReceiver.EXTRA_IDS, mails.map { it.id }.toLongArray())
+        return PendingIntent.getBroadcast(context, accountId.hashCode() * 10 + n, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
     }
 
     private companion object {

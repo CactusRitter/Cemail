@@ -3,6 +3,14 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.10.0 — 2026-11-10
+- Cabecera: el título queda centrado entre el botón del menú y la píldora y ya no se pega a ella; Ajustes pasa al menú de las tres barras (primera fila). La píldora se queda con actualizar y buscar.
+- Los botones de arriba usan el mismo fondo con desenfoque que Cenotes (el fondo con colores también desenfoca), en vez de un blanco liso.
+- Botón de redactar: solo el icono, redondo.
+- Bandeja unificada: el menú solo ofrece Recibidos y Destacados; borradores, enviados, pospuestos, archivados, papelera y etiquetas aparecen al elegir una cuenta.
+- Notificaciones: botones «Leído» y «Borrar» (actúan sobre todos los mensajes de esa notificación sin abrir la app). Posponer lo da el propio Android.
+- Registro de actividad (Ajustes → Diagnóstico): sincronizaciones, notificaciones, cuentas y errores, sin texto de los mensajes. Se puede compartir como .txt, copiar o borrar.
+
 ## 0.9.0 — 2026-11-10
 - Notificaciones de correo nuevo: cuando la comprobación en segundo plano encuentra mensajes no leídos en la Bandeja de entrada, se avisa con una notificación por cuenta (un mensaje: remitente, asunto y texto; varios: lista). No avisa con la app abierta ni en la primera sincronización de una cuenta ni con mensajes de más de 3 días.
 - Ajustes → Correo nuevo: interruptor de notificaciones, botón para enviar una de prueba y aviso si Android las tiene bloqueadas. El permiso se pide al abrir la app (Android 13+).

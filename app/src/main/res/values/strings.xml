@@ -187,4 +187,10 @@
     <string name="notif_test_sender">Cemail</string>
     <string name="notif_test_subject">Notifications work</string>
     <string name="notif_test_body">This is how new mail will look when it arrives while Cemail is closed.</string>
+    <string name="notif_action_read">Read</string>
+    <string name="notif_action_delete">Delete</string>
+    <string name="settings_log_title">Activity log</string>
+    <string name="settings_log_body">A record of what the app does on this phone (syncs, notifications, errors), without message text. Share it so it can be read when you cannot connect a cable.</string>
+    <string name="settings_log_share">Share log</string>
+    <string name="settings_log_share_title">Share the log</string>
 </resources>

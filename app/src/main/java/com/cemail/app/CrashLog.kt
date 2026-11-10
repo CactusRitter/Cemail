@@ -27,6 +27,7 @@ object CrashLog {
             val header = "Cemail ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) · Android ${android.os.Build.VERSION.RELEASE} · " +
                 java.time.Instant.now().toString()
             file(context).writeText(header + "\n" + Log.getStackTraceString(error))
+            AppLog.e("crash", "unexpected error", error)
         } catch (_: Exception) {
             // nothing else can be done here
         }

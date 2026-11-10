@@ -65,7 +65,17 @@ class CemailApplication : Application() {
 
     /** Notifies only when the user is not looking at the app (it already shows the new mail by itself). */
     private fun notifyNewMail(accountId: String, mails: List<com.cemail.app.data.mail.Mail>) {
-        if (visibleActivities > 0 || !settings.state.value.notifications) return
+        val skip = when {
+            visibleActivities > 0 -> "app is open"
+            !settings.state.value.notifications -> "notifications off"
+            !notifier.allowed() -> "Android permission missing"
+            else -> null
+        }
+        if (skip != null) {
+            AppLog.i("notif", "${mails.size} new message(s) not announced: $skip")
+            return
+        }
+        AppLog.i("notif", "announcing ${mails.size} new message(s)")
         appScope.launch {
             val accounts = accountRepository.accounts.first()
             val label = accounts.firstOrNull { it.id == accountId }?.email?.takeIf { accounts.size > 1 }
@@ -75,6 +85,7 @@ class CemailApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        AppLog.init(this)
         CrashLog.install(this)
         notifier.createChannel()
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {

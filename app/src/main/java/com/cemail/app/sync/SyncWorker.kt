@@ -8,6 +8,7 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.cemail.app.AppLog
 import com.cemail.app.CemailApplication
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.first
@@ -23,7 +24,9 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
     override suspend fun doWork(): Result {
         val app = applicationContext as CemailApplication
         val accounts = app.accountRepository.accounts.first()
+        AppLog.i("worker", "background check, ${accounts.size} account(s)")
         val ok = accounts.map { app.mailRepositoryFor(it.id).refresh(quick = true) }.all { it }
+        AppLog.i("worker", "background check ${if (ok) "ok" else "failed, will retry"}")
         return if (ok) Result.success() else Result.retry()
     }
 

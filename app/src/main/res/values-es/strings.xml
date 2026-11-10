@@ -185,4 +185,10 @@
     <string name="notif_test_sender">Cemail</string>
     <string name="notif_test_subject">Las notificaciones funcionan</string>
     <string name="notif_test_body">Así se verá el correo nuevo cuando llegue con Cemail cerrado.</string>
+    <string name="notif_action_read">Leído</string>
+    <string name="notif_action_delete">Borrar</string>
+    <string name="settings_log_title">Registro de actividad</string>
+    <string name="settings_log_body">Un registro de lo que hace la app en este teléfono (sincronizaciones, notificaciones, errores), sin texto de los mensajes. Compártelo para poder leerlo cuando no hay cable.</string>
+    <string name="settings_log_share">Compartir registro</string>
+    <string name="settings_log_share_title">Compartir el registro</string>
 </resources>
