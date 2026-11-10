@@ -1,13 +1,13 @@
 package com.cemail.app.data.mail
 
 /** Real folders a message can live in. Starred and Snoozed are views over these. */
-enum class Folder { INBOX, SENT, DRAFTS, ARCHIVE, TRASH }
+enum class Folder { INBOX, SENT, DRAFTS, ARCHIVE, TRASH, SPAM, OUTBOX }
 
 private val WHITESPACE = Regex("""\s+""")
 private val IMAGE_PLACEHOLDER = Regex("""\[(image|cid):[^\]]*\]""", RegexOption.IGNORE_CASE)
 
 /** What the list screen can show: the folders plus the two virtual views. */
-enum class MailBox { INBOX, STARRED, SNOOZED, SENT, DRAFTS, ARCHIVE, TRASH }
+enum class MailBox { INBOX, STARRED, SNOOZED, SENT, DRAFTS, OUTBOX, ARCHIVE, SPAM, TRASH }
 
 data class Mail(
     val id: Long,
@@ -42,10 +42,15 @@ data class Mail(
     val references: String? = null,
     /** Pictures inside the formatted text (the signature's), sent as inline parts. */
     val outgoingImages: List<com.cemail.app.data.gmail.InlineImage> = emptyList(),
+    /** Outbox only: when the message is to be sent. */
+    val sendAt: Long? = null,
 ) {
     /** One-line summary for the list: no line breaks and no "[image: ...]" placeholders of text-only versions. */
     val preview: String get() = body.replace(IMAGE_PLACEHOLDER, " ").replace(WHITESPACE, " ").trim()
     fun isSnoozed(now: Long) = snoozedUntil != null && snoozedUntil > now
+
+    /** In the Trash or the Spam folder: left out of search, Starred and conversations. */
+    val discarded: Boolean get() = folder == Folder.TRASH || folder == Folder.SPAM
 }
 
 /** Simple Gmail-like search: free words plus `from:`, `is:unread`, `is:starred`, `has:attachment`. */

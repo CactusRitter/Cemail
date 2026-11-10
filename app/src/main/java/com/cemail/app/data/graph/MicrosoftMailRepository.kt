@@ -3,6 +3,7 @@ package com.cemail.app.data.graph
 import com.cemail.app.AppLog
 import com.cemail.app.data.db.MessageDao
 import com.cemail.app.data.db.MessageEntity
+import com.cemail.app.data.db.MutedThread
 import com.cemail.app.data.gmail.AttachmentFinder
 import com.cemail.app.data.gmail.AttachmentInfo
 import com.cemail.app.data.gmail.GmailHttpException
@@ -14,7 +15,13 @@ import com.cemail.app.data.mail.Label
 import com.cemail.app.data.mail.Mail
 import com.cemail.app.data.mail.MailRepository
 import com.cemail.app.data.mail.capped
+import com.cemail.app.data.mail.Unsubscribe
+import com.cemail.app.data.mail.UnsubscribeInfo
+import com.cemail.app.data.mail.cancelOutbox
+import com.cemail.app.data.mail.deliverOutbox
+import com.cemail.app.data.mail.scheduleOutbox
 import com.cemail.app.data.mail.toEntity
+import com.cemail.app.data.mail.ftsQuery
 import com.cemail.app.data.mail.toMail
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -123,6 +130,66 @@ class MicrosoftMailRepository(
         }
     }
 
+    /** The Microsoft way of sending (Graph, which keeps the copy in Sent Items). Shared by a normal send and the Outbox. */
+    private suspend fun transmit(mail: Mail) {
+        api.sendMime(
+            MimeBuilder.build(
+                mail.senderName, mail.subject, mail.body, mail.outgoing, mail.cc, mail.bcc, mail.outgoingHtml,
+                mail.inReplyTo, mail.references, mail.outgoingImages,
+            ),
+        )
+    }
+
+    override suspend fun isMuted(id: Long): Boolean = withContext(Dispatchers.IO) {
+        val thread = dao.threadIdOf(id) ?: return@withContext false
+        dao.mutedCount(accountId, thread) > 0
+    }
+
+    override fun setMuted(id: Long, muted: Boolean) {
+        scope.launch(Dispatchers.IO) {
+            val thread = dao.threadIdOf(id) ?: return@launch
+            if (muted) {
+                dao.mute(MutedThread(accountId, thread))
+                write(mails.value.filter { it.accountId == accountId && it.threadId == thread && it.folder == Folder.INBOX }
+                    .map { it to it.copy(folder = Folder.ARCHIVE, read = true) })
+            } else {
+                dao.unmute(accountId, thread)
+            }
+        }
+    }
+
+    override suspend fun unsubscribeInfo(id: Long): UnsubscribeInfo? = withContext(Dispatchers.IO) {
+        val remote = dao.remoteIdOf(id, accountId) ?: return@withContext null
+        try {
+            val h = api.message(remote, "internetMessageHeaders").internetMessageHeaders
+            fun header(name: String) = h.firstOrNull { it.name.equals(name, true) }?.value
+            Unsubscribe.parse(header("List-Unsubscribe"), header("List-Unsubscribe-Post"))
+        } catch (e: Exception) {
+            AppLog.e("unsubscribe", "could not read the headers", e)
+            null
+        }
+    }
+
+    override suspend fun searchIds(query: String): Set<Long> = withContext(Dispatchers.IO) {
+        val q = ftsQuery(query) ?: return@withContext emptySet()
+        try {
+            dao.searchIds(accountId, q).toSet()
+        } catch (e: Exception) {
+            AppLog.e("search", "full-text search failed", e)
+            emptySet()
+        }
+    }
+
+    override suspend fun schedule(mail: Mail, at: Long): Long = withContext(Dispatchers.IO) { dao.scheduleOutbox(accountId, mail, at) }
+
+    override fun cancelScheduled(id: Long) {
+        scope.launch(Dispatchers.IO) { dao.cancelOutbox(id) }
+    }
+
+    override suspend fun deliver(id: Long): Boolean = withContext(Dispatchers.IO) {
+        deliverOutbox(dao, accountId, id, ::transmit).also { if (it) refresh() }
+    }
+
     override fun nextId() = 0L
 
     override fun remove(id: Long) {
@@ -164,7 +231,13 @@ class MicrosoftMailRepository(
                     val read = m.isRead
                     val starred = m.flag?.flagStatus == "flagged"
                     if (old == null) {
-                        val entity = m.toEntity(accountId, folder)
+                        var entity = m.toEntity(accountId, folder)
+                        // A message of a muted conversation goes straight to the archive.
+                        val thread = entity.threadId
+                        if (folder == Folder.INBOX && thread != null && dao.mutedCount(accountId, thread) > 0) {
+                            try { api.update(m.id, true, null); api.move(m.id, "archive") } catch (_: Exception) { /* next sync */ }
+                            entity = entity.copy(folder = Folder.ARCHIVE.name, read = true)
+                        }
                         dao.insert(entity)
                         if (!entity.read && folder == Folder.INBOX && entity.timeMillis > System.currentTimeMillis() - RECENT_MILLIS) {
                             arrived += entity
@@ -234,6 +307,21 @@ class MicrosoftMailRepository(
         }
     }
 
+    override suspend fun emptyFolder(folder: Folder): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val target = wellKnown(folder) ?: return@withContext false
+            // Deleting from Deleted Items or Junk is permanent.
+            val ids = api.messages(target, 1000).map { it.id }
+            ids.forEach { api.delete(it) }
+            dao.deleteRemoteInFolder(accountId, folder.name)
+            AppLog.i("empty", "...${accountId.takeLast(4)} Microsoft ${folder.name} emptied (${ids.size})")
+            true
+        } catch (e: Exception) {
+            AppLog.e("empty", "could not empty ${folder.name}", e)
+            false
+        }
+    }
+
     override suspend fun emlFile(id: Long): File? = withContext(Dispatchers.IO) {
         val remote = dao.remoteIdOf(id, accountId) ?: return@withContext null
         try {
@@ -282,16 +370,18 @@ class MicrosoftMailRepository(
         }
     }
 
-    private fun wellKnown(folder: Folder) = when (folder) {
+    private fun wellKnown(folder: Folder): String? = when (folder) {
         Folder.INBOX -> "inbox"
         Folder.SENT -> "sentitems"
         Folder.DRAFTS -> "drafts"
         Folder.TRASH -> "deleteditems"
         Folder.ARCHIVE -> "archive"
+        Folder.SPAM -> "junkemail"
+        Folder.OUTBOX -> null
     }
 
     private companion object {
-        val FOLDERS = listOf(Folder.INBOX, Folder.SENT, Folder.DRAFTS, Folder.TRASH, Folder.ARCHIVE)
+        val FOLDERS = listOf(Folder.INBOX, Folder.SENT, Folder.DRAFTS, Folder.TRASH, Folder.ARCHIVE, Folder.SPAM)
         const val INBOX_LIMIT = 100
         const val OTHER_LIMIT = 40
         const val RECENT_MILLIS = 3L * 24 * 60 * 60 * 1000

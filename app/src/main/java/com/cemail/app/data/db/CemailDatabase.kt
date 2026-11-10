@@ -6,6 +6,8 @@ import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Entity
+import androidx.room.Fts4
+import androidx.room.FtsOptions
 import androidx.room.Index
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -61,7 +63,17 @@ References". */
     @ColumnInfo(defaultValue = "") val cc: String = "",
     @ColumnInfo(defaultValue = "") val bcc: String = "",
     @ColumnInfo(defaultValue = "") val replyRefs: String = "",
+    /** Outbox only: when to send the message (null for everything else). */
+    val sendAt: Long? = null,
 )
+
+/**
+ * The searchable copy of a message (Room keeps it in step with `messages`): subject, text and sender, so any word of
+ * a message is found without a connection. Letters are folded (case, accents).
+ */
+@Fts4(contentEntity = MessageEntity::class, tokenizer = FtsOptions.TOKENIZER_UNICODE61)
+@Entity(tableName = "messages_fts")
+data class MessageFts(val subject: String, val body: String, val senderName: String, val senderEmail: String)
 
 @Dao
 interface AccountDao {
@@ -89,7 +101,7 @@ interface MessageDao {
         "SELECT localId, accountId, remoteId, folder, senderName, senderEmail, subject, " +
             "CASE WHEN folder = 'DRAFTS' THEN body ELSE substr(body, 1, 2000) END AS body, " +
             "timeMillis, read, starred, pinned, snoozedUntil, hasAttachment, labelIds, " +
-            "CASE WHEN folder = 'DRAFTS' THEN bodyHtml ELSE NULL END AS bodyHtml, threadId, cc, bcc, replyRefs " +
+            "CASE WHEN folder = 'DRAFTS' THEN bodyHtml ELSE NULL END AS bodyHtml, threadId, cc, bcc, replyRefs, sendAt " +
             "FROM messages WHERE accountId = :accountId ORDER BY timeMillis DESC",
     )
     fun observe(accountId: String): Flow<List<MessageEntity>>
@@ -101,7 +113,7 @@ interface MessageDao {
     @Query(
         "SELECT localId, accountId, remoteId, folder, senderName, senderEmail, subject, '' AS body, " +
             "timeMillis, read, starred, pinned, snoozedUntil, hasAttachment, labelIds, " +
-            "CASE WHEN bodyHtml IS NULL THEN NULL ELSE '' END AS bodyHtml, threadId, cc, bcc, replyRefs " +
+            "CASE WHEN bodyHtml IS NULL THEN NULL ELSE '' END AS bodyHtml, threadId, cc, bcc, replyRefs, sendAt " +
             "FROM messages WHERE accountId = :accountId AND remoteId IS NOT NULL",
     )
     suspend fun remoteOnes(accountId: String): List<MessageEntity>
@@ -109,7 +121,7 @@ interface MessageDao {
     /** One message without its texts (see [bodyChunk] and [htmlChunk] for those). */
     @Query(
         "SELECT localId, accountId, remoteId, folder, senderName, senderEmail, subject, '' AS body, " +
-            "timeMillis, read, starred, pinned, snoozedUntil, hasAttachment, labelIds, NULL AS bodyHtml, threadId, cc, bcc, replyRefs " +
+            "timeMillis, read, starred, pinned, snoozedUntil, hasAttachment, labelIds, NULL AS bodyHtml, threadId, cc, bcc, replyRefs, sendAt " +
             "FROM messages WHERE localId = :localId",
     )
     suspend fun light(localId: Long): MessageEntity?
@@ -120,6 +132,22 @@ interface MessageDao {
 
     @Query("SELECT substr(bodyHtml, :start, :length) FROM messages WHERE localId = :localId")
     suspend fun htmlChunk(localId: Long, start: Int, length: Int): String?
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun mute(row: MutedThread)
+
+    @Query("DELETE FROM muted_threads WHERE accountId = :accountId AND threadId = :threadId")
+    suspend fun unmute(accountId: String, threadId: String)
+
+    @Query("SELECT COUNT(*) FROM muted_threads WHERE accountId = :accountId AND threadId = :threadId")
+    suspend fun mutedCount(accountId: String, threadId: String): Int
+
+    @Query("SELECT threadId FROM messages WHERE localId = :localId")
+    suspend fun threadIdOf(localId: Long): String?
+
+    /** Messages of the account that contain every word of [query] (an FTS expression, see [ftsQuery]). */
+    @Query("SELECT localId FROM messages WHERE rowid IN (SELECT rowid FROM messages_fts WHERE messages_fts MATCH :query) AND accountId = :accountId")
+    suspend fun searchIds(accountId: String, query: String): List<Long>
 
     @Query("SELECT remoteId FROM messages WHERE accountId = :accountId AND remoteId IS NOT NULL AND bodyHtml LIKE '%cid:%'")
     suspend fun remoteIdsWithInlineImages(accountId: String): List<String>
@@ -135,6 +163,43 @@ interface MessageDao {
 
     @Query("UPDATE messages SET folder = :folder, read = :read, starred = :starred, labelIds = :labelIds WHERE localId = :localId")
     suspend fun updateState(localId: Long, folder: String, read: Boolean, starred: Boolean, labelIds: String)
+
+    /** The earliest time a snoozed message has to come back (null if none is snoozed). */
+    @Query("SELECT MIN(snoozedUntil) FROM messages WHERE snoozedUntil IS NOT NULL")
+    fun nextSnooze(): Flow<Long?>
+
+    @Query("SELECT MIN(snoozedUntil) FROM messages WHERE snoozedUntil IS NOT NULL")
+    suspend fun nextSnoozeOnce(): Long?
+
+    /** Snoozed messages whose time has come (no texts). */
+    @Query(
+        "SELECT localId, accountId, remoteId, folder, senderName, senderEmail, subject, '' AS body, " +
+            "timeMillis, read, starred, pinned, snoozedUntil, hasAttachment, labelIds, NULL AS bodyHtml, threadId, cc, bcc, replyRefs, sendAt " +
+            "FROM messages WHERE snoozedUntil IS NOT NULL AND snoozedUntil <= :now ORDER BY snoozedUntil",
+    )
+    suspend fun dueSnoozed(now: Long): List<MessageEntity>
+
+    /** Brings snoozed messages back: no snooze, unread, in the Inbox. */
+    @Query("UPDATE messages SET snoozedUntil = NULL, read = 0, folder = 'INBOX' WHERE localId IN (:ids)")
+    suspend fun wake(ids: List<Long>)
+
+    /** The earliest time a message of the Outbox has to go out (null if the Outbox is empty). */
+    @Query("SELECT MIN(sendAt) FROM messages WHERE folder = 'OUTBOX' AND sendAt IS NOT NULL")
+    fun nextSend(): Flow<Long?>
+
+    @Query("SELECT MIN(sendAt) FROM messages WHERE folder = 'OUTBOX' AND sendAt IS NOT NULL")
+    suspend fun nextSendOnce(): Long?
+
+    /** Messages of the Outbox whose time has come (no texts). */
+    @Query(
+        "SELECT localId, accountId, remoteId, folder, senderName, senderEmail, subject, '' AS body, " +
+            "timeMillis, read, starred, pinned, snoozedUntil, hasAttachment, labelIds, NULL AS bodyHtml, threadId, cc, bcc, replyRefs, sendAt " +
+            "FROM messages WHERE folder = 'OUTBOX' AND sendAt IS NOT NULL AND sendAt <= :now ORDER BY sendAt",
+    )
+    suspend fun dueOutbox(now: Long): List<MessageEntity>
+
+    @Query("UPDATE messages SET sendAt = :at WHERE localId = :localId")
+    suspend fun setSendAt(localId: Long, at: Long)
 
     @Query("UPDATE messages SET labelIds = :labelIds WHERE localId = :localId")
     suspend fun updateLabelIds(localId: Long, labelIds: String)
@@ -157,13 +222,17 @@ interface MessageDao {
     @Query("DELETE FROM messages WHERE accountId = :accountId AND localId IN (:localIds)")
     suspend fun deleteAll(accountId: String, localIds: List<Long>)
 
+    /** Forgets the cached copies of a folder (the messages that exist on the server). */
+    @Query("DELETE FROM messages WHERE accountId = :accountId AND folder = :folder AND remoteId IS NOT NULL")
+    suspend fun deleteRemoteInFolder(accountId: String, folder: String)
+
     @Query("DELETE FROM messages WHERE accountId = :accountId")
     suspend fun deleteAccount(accountId: String)
 
     /** The newest Inbox messages of every account, without their texts (for the widgets). */
     @Query(
         "SELECT localId, accountId, remoteId, folder, senderName, senderEmail, subject, '' AS body, " +
-            "timeMillis, read, starred, pinned, snoozedUntil, hasAttachment, labelIds, NULL AS bodyHtml, threadId, cc, bcc, replyRefs " +
+            "timeMillis, read, starred, pinned, snoozedUntil, hasAttachment, labelIds, NULL AS bodyHtml, threadId, cc, bcc, replyRefs, sendAt " +
             "FROM messages WHERE folder = 'INBOX' AND (snoozedUntil IS NULL OR snoozedUntil < :now) " +
             "ORDER BY timeMillis DESC LIMIT :limit",
     )
@@ -181,6 +250,10 @@ interface MessageDao {
 }
 
 /** A Gmail label the user created (system labels like INBOX are not stored). */
+/** A conversation the user muted: its new messages go straight to the archive (a Cemail-only rule). */
+@Entity(tableName = "muted_threads", primaryKeys = ["accountId", "threadId"])
+data class MutedThread(val accountId: String, val threadId: String)
+
 @Entity(tableName = "labels", primaryKeys = ["accountId", "id"])
 data class LabelEntity(val accountId: String, val id: String, val name: String)
 
@@ -197,8 +270,8 @@ interface LabelDao {
 }
 
 @Database(
-    entities = [AccountEntity::class, MessageEntity::class, LabelEntity::class],
-    version = 7,
+    entities = [AccountEntity::class, MessageEntity::class, LabelEntity::class, MessageFts::class, MutedThread::class],
+    version = 10,
     exportSchema = true,
     autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
@@ -209,7 +282,7 @@ abstract class CemailDatabase : RoomDatabase() {
 
     companion object {
         fun create(context: Context): CemailDatabase =
-            Room.databaseBuilder(context, CemailDatabase::class.java, "cemail.db").addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7).build()
+            Room.databaseBuilder(context, CemailDatabase::class.java, "cemail.db").addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10).build()
     }
 }
 
@@ -234,6 +307,38 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
         db.execSQL("ALTER TABLE messages ADD COLUMN cc TEXT NOT NULL DEFAULT ''")
         db.execSQL("ALTER TABLE messages ADD COLUMN bcc TEXT NOT NULL DEFAULT ''")
         db.execSQL("ALTER TABLE messages ADD COLUMN replyRefs TEXT NOT NULL DEFAULT ''")
+    }
+}
+
+/** 0.30.0: messages can wait in an Outbox (scheduled send, undo send). */
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE messages ADD COLUMN sendAt INTEGER")
+    }
+}
+
+/** 0.30.0: muted conversations. */
+val MIGRATION_9_10 = object : Migration(9, 10) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS `muted_threads` (`accountId` TEXT NOT NULL, `threadId` TEXT NOT NULL, PRIMARY KEY(`accountId`, `threadId`))")
+    }
+}
+
+/**
+ * 0.30.0: full-text search over the messages. The statements are the ones Room generates for [MessageFts] (they are
+ * in schemas/9.json); the index is then built from the messages already stored.
+ */
+val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE VIRTUAL TABLE IF NOT EXISTS `messages_fts` USING FTS4(`subject` TEXT NOT NULL, `body` TEXT NOT NULL, " +
+                "`senderName` TEXT NOT NULL, `senderEmail` TEXT NOT NULL, tokenize=unicode61, content=`messages`)",
+        )
+        db.execSQL("CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_messages_fts_BEFORE_UPDATE BEFORE UPDATE ON `messages` BEGIN DELETE FROM `messages_fts` WHERE `docid`=OLD.`rowid`; END")
+        db.execSQL("CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_messages_fts_BEFORE_DELETE BEFORE DELETE ON `messages` BEGIN DELETE FROM `messages_fts` WHERE `docid`=OLD.`rowid`; END")
+        db.execSQL("CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_messages_fts_AFTER_UPDATE AFTER UPDATE ON `messages` BEGIN INSERT INTO `messages_fts`(`docid`, `subject`, `body`, `senderName`, `senderEmail`) VALUES (NEW.`rowid`, NEW.`subject`, NEW.`body`, NEW.`senderName`, NEW.`senderEmail`); END")
+        db.execSQL("CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_messages_fts_AFTER_INSERT AFTER INSERT ON `messages` BEGIN INSERT INTO `messages_fts`(`docid`, `subject`, `body`, `senderName`, `senderEmail`) VALUES (NEW.`rowid`, NEW.`subject`, NEW.`body`, NEW.`senderName`, NEW.`senderEmail`); END")
+        db.execSQL("INSERT INTO `messages_fts`(`messages_fts`) VALUES ('rebuild')")
     }
 }
 

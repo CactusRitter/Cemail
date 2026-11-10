@@ -3,6 +3,16 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.30.0 — 2026-11-10
+Cinco funciones nuevas para el uso diario.
+- **Posponer de verdad:** a la hora elegida el mensaje vuelve a la bandeja como no leído y Cemail avisa con una notificación (también con la app cerrada, con WorkManager).
+- **Spam y vaciar papelera:** carpeta Spam en el menú (en Gmail, Microsoft e IMAP), acción «Spam» en el menú del mensaje (en la carpeta Spam sirve para sacarlo) y botón «Vaciar la papelera» / «Vaciar el spam» con confirmación. En Gmail el borrado definitivo necesita un permiso más amplio que el actual: hasta pedirlo, avisa de que el servidor lo rechazó.
+- **Deshacer envío y envío programado:** un mensaje espera en una bandeja de salida guardada en el teléfono (5, 10, 20 o 30 s, o desactivado, en Ajustes) y puede deshacerse devolviéndolo al editor; sale igualmente si cierras la app. Botón del reloj en la redacción para elegir hora (más tarde hoy, mañana, fin de semana, semana que viene, o fecha y hora propias). Carpeta «Programados» en el menú; tocar uno lo abre para editarlo.
+- **Búsqueda sin conexión en todo el texto** (Room FTS4, sin distinguir mayúsculas ni acentos): encuentra cualquier palabra del mensaje, no solo del principio, en todas las cuentas. Los operadores (`from:`, `is:unread`) siguen funcionando como antes.
+- **Cancelar suscripción en un toque** (cabecera `List-Unsubscribe`: un clic, página web o mensaje) y **silenciar conversación** (archiva el hilo y los mensajes nuevos de él), ambos en el menú ⋮ del mensaje.
+- **Añadir cuenta pasa a Ajustes** (Google, Microsoft u otra) y el menú lateral queda más ligero; al tocar una cuenta el menú ya no se cierra, para elegir enseguida sus etiquetas.
+- Base de datos a la v10 (columna de envío, búsqueda de texto completo y conversaciones silenciadas). Tests nuevos de búsqueda, cancelar suscripción, etiquetas de spam y caché.
+
 ## 0.29.1 — 2026-11-10
 - **Arreglo de la sincronización al arrancar:** la pantalla que lanzaba la sincronización la cancelaba al cambiar las cuentas mostradas, la app lo contaba como fallo y la pantalla nueva, al ver que ya había una en marcha, no hacía otra: no se sincronizaba nada hasta la siguiente comprobación automática (y salía el aviso de «no se pudo sincronizar»). Ahora la sincronización corre en el ámbito de la app y no depende de la pantalla que la pidió; una cancelación ya no se cuenta como error.
 

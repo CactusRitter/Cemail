@@ -21,6 +21,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -28,7 +31,16 @@ import kotlinx.coroutines.launch
 import java.util.Calendar
 
 /** Something the user just did, offered to be undone for a few seconds (Spark-style). */
-data class UndoEvent(val id: Long, @StringRes val message: Int, val previous: List<Mail>)
+data class UndoEvent(
+    val id: Long,
+    @StringRes val message: Int,
+    val previous: List<Mail>,
+    /** "Undo send": the Outbox message to take back, and the draft to give back to the user. */
+    val cancelSend: Long? = null,
+    val restore: Draft? = null,
+    /** How long the bar stays (an undoable send stays as long as its delay). */
+    val durationMillis: Long = 5_000,
+)
 
 /** A message being written. */
 data class Draft(
@@ -91,23 +103,26 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
     private val ui = MutableStateFlow(Ui())
     private var undoCounter = 0L
 
-    val state: StateFlow<MailUiState> = combine(repo.mails, ui, repo.syncing, repo.labels) { rawMails, u, syncing, labels ->
+    /** Ids found by the full-text search for the current query (empty while there is no query or it uses operators). */
+    private val searchHits = MutableStateFlow<Set<Long>>(emptySet())
+
+    val state: StateFlow<MailUiState> = combine(repo.mails, ui, repo.syncing, repo.labels, searchHits) { rawMails, u, syncing, labels, hits ->
         val mails = withKnownNames(rawMails)
         val now = System.currentTimeMillis()
-        val inBox = if (u.labelId != null) mails.filter { u.labelId in it.labelIds && it.folder != Folder.TRASH } else mails.filter { it.inBox(u.box, now) }
-        val shown = (if (u.query.isBlank()) inBox else mails.filter { it.folder != Folder.TRASH && it.matches(u.query) })
+        val inBox = if (u.labelId != null) mails.filter { u.labelId in it.labelIds && !it.discarded } else mails.filter { it.inBox(u.box, now) }
+        val shown = (if (u.query.isBlank()) inBox else mails.filter { !it.discarded && (it.matches(u.query) || it.id in hits) })
             .sortedByDescending { it.timeMillis }
         val showPinned = u.box == MailBox.INBOX && u.labelId == null && u.query.isBlank()
         val open = u.openId?.let { id -> mails.firstOrNull { it.id == id } }
         val conversation = open?.threadId?.let { thread ->
-            mails.filter { it.threadId == thread && it.accountId == open.accountId && it.id != open.id && it.folder != Folder.TRASH }
+            mails.filter { it.threadId == thread && it.accountId == open.accountId && it.id != open.id && !it.discarded }
                 .sortedByDescending { it.timeMillis }
         }.orEmpty()
         MailUiState(
             thread = conversation,
             box = u.box, query = u.query, searching = u.searching, selection = u.selection, syncing = syncing,
             labels = labels, labelId = u.labelId, expanded = u.expanded, collapsedSections = u.collapsedSections,
-            unreadByLabel = labels.associate { l -> l.id to mails.count { !it.read && l.id in it.labelIds && it.folder != Folder.TRASH } },
+            unreadByLabel = labels.associate { l -> l.id to mails.count { !it.read && l.id in it.labelIds && !it.discarded } },
             open = open,
             draft = u.draft, snoozeTargets = u.snoozeTargets, undo = u.undo,
             pinned = if (showPinned) shown.filter { it.pinned } else emptyList(),
@@ -118,16 +133,24 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
 
     private fun Mail.inBox(box: MailBox, now: Long) = when (box) {
         MailBox.INBOX -> folder == Folder.INBOX && !isSnoozed(now)
-        MailBox.STARRED -> starred && folder != Folder.TRASH
+        MailBox.STARRED -> starred && !discarded
         MailBox.SNOOZED -> folder == Folder.INBOX && isSnoozed(now)
         MailBox.SENT -> folder == Folder.SENT
         MailBox.DRAFTS -> folder == Folder.DRAFTS
         MailBox.ARCHIVE -> folder == Folder.ARCHIVE
+        MailBox.OUTBOX -> folder == Folder.OUTBOX
+        MailBox.SPAM -> folder == Folder.SPAM
         MailBox.TRASH -> folder == Folder.TRASH
     }
 
     init {
         refresh()
+        // The full-text search follows what is typed, a moment after the last key.
+        viewModelScope.launch {
+            ui.map { it.query }.distinctUntilChanged().debounce(200).collect { query ->
+                searchHits.value = if (query.isBlank()) emptySet() else repo.searchIds(query)
+            }
+        }
     }
 
     /** Syncs with the server; a failure is told with the same bar that offers Undo. */
@@ -176,6 +199,19 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
 
     fun archive(ids: Set<Long>) = act(ids, R.string.done_archived, true) { it.copy(folder = Folder.ARCHIVE, snoozedUntil = null) }
     fun trash(ids: Set<Long>) = act(ids, R.string.done_trashed, true) { it.copy(folder = Folder.TRASH, snoozedUntil = null) }
+    /** Deletes everything in the Trash or Spam for good (the screen asked first); tells how it went. */
+    fun emptyFolder(box: MailBox) {
+        val folder = when (box) {
+            MailBox.TRASH -> Folder.TRASH
+            MailBox.SPAM -> Folder.SPAM
+            else -> return
+        }
+        viewModelScope.launch {
+            val ok = repo.emptyFolder(folder)
+            ui.update { it.copy(undo = UndoEvent(++undoCounter, if (ok) R.string.done_emptied else R.string.empty_failed, emptyList())) }
+        }
+    }
+    fun spam(ids: Set<Long>) = act(ids, R.string.done_spammed, true) { it.copy(folder = Folder.SPAM, snoozedUntil = null) }
     fun moveToInbox(ids: Set<Long>) = act(ids, R.string.done_marked, true) { it.copy(folder = Folder.INBOX, snoozedUntil = null) }
     fun toggleStar(ids: Set<Long>) {
         val turnOn = repo.snapshot(ids).any { !it.starred }
@@ -200,6 +236,10 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
     fun undo() {
         val u = ui.value.undo ?: return
         if (u.previous.isNotEmpty()) repo.restore(u.previous)
+        u.cancelSend?.let { id ->
+            repo.cancelScheduled(id)
+            u.restore?.let { draft -> ui.update { it.copy(draft = draft) } }
+        }
         ui.update { it.copy(undo = null) }
     }
     fun dismissUndo(id: Long) = ui.update { if (it.undo?.id == id) it.copy(undo = null) else it }
@@ -239,12 +279,18 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
 
     /** Re-opens a saved draft for editing (the stored copy is removed; it is saved again on close). */
     fun editDraft(mail: Mail) {
-        repo.remove(mail.id)
+        // A scheduled message is taken out of the Outbox; its attachments come back into the editor.
+        val attachments = if (mail.folder == Folder.OUTBOX) {
+            com.cemail.app.data.mail.Outbox.load(mail.id).first.also { repo.cancelScheduled(mail.id) }
+        } else {
+            repo.remove(mail.id)
+            emptyList()
+        }
         ui.update {
             it.copy(
                 draft = Draft(
                     to = mail.senderName, subject = mail.subject, body = mail.body,
-                    cc = mail.cc, bcc = mail.bcc, html = mail.bodyHtml?.takeIf { h -> h.isNotBlank() },
+                    cc = mail.cc, bcc = mail.bcc, html = mail.bodyHtml?.takeIf { h -> h.isNotBlank() }, attachments = attachments,
                     signed = true, threadId = mail.threadId, inReplyTo = mail.inReplyTo, references = mail.references,
                 ),
             )
@@ -261,12 +307,32 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
         }
     }
 
-    fun send(me: String) {
+    /**
+     * Sends the message. With an undo delay ([undoMillis]) or a chosen time ([at]) it waits in the Outbox first: it is
+     * a saved row, so it goes out even if the app closes meanwhile, and Undo takes it back into the editor.
+     */
+    fun send(me: String, undoMillis: Long = 0, at: Long? = null) {
         val d = ui.value.draft ?: return
         ui.update { it.copy(draft = null) }
-        // send() puts it in Sent at once and delivers it through Gmail (a failure leaves it in Drafts).
-        repo.send(d.toMail(repo.nextId(), me, Folder.SENT))
-        ui.update { it.copy(undo = UndoEvent(++undoCounter, R.string.done_sent, emptyList())) }
+        val mail = d.toMail(repo.nextId(), me, Folder.SENT)
+        val sendAt = at ?: undoMillis.takeIf { it > 0 }?.let { System.currentTimeMillis() + it }
+        if (sendAt == null) {
+            // send() puts it in Sent at once and delivers it (a failure leaves it in Drafts).
+            repo.send(mail)
+            ui.update { it.copy(undo = UndoEvent(++undoCounter, R.string.done_sent, emptyList())) }
+            return
+        }
+        viewModelScope.launch {
+            val id = repo.schedule(mail, sendAt)
+            ui.update {
+                it.copy(
+                    undo = UndoEvent(
+                        ++undoCounter, if (at != null) R.string.done_scheduled else R.string.done_sent, emptyList(),
+                        cancelSend = id, restore = d, durationMillis = if (at != null) 8_000 else maxOf(5_000, undoMillis),
+                    ),
+                )
+            }
+        }
     }
 
     private fun Draft.toMail(id: Long, me: String, folder: Folder): Mail {
@@ -311,6 +377,14 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
 
     suspend fun inlineImages(id: Long): Map<String, String> = repo.inlineImages(id)
     suspend fun full(id: Long): Mail? = repo.full(id)
+    suspend fun unsubscribeInfo(id: Long) = repo.unsubscribeInfo(id)
+    suspend fun isMuted(id: Long) = repo.isMuted(id)
+
+    /** Mutes or unmutes the conversation of a message; muting also closes it and says so. */
+    fun setMuted(id: Long, muted: Boolean) {
+        repo.setMuted(id, muted)
+        if (muted) ui.update { it.copy(openId = null, undo = UndoEvent(++undoCounter, R.string.done_muted, emptyList())) }
+    }
     suspend fun userLabels(accountId: String) = repo.userLabels(accountId)
 
     /** The people who wrote to the user, to offer as recipients while typing. */

@@ -62,6 +62,21 @@ class UnifiedMailRepository(private val accounts: List<MailRepository>, scope: C
         return null
     }
 
+    override suspend fun isMuted(id: Long): Boolean = accounts.any { it.isMuted(id) }
+    override fun setMuted(id: Long, muted: Boolean) = accounts.forEach { it.setMuted(id, muted) }
+    override suspend fun unsubscribeInfo(id: Long): UnsubscribeInfo? {
+        for (account in accounts) account.unsubscribeInfo(id)?.let { return it }
+        return null
+    }
+    override suspend fun searchIds(query: String): Set<Long> = accounts.flatMap { it.searchIds(query) }.toSet()
+    override suspend fun schedule(mail: Mail, at: Long): Long = accounts.first().schedule(mail, at)
+    override fun cancelScheduled(id: Long) = accounts.forEach { it.cancelScheduled(id) }
+    override suspend fun deliver(id: Long): Boolean = accounts.any { it.deliver(id) }
+
+    override suspend fun emptyFolder(folder: Folder): Boolean = coroutineScope {
+        accounts.map { async { it.emptyFolder(folder) } }.awaitAll().all { it }
+    }
+
     override suspend fun full(id: Long): Mail? {
         for (account in accounts) account.full(id)?.let { return it }
         return null

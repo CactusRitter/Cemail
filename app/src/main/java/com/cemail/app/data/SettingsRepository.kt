@@ -20,6 +20,8 @@ data class AppSettings(
     val showSenderCircle: Boolean = true,
     /** Show a notification for mail that arrives while the app is closed. */
     val notifications: Boolean = true,
+    /** Seconds a sent message waits so it can still be undone; 0 = sent at once. */
+    val undoSendSeconds: Int = 5,
 )
 
 /** Small app preferences, kept in SharedPreferences and exposed as a StateFlow (same approach as Cenotes). */
@@ -39,6 +41,7 @@ class SettingsRepository(context: Context) {
         syncMinutes = prefs.getInt(KEY_SYNC, 15),
         showSenderCircle = prefs.getBoolean(KEY_CIRCLE, true),
         notifications = prefs.getBoolean(KEY_NOTIFICATIONS, true),
+        undoSendSeconds = prefs.getInt(KEY_UNDO_SEND, 5),
     )
 
 
@@ -95,6 +98,11 @@ class SettingsRepository(context: Context) {
         _state.value = _state.value.copy(syncMinutes = value)
     }
 
+    fun setUndoSendSeconds(value: Int) {
+        prefs.edit().putInt(KEY_UNDO_SEND, value).apply()
+        _state.value = _state.value.copy(undoSendSeconds = value)
+    }
+
     fun setShowSenderCircle(value: Boolean) {
         prefs.edit().putBoolean(KEY_CIRCLE, value).apply()
         _state.value = _state.value.copy(showSenderCircle = value)
@@ -102,6 +110,7 @@ class SettingsRepository(context: Context) {
 
     private companion object {
         const val KEY_CIRCLE = "show_sender_circle"
+        const val KEY_UNDO_SEND = "undo_send_seconds"
         const val KEY_NOTIFICATIONS = "notifications"
         const val KEY_ASKED = "asked_notification_permission"
         const val KEY_SYNC = "sync_minutes"

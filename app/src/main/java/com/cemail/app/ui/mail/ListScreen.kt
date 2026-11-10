@@ -39,6 +39,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -77,6 +80,8 @@ fun MailBox.labelRes(): Int = when (this) {
     MailBox.SENT -> R.string.box_sent
     MailBox.DRAFTS -> R.string.box_drafts
     MailBox.ARCHIVE -> R.string.box_archive
+    MailBox.OUTBOX -> R.string.box_outbox
+    MailBox.SPAM -> R.string.box_spam
     MailBox.TRASH -> R.string.box_trash
 }
 
@@ -91,7 +96,7 @@ fun ListScreen(
 ) {
     val haze = rememberHazeState()
     val selecting = state.selection.isNotEmpty()
-    val startIsArchive = state.box != MailBox.ARCHIVE && state.box != MailBox.TRASH
+    val startIsArchive = state.box != MailBox.ARCHIVE && state.box != MailBox.TRASH && state.box != MailBox.SPAM
 
     Box(Modifier.fillMaxSize()) {
         // The background is a blur source too (as in Cenotes), so the buttons over it get real frosted glass
@@ -131,6 +136,9 @@ fun ListScreen(
                         }
                     }
                 }
+            }
+            if ((state.box == MailBox.TRASH || state.box == MailBox.SPAM) && state.labelId == null && state.query.isBlank() && !empty) {
+                item(key = "empty-folder") { EmptyFolderButton(state.box, vm) }
             }
             if (state.pinned.isNotEmpty()) {
                 item(key = "h-pinned") { SectionHeader(stringResource(R.string.section_pinned)) }
@@ -212,7 +220,7 @@ private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsA
         mail = mail,
         selected = mail.id in state.selection,
         selectionMode = state.selection.isNotEmpty(),
-        onClick = { if (state.selection.isNotEmpty()) vm.toggleSelect(mail.id) else if (mail.folder == Folder.DRAFTS) vm.editDraft(mail) else vm.open(mail.id) },
+        onClick = { if (state.selection.isNotEmpty()) vm.toggleSelect(mail.id) else if (mail.folder == Folder.DRAFTS || mail.folder == Folder.OUTBOX) vm.editDraft(mail) else vm.open(mail.id) },
         onLongClick = { vm.toggleSelect(mail.id) },
         onToggleStar = { vm.toggleStar(one) },
         onSwipeStart = { if (startIsArchive) vm.archive(one) else vm.moveToInbox(one) },
@@ -305,6 +313,39 @@ private fun DateHeader(section: DateSection, count: Int, collapsed: Boolean, onC
             stringResource(if (collapsed) R.string.label_expand else R.string.label_collapse),
             Modifier.padding(horizontal = 8.dp),
             tint = MaterialTheme.colorScheme.primary,
+        )
+    }
+}
+
+/** "Empty trash" / "Empty spam" at the top of those folders; it asks before deleting anything for good. */
+@Composable
+private fun EmptyFolderButton(box: MailBox, vm: MailViewModel) {
+    var confirm by remember { mutableStateOf(false) }
+    val name = stringResource(box.labelRes())
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Text(
+            stringResource(if (box == MailBox.TRASH) R.string.empty_trash else R.string.empty_spam),
+            Modifier
+                .glass(CircleShape, GlassKind.Card)
+                .clickable(role = Role.Button) { confirm = true }
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.error,
+        )
+    }
+    if (confirm) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { confirm = false },
+            title = { Text(stringResource(R.string.empty_confirm_title)) },
+            text = { Text(stringResource(R.string.empty_confirm_body, name)) },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = { confirm = false; vm.emptyFolder(box) }) {
+                    Text(stringResource(R.string.delete_forever), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { confirm = false }) { Text(stringResource(R.string.cancel)) }
+            },
         )
     }
 }

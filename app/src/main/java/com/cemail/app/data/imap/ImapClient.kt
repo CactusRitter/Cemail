@@ -199,6 +199,14 @@ class ImapClient(private val config: ImapConfig) {
         folder.expunge()
     }
 
+    /** Deletes every message of the folder for good. */
+    fun expungeAll(folder: IMAPFolder) {
+        val all = folder.messages
+        if (all.isEmpty()) return
+        folder.setFlags(all, Flags(Flags.Flag.DELETED), true)
+        folder.expunge()
+    }
+
     fun raw(folder: IMAPFolder, uid: Long): ByteArray? {
         val message = byUid(folder, uid) ?: return null
         return ByteArrayOutputStream().also { message.writeTo(it) }.toByteArray()

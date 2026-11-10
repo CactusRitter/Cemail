@@ -69,6 +69,29 @@ class MailNotifier(private val context: Context) {
         NotificationManagerCompat.from(context).notify(accountId.hashCode(), builder.build())
     }
 
+    /** Messages that came back from a snooze. Their ids are not remembered: they are announced once, as they return. */
+    @SuppressLint("MissingPermission") // checked by allowed()
+    fun showSnoozed(accountLabel: String?, mails: List<Mail>) {
+        if (mails.isEmpty() || !allowed()) return
+        val open = PendingIntent.getActivity(
+            context, 0, Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        for (mail in mails.take(MAX_LINES)) {
+            val subject = mail.subject.ifBlank { context.getString(R.string.no_subject) }
+            val builder = NotificationCompat.Builder(context, CHANNEL)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentIntent(open)
+                .setAutoCancel(true)
+                .setCategory(NotificationCompat.CATEGORY_REMINDER)
+                .setContentTitle(context.getString(R.string.notif_snoozed_title, mail.senderName))
+                .setContentText(subject)
+                .setSubText(accountLabel)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(subject + "\n" + mail.preview))
+            NotificationManagerCompat.from(context).notify(("snoozed" + mail.id).hashCode(), builder.build())
+        }
+    }
+
     /** A button that acts on every message the notification shows. */
     private fun action(name: String, accountId: String, mails: List<Mail>, n: Int): PendingIntent {
         val intent = Intent(context, MailActionReceiver::class.java).setAction(name)

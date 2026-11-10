@@ -47,11 +47,10 @@ fun accountPalette(): List<Color> {
 
 /**
  * Top of the drawer. "All accounts" (the unified inbox) is always the first row. Below it, a pill with the
- * account being shown unfolds the list of accounts and "Add account". Removing an account is in Settings.
+ * account being shown unfolds the list of accounts; tapping one switches to it and keeps the menu open, so its labels can be picked right away. Adding and removing accounts is in Settings.
  */
 @Composable
-fun AccountSwitcher(acc: AccountUiState, onSelect: (String?) -> Unit, onAdd: () -> Unit, onAddMicrosoft: () -> Unit, onAddImap: () -> Unit) {
-    var adding by rememberSaveable { mutableStateOf(false) }
+fun AccountSwitcher(acc: AccountUiState, onSelect: (String?) -> Unit) {
     val accounts = acc.accounts
     val palette = accountPalette()
     val several = accounts.size > 1
@@ -62,7 +61,7 @@ fun AccountSwitcher(acc: AccountUiState, onSelect: (String?) -> Unit, onAdd: () 
         AccountPill(
             title = stringResource(R.string.account_all), subtitle = stringResource(R.string.account_all_body),
             stripe = null, selected = acc.selectedId == null, expanded = null,
-            onClick = { open = false; onSelect(null) },
+            onClick = { onSelect(null) },
         ) { AllAccountsIcon() }
     }
 
@@ -91,40 +90,8 @@ fun AccountSwitcher(acc: AccountUiState, onSelect: (String?) -> Unit, onAdd: () 
             stripe = if (several) palette[index % palette.size] else null,
             selected = account.id == current?.id && acc.selectedId != null || (account.id == current?.id && !several),
             expanded = null,
-            onClick = { open = false; onSelect(account.id) },
+            onClick = { onSelect(account.id) },
         ) { Avatar(account.displayName ?: account.email, size = 40) }
-    }
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .glass(CircleShape, GlassKind.Card)
-            .clickable(role = Role.Button) { adding = !adding }
-            .padding(horizontal = 8.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
-            Icon(Icons.Filled.Add, null, tint = MaterialTheme.colorScheme.primary)
-        }
-        Text(stringResource(R.string.account_add), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
-    }
-    if (adding) {
-        listOf(
-            R.string.account_add_google to onAdd,
-            R.string.account_add_microsoft to onAddMicrosoft,
-            R.string.account_add_other to onAddImap,
-        ).forEach { (label, action) ->
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(start = 24.dp)
-                    .glass(CircleShape, GlassKind.Card)
-                    .clickable(role = Role.Button) { open = false; adding = false; action() }
-                    .padding(horizontal = 20.dp, vertical = 14.dp),
-            ) {
-                Text(stringResource(label), style = MaterialTheme.typography.titleSmall)
-            }
-        }
     }
 }
 

@@ -52,6 +52,30 @@ interface MailRepository {
     /** Downloads one attachment to the phone's cache (once) and returns the file, or null if it fails. */
     suspend fun attachmentFile(id: Long, attachment: com.cemail.app.data.gmail.AttachmentInfo): java.io.File?
 
+    /** Puts the message in the Outbox to be sent at [at] (a few seconds ahead for "undo send"). Returns its id. */
+    suspend fun schedule(mail: Mail, at: Long): Long
+
+    /** Takes a message out of the Outbox (it will not be sent). */
+    fun cancelScheduled(id: Long)
+
+    /** Sends a message of the Outbox now (called when its time comes). true if it went out. */
+    suspend fun deliver(id: Long): Boolean
+
+    /** true if the conversation of this message is muted. */
+    suspend fun isMuted(id: Long): Boolean
+
+    /** Mutes (archiving it now, and every new message of it from now on) or unmutes the conversation of a message. */
+    fun setMuted(id: Long, muted: Boolean)
+
+    /** How to leave the mailing list this message came from (from its headers; needs a connection), or null. */
+    suspend fun unsubscribeInfo(id: Long): UnsubscribeInfo?
+
+    /** Ids of the messages whose subject, sender or whole text contain every word of [query] (works offline). */
+    suspend fun searchIds(query: String): Set<Long>
+
+    /** Deletes for good everything in the Trash or Spam folder. false if the server refused (nothing is removed then). */
+    suspend fun emptyFolder(folder: Folder): Boolean
+
     /** The pictures embedded in a message, as Content-ID → `data:` URI (downloaded once, then kept on the phone). */
     suspend fun inlineImages(id: Long): Map<String, String>
 }
@@ -85,4 +109,18 @@ class DemoMailRepository(seed: List<Mail>, private val demoLabels: List<Label> =
     override suspend fun attachments(id: Long) = emptyList<com.cemail.app.data.gmail.AttachmentInfo>()
     override suspend fun attachmentFile(id: Long, attachment: com.cemail.app.data.gmail.AttachmentInfo): java.io.File? = null
     override suspend fun inlineImages(id: Long) = emptyMap<String, String>()
+    override suspend fun searchIds(query: String): Set<Long> = emptySet()
+    override suspend fun unsubscribeInfo(id: Long): UnsubscribeInfo? = null
+    override suspend fun isMuted(id: Long) = false
+    override fun setMuted(id: Long, muted: Boolean) = Unit
+    override suspend fun schedule(mail: Mail, at: Long): Long {
+        add(mail.copy(folder = Folder.SENT))
+        return 0
+    }
+    override fun cancelScheduled(id: Long) = Unit
+    override suspend fun deliver(id: Long) = false
+    override suspend fun emptyFolder(folder: Folder): Boolean {
+        state.update { l -> l.filter { it.folder != folder } }
+        return true
+    }
 }

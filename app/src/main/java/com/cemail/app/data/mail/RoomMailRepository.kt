@@ -4,6 +4,7 @@ import com.cemail.app.data.db.LabelDao
 import com.cemail.app.data.db.LabelEntity
 import com.cemail.app.data.db.MessageDao
 import com.cemail.app.data.db.MessageEntity
+import com.cemail.app.data.db.MutedThread
 import com.cemail.app.data.gmail.GmailApi
 import com.cemail.app.data.gmail.GmailHttpException
 import com.cemail.app.data.gmail.GmailMessage
@@ -119,6 +120,75 @@ class RoomMailRepository(
         }
     }
 
+    /** The Gmail way of sending, shared by a normal send and by the Outbox. */
+    private suspend fun transmit(mail: Mail) {
+        api.send(
+            MimeBuilder.build(
+                mail.senderName, mail.subject, mail.body, mail.outgoing, mail.cc, mail.bcc, mail.outgoingHtml,
+                mail.inReplyTo, mail.references, mail.outgoingImages,
+            ),
+            mail.threadId,
+        )
+    }
+
+    override suspend fun isMuted(id: Long): Boolean = withContext(Dispatchers.IO) {
+        val thread = dao.threadIdOf(id) ?: return@withContext false
+        dao.mutedCount(accountId, thread) > 0
+    }
+
+    override fun setMuted(id: Long, muted: Boolean) {
+        scope.launch(Dispatchers.IO) {
+            val thread = dao.threadIdOf(id) ?: return@launch
+            if (muted) {
+                dao.mute(MutedThread(accountId, thread))
+                // What is already in the Inbox goes to the archive now.
+                write(mails.value.filter { it.accountId == accountId && it.threadId == thread && it.folder == Folder.INBOX }
+                    .map { it to it.copy(folder = Folder.ARCHIVE, read = true) })
+            } else {
+                dao.unmute(accountId, thread)
+            }
+        }
+    }
+
+    /** A message of a muted conversation does not stay in the Inbox: it is archived on the server and here. */
+    private suspend fun applyMute(entity: MessageEntity): MessageEntity {
+        val thread = entity.threadId ?: return entity
+        if (entity.folder != Folder.INBOX.name || dao.mutedCount(accountId, thread) == 0) return entity
+        try { api.modify(entity.remoteId!!, emptyList(), listOf("INBOX", "UNREAD")) } catch (_: Exception) { /* next sync corrects it */ }
+        return entity.copy(folder = Folder.ARCHIVE.name, read = true)
+    }
+
+    override suspend fun unsubscribeInfo(id: Long): UnsubscribeInfo? = withContext(Dispatchers.IO) {
+        val remote = dao.remoteIdOf(id, accountId) ?: return@withContext null
+        try {
+            val h = api.getHeaders(remote, Unsubscribe.HEADERS)
+            Unsubscribe.parse(h["List-Unsubscribe"], h["List-Unsubscribe-Post"])
+        } catch (e: Exception) {
+            AppLog.e("unsubscribe", "could not read the headers", e)
+            null
+        }
+    }
+
+    override suspend fun searchIds(query: String): Set<Long> = withContext(Dispatchers.IO) {
+        val q = ftsQuery(query) ?: return@withContext emptySet()
+        try {
+            dao.searchIds(accountId, q).toSet()
+        } catch (e: Exception) {
+            AppLog.e("search", "full-text search failed", e)
+            emptySet()
+        }
+    }
+
+    override suspend fun schedule(mail: Mail, at: Long): Long = withContext(Dispatchers.IO) { dao.scheduleOutbox(accountId, mail, at) }
+
+    override fun cancelScheduled(id: Long) {
+        scope.launch(Dispatchers.IO) { dao.cancelOutbox(id) }
+    }
+
+    override suspend fun deliver(id: Long): Boolean = withContext(Dispatchers.IO) {
+        deliverOutbox(dao, accountId, id, ::transmit).also { if (it) refresh() }
+    }
+
     override fun nextId() = 0L
     override fun remove(id: Long) {
         scope.launch(Dispatchers.IO) { dao.delete(id) }
@@ -141,6 +211,24 @@ class RoomMailRepository(
                 _syncing.value = false
             }
         }.await()
+    }
+
+    override suspend fun emptyFolder(folder: Folder): Boolean = withContext(Dispatchers.IO) {
+        val query = when (folder) {
+            Folder.TRASH -> "in:trash"
+            Folder.SPAM -> "in:spam"
+            else -> return@withContext false
+        }
+        try {
+            val ids = api.listMessageIds(query, 1000)
+            ids.chunked(1000).forEach { api.batchDelete(it) }
+            dao.deleteRemoteInFolder(accountId, folder.name)
+            AppLog.i("empty", "...${accountId.takeLast(4)} Gmail ${folder.name} emptied (${ids.size})")
+            true
+        } catch (e: Exception) {
+            AppLog.e("empty", "could not empty ${folder.name}", e)
+            false
+        }
     }
 
     override suspend fun emlFile(id: Long): File? = withContext(Dispatchers.IO) {
@@ -324,11 +412,11 @@ class RoomMailRepository(
     /** Downloads a message whole and stores it (replacing [old]); spam and chats are not kept. */
     private suspend fun ingest(id: String, old: MessageEntity?, arrived: java.util.Queue<MessageEntity>) {
         val message = api.getMessage(id)
-        if (message.labelIds.any { it == "SPAM" || it == "CHAT" }) {
+        if (message.labelIds.any { it == "CHAT" }) {
             if (old != null) dao.delete(old.localId)
             return
         }
-        val entity = GmailParser.parse(message).toEntity(accountId, id).capped()
+        val entity = applyMute(GmailParser.parse(message).toEntity(accountId, id).capped())
         // Embedded pictures first, so they are already there when the message shows up.
         if (entity.bodyHtml?.contains("cid:", ignoreCase = true) == true) {
             try { saveInlineImages(id, message) } catch (_: Exception) { /* retried when the message is opened */ }
@@ -345,10 +433,6 @@ class RoomMailRepository(
 
     /** Puts the labels the server has on the cached copy (and drops it if it became spam). */
     private suspend fun applyLabels(old: MessageEntity, labels: Set<String>) {
-        if ("SPAM" in labels) {
-            dao.delete(old.localId)
-            return
-        }
         val state = LabelDiff.stateOf(labels)
         val joined = labels.sorted().joinToString(" ")
         if (state.folder.name != old.folder || state.read != old.read || state.starred != old.starred || joined != old.labelIds) {
@@ -360,7 +444,8 @@ class RoomMailRepository(
         // Taken before listing: anything that changes meanwhile shows up in the next delta.
         val historyAtStart = try { api.currentHistoryId() } catch (_: Exception) { null }
         if (!quick) syncLabels()
-        val remoteIds = api.listMessageIds(QUERY, LIMIT)
+        // The newest messages, and the newest spam apart so that a flood of spam never pushes real mail out of the window.
+        val remoteIds = (api.listMessageIds(QUERY, LIMIT) + api.listMessageIds("in:spam", SPAM_LIMIT)).distinct()
         val cached = dao.remoteOnes(accountId).associateBy { it.remoteId!! }
         val gate = Semaphore(6)
         val arrived = java.util.concurrent.ConcurrentLinkedQueue<MessageEntity>()
@@ -372,7 +457,7 @@ class RoomMailRepository(
                         if (old == null || old.bodyHtml == null) {
                             // New message, or one saved before HTML was kept: download it whole.
                             val message = api.getMessage(id)
-                            val entity = GmailParser.parse(message).toEntity(accountId, id).capped()
+                            val entity = applyMute(GmailParser.parse(message).toEntity(accountId, id).capped())
                             // Embedded pictures first, so they are already there when the message shows up.
                             if (entity.bodyHtml?.contains("cid:", ignoreCase = true) == true) {
                                 try { saveInlineImages(id, message) } catch (_: Exception) { /* retried when the message is opened */ }
@@ -425,6 +510,7 @@ class RoomMailRepository(
     private companion object {
         const val QUERY = "in:anywhere -in:spam -in:chats"
         const val LIMIT = 120
+        const val SPAM_LIMIT = 30
         const val MAX_INLINE_BYTES = 4 * 1024 * 1024
         const val RECENT_MILLIS = 3L * 24 * 60 * 60 * 1000
         const val CHUNK = 250_000
@@ -446,6 +532,7 @@ internal fun MessageEntity.toMail() = Mail(
     snoozedUntil = snoozedUntil, hasAttachment = hasAttachment,
     labelIds = labelIds.split(" ").filter { it.isNotEmpty() }.toSet(), bodyHtml = bodyHtml, accountId = accountId,
     threadId = threadId,
+    sendAt = sendAt,
     cc = cc, bcc = bcc,
     inReplyTo = replyRefs.substringBefore('\n').ifBlank { null }, references = replyRefs.substringAfter('\n', "").ifBlank { null },
 )
@@ -456,6 +543,7 @@ internal fun Mail.toEntity(accountId: String, remoteId: String?) = MessageEntity
     starred = starred, pinned = pinned, snoozedUntil = snoozedUntil, hasAttachment = hasAttachment,
     labelIds = labelIds.sorted().joinToString(" "), bodyHtml = outgoingHtml ?: bodyHtml ?: "", threadId = threadId,
     cc = cc, bcc = bcc, replyRefs = inReplyTo.orEmpty() + "\n" + references.orEmpty(),
+    sendAt = sendAt,
 )
 
 private fun ParsedMessage.toEntity(accountId: String, remoteId: String): MessageEntity {
@@ -475,6 +563,7 @@ object LabelDiff {
     fun stateOf(labels: Set<String>) = State(
         folder = when {
             "TRASH" in labels -> Folder.TRASH
+            "SPAM" in labels -> Folder.SPAM
             "DRAFT" in labels -> Folder.DRAFTS
             "INBOX" in labels -> Folder.INBOX
             "SENT" in labels -> Folder.SENT
@@ -493,9 +582,12 @@ object LabelDiff {
                 Folder.INBOX -> { add += "INBOX"; remove += "TRASH" }
                 Folder.ARCHIVE -> { remove += "INBOX"; remove += "TRASH" }
                 Folder.TRASH -> { add += "TRASH"; remove += "INBOX" }
+                Folder.SPAM -> { add += "SPAM"; remove += "INBOX" }
                 else -> Unit
             }
         }
+        // Taking a message out of Spam (to the Inbox, the archive or the trash) removes the Spam label.
+        if (before.folder == Folder.SPAM && after.folder != Folder.SPAM) remove += "SPAM"
         if (before.read != after.read) if (after.read) remove += "UNREAD" else add += "UNREAD"
         if (before.starred != after.starred) if (after.starred) add += "STARRED" else remove += "STARRED"
         // Labels the user created (their ids look like "Label_12") put on or taken off from the message.

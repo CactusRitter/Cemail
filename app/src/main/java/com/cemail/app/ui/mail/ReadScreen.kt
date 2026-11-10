@@ -24,9 +24,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -212,6 +215,12 @@ fun ReadScreen(
 
         // Top: one floating pill with the back button, the subject over the sender, and the menu button.
         var panel by remember { mutableStateOf(false) }
+        // Looked up when the menu opens (a connection may be needed), so opening a message costs nothing extra.
+        val unsubscribe by produceState<com.cemail.app.data.mail.UnsubscribeInfo?>(null, summary.id, panel) {
+            value = if (panel) vm.unsubscribeInfo(summary.id) else null
+        }
+        val muted by produceState(false, summary.id, panel) { value = panel && vm.isMuted(summary.id) }
+        var unsubscribing by remember { mutableStateOf(false) }
         var attachPanel by remember { mutableStateOf(false) }
         var labelPanel by remember { mutableStateOf(false) }
         Box(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 12.dp, vertical = 8.dp)) {
@@ -277,12 +286,15 @@ fun ReadScreen(
             }
         }
 
+        if (unsubscribing) unsubscribe?.let { info ->
+            UnsubscribeDialog(mail.senderName, info, vm, onDismiss = { unsubscribing = false })
+        }
         if (attachPanel) AttachmentsPopup(mail.id, attachments, vm) { attachPanel = false }
         if (labelPanel) LabelsPopup(mail, accountLabels, vm) { labelPanel = false }
         if (panel) {
             ActionGrid(
                 onDismiss = { panel = false },
-                items = listOf(
+                items = listOfNotNull(
                     PanelItem(CemailIcons.Reply, R.string.action_reply) { reply() },
                     PanelItem(CemailIcons.ReplyAll, R.string.action_reply_all) { reply(all = true) },
                     PanelItem(CemailIcons.Forward, R.string.action_forward) { reply(forward = true) },
@@ -291,6 +303,10 @@ fun ReadScreen(
                         PanelItem(CemailIcons.Archive, R.string.action_archive) { vm.archive(one) }
                     } else {
                         PanelItem(CemailIcons.Inbox, R.string.action_move_inbox) { vm.moveToInbox(one) }
+                    },
+                    // In the Spam folder the same button takes the message back out of it.
+                    PanelItem(Icons.Filled.Warning, R.string.action_spam, selected = mail.folder == Folder.SPAM) {
+                        if (mail.folder == Folder.SPAM) vm.moveToInbox(one) else vm.spam(one)
                     },
                     PanelItem(CemailIcons.Snooze, R.string.action_snooze) { vm.askSnooze(one) },
                     PanelItem(
@@ -311,6 +327,15 @@ fun ReadScreen(
                                 shareFile(context, file, "message/rfc822")
                             }
                         }
+                    },
+                    // Only offered when the message really has them: a mailing list's headers, and a conversation id.
+                    if (unsubscribe != null) PanelItem(Icons.Filled.Close, R.string.action_unsubscribe) { unsubscribing = true } else null,
+                    if (mail.threadId != null) {
+                        PanelItem(Icons.Filled.Notifications, if (muted) R.string.action_unmute else R.string.action_mute, selected = muted) {
+                            vm.setMuted(mail.id, !muted)
+                        }
+                    } else {
+                        null
                     },
                     PanelItem(Icons.Filled.Delete, R.string.action_trash, danger = true) { vm.trash(one) },
                 ),
@@ -562,3 +587,40 @@ fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier, onScroll: (I
 
 /** Subjects that already start with a reply or forward prefix (in English, Spanish, German, French). */
 private val SUBJECT_PREFIX = Regex("""^\s*(re|rv|aw|sv|fwd?|wg|tr)\s*:""", RegexOption.IGNORE_CASE)
+
+/** Asks before leaving a mailing list, then does it the way the list allows: one click, its page, or a message. */
+@Composable
+private fun UnsubscribeDialog(sender: String, info: com.cemail.app.data.mail.UnsubscribeInfo, vm: MailViewModel, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val body = when {
+        info.oneClick -> R.string.unsub_body_oneclick
+        info.https != null -> R.string.unsub_body_web
+        else -> R.string.unsub_body_mail
+    }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.unsub_title, sender)) },
+        text = { Text(stringResource(body)) },
+        confirmButton = {
+            androidx.compose.material3.TextButton(onClick = {
+                onDismiss()
+                when {
+                    info.oneClick -> scope.launch {
+                        val ok = com.cemail.app.data.mail.Unsubscribe.postOneClick(info.https.orEmpty())
+                        Toast.makeText(context, if (ok) R.string.unsub_done else R.string.unsub_failed, Toast.LENGTH_LONG).show()
+                    }
+                    info.https != null -> try {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(info.https)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    } catch (_: Exception) {
+                        Toast.makeText(context, R.string.unsub_failed, Toast.LENGTH_LONG).show()
+                    }
+                    info.mailto != null -> vm.newDraft(Draft(to = info.mailto, subject = info.mailtoSubject ?: "unsubscribe"))
+                }
+            }) { Text(stringResource(R.string.action_unsubscribe)) }
+        },
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
+    )
+}

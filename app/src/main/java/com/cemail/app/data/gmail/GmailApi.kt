@@ -31,9 +31,15 @@ interface GmailApi {
     /** The headers a reply needs (Message-ID, References, From, To, Cc...) and the thread id. */
     suspend fun getReplyInfo(id: String): ReplyInfo
 
+    /** The values of some headers of a message (the first of each). */
+    suspend fun getHeaders(id: String, names: List<String>): Map<String, String>
+
     /** The message exactly as RFC 822 text (what an .eml file holds). */
     suspend fun getRaw(id: String): ByteArray
     suspend fun send(raw: ByteArray, threadId: String? = null)
+
+    /** Deletes messages for good (needs Gmail's full-access scope, not just "modify"). */
+    suspend fun batchDelete(ids: List<String>)
 
     /** The mailbox's current history id: the starting point for [changesSince]. */
     suspend fun currentHistoryId(): String
@@ -99,6 +105,14 @@ class HttpGmailApi(
         call(Request.Builder().url(url).post(body).build())
     }
 
+    override suspend fun getHeaders(id: String, names: List<String>): Map<String, String> {
+        val url = BASE.newBuilder().addPathSegment("messages").addPathSegment(id)
+            .addQueryParameter("format", "metadata")
+            .apply { names.forEach { addQueryParameter("metadataHeaders", it) } }.build()
+        val headers = json.decodeFromString<GmailMessage>(call(Request.Builder().url(url).build())).payload?.headers.orEmpty()
+        return names.mapNotNull { n -> headers.firstOrNull { it.name.equals(n, true) }?.let { n to it.value } }.toMap()
+    }
+
     override suspend fun getRaw(id: String): ByteArray {
         val url = BASE.newBuilder().addPathSegment("messages").addPathSegment(id).addQueryParameter("format", "raw").build()
         val raw = json.decodeFromString<GmailMessage>(call(Request.Builder().url(url).build())).raw ?: throw GmailHttpException(500, "no raw message")
@@ -117,6 +131,12 @@ class HttpGmailApi(
         val encoded = Base64.getUrlEncoder().withoutPadding().encodeToString(raw)
         val body = json.encodeToString(SendRequest(encoded, threadId)).toRequestBody(jsonType)
         call(Request.Builder().url(url).post(body).build())
+    }
+
+    override suspend fun batchDelete(ids: List<String>) {
+        if (ids.isEmpty()) return
+        val url = BASE.newBuilder().addPathSegment("messages").addPathSegment("batchDelete").build()
+        call(Request.Builder().url(url).post(json.encodeToString(BatchDeleteRequest(ids)).toRequestBody(jsonType)).build())
     }
 
     override suspend fun currentHistoryId(): String {

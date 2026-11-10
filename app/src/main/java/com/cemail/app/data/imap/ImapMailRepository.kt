@@ -15,8 +15,14 @@ import com.cemail.app.data.mail.Mail
 import com.cemail.app.data.mail.MailRepository
 import com.cemail.app.data.mail.InlineCache
 import com.cemail.app.data.mail.SyncMarks
+import com.cemail.app.data.mail.Unsubscribe
+import com.cemail.app.data.mail.UnsubscribeInfo
+import com.cemail.app.data.mail.cancelOutbox
+import com.cemail.app.data.mail.deliverOutbox
+import com.cemail.app.data.mail.scheduleOutbox
 import com.cemail.app.data.mail.capped
 import com.cemail.app.data.mail.toEntity
+import com.cemail.app.data.mail.ftsQuery
 import com.cemail.app.data.mail.toMail
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -131,6 +137,58 @@ class ImapMailRepository(
         }
     }
 
+    /** The IMAP way of sending: SMTP, then a copy in Sent. Shared by a normal send and by the Outbox. */
+    private suspend fun transmit(mail: Mail) = withContext(Dispatchers.IO) {
+        val raw = MimeBuilder.build(
+            mail.senderName, mail.subject, mail.body, mail.outgoing, mail.cc, mail.bcc, mail.outgoingHtml,
+            mail.inReplyTo, mail.references, mail.outgoingImages,
+        )
+        val sent = client.send(raw)
+        marks.get("role.SENT")?.let { path ->
+            try {
+                client.withStore { store -> client.appendTo(store, path, sent, seen = true) }
+            } catch (e: Exception) {
+                AppLog.e("send", "sent, but the copy in Sent could not be saved", e)
+            }
+        }
+    }
+
+    /** IMAP messages have no conversation id here, so there is nothing to mute. */
+    override suspend fun isMuted(id: Long): Boolean = false
+    override fun setMuted(id: Long, muted: Boolean) = Unit
+
+    override suspend fun unsubscribeInfo(id: Long): UnsubscribeInfo? = withContext(Dispatchers.IO) {
+        val remote = dao.remoteIdOf(id, accountId) ?: return@withContext null
+        val (path, uid) = parseRemote(remote)
+        try {
+            val h = client.withStore { store -> client.inFolder(store, path, readOnly = true) { client.headers(it, uid, Unsubscribe.HEADERS) } }
+            Unsubscribe.parse(h["List-Unsubscribe"], h["List-Unsubscribe-Post"])
+        } catch (e: Exception) {
+            AppLog.e("unsubscribe", "could not read the headers", e)
+            null
+        }
+    }
+
+    override suspend fun searchIds(query: String): Set<Long> = withContext(Dispatchers.IO) {
+        val q = ftsQuery(query) ?: return@withContext emptySet()
+        try {
+            dao.searchIds(accountId, q).toSet()
+        } catch (e: Exception) {
+            AppLog.e("search", "full-text search failed", e)
+            emptySet()
+        }
+    }
+
+    override suspend fun schedule(mail: Mail, at: Long): Long = withContext(Dispatchers.IO) { dao.scheduleOutbox(accountId, mail, at) }
+
+    override fun cancelScheduled(id: Long) {
+        scope.launch(Dispatchers.IO) { dao.cancelOutbox(id) }
+    }
+
+    override suspend fun deliver(id: Long): Boolean = withContext(Dispatchers.IO) {
+        deliverOutbox(dao, accountId, id, ::transmit).also { if (it) refresh() }
+    }
+
     override fun nextId() = 0L
 
     override fun remove(id: Long) {
@@ -161,7 +219,7 @@ class ImapMailRepository(
         client.withStore { store ->
             val folders = client.folders(store)
             val byRole = folders.groupBy { it.role }.mapValues { it.value.first().path }
-            for (role in listOf(Role.INBOX, Role.SENT, Role.DRAFTS, Role.TRASH, Role.ARCHIVE)) {
+            for (role in listOf(Role.INBOX, Role.SENT, Role.DRAFTS, Role.TRASH, Role.ARCHIVE, Role.JUNK)) {
                 byRole[role]?.let { marks.put("role.$role", it) }
             }
             val wanted = folders.filter { it.role in SYNCED }.sortedBy { it.role.ordinal }
@@ -269,6 +327,19 @@ class ImapMailRepository(
         }
     }
 
+    override suspend fun emptyFolder(folder: Folder): Boolean = withContext(Dispatchers.IO) {
+        val path = marks.get("role.${roleOf(folder)}") ?: return@withContext false
+        try {
+            client.withStore { store -> client.inFolder(store, path) { client.expungeAll(it) } }
+            dao.deleteRemoteInFolder(accountId, folder.name)
+            AppLog.i("empty", "...${accountId.takeLast(4)} IMAP ${folder.name} emptied")
+            true
+        } catch (e: Exception) {
+            AppLog.e("empty", "could not empty ${folder.name}", e)
+            false
+        }
+    }
+
     override suspend fun emlFile(id: Long): File? = withContext(Dispatchers.IO) {
         val remote = dao.remoteIdOf(id, accountId) ?: return@withContext null
         val (path, uid) = parseRemote(remote)
@@ -338,6 +409,7 @@ class ImapMailRepository(
         Role.SENT -> Folder.SENT
         Role.DRAFTS -> Folder.DRAFTS
         Role.TRASH -> Folder.TRASH
+        Role.JUNK -> Folder.SPAM
         else -> Folder.ARCHIVE
     }
 
@@ -347,10 +419,12 @@ class ImapMailRepository(
         Folder.DRAFTS -> Role.DRAFTS
         Folder.TRASH -> Role.TRASH
         Folder.ARCHIVE -> Role.ARCHIVE
+        Folder.SPAM -> Role.JUNK
+        Folder.OUTBOX -> Role.OTHER
     }
 
     private companion object {
-        val SYNCED = setOf(Role.INBOX, Role.SENT, Role.DRAFTS, Role.TRASH, Role.ARCHIVE)
+        val SYNCED = setOf(Role.INBOX, Role.SENT, Role.DRAFTS, Role.TRASH, Role.ARCHIVE, Role.JUNK)
         const val INBOX_LIMIT = 80
         const val OTHER_LIMIT = 30
         const val RECENT_MILLIS = 3L * 24 * 60 * 60 * 1000

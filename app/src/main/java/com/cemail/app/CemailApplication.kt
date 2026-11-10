@@ -136,6 +136,7 @@ class CemailApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         AppLog.init(this)
+        com.cemail.app.data.mail.Outbox.init(java.io.File(filesDir, "outbox"))
         CrashLog.install(this)
         notifier.createChannel()
         appScope.launch { accountRepository.accounts.collect { updateShortcuts(it) } }
@@ -155,6 +156,14 @@ class CemailApplication : Application() {
             override fun onActivityDestroyed(activity: android.app.Activity) = Unit
         })
         SyncWorker.schedule(this, settings.state.value.syncMinutes)
+        // The Outbox: the delivery always follows the earliest message waiting to be sent.
+        appScope.launch {
+            database.messages().nextSend().distinctUntilChanged().collect { com.cemail.app.sync.OutboxWorker.schedule(this@CemailApplication, it) }
+        }
+        // Snoozed messages come back on time: the wake-up always follows the earliest pending snooze.
+        appScope.launch {
+            database.messages().nextSnooze().distinctUntilChanged().collect { com.cemail.app.sync.SnoozeWorker.schedule(this@CemailApplication, it) }
+        }
     }
 
     /** Lives as long as the process: work started while leaving a screen always finishes. */

@@ -24,7 +24,9 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
@@ -81,6 +83,8 @@ private fun MailBox.icon(): ImageVector = when (this) {
     MailBox.SENT -> Icons.AutoMirrored.Filled.Send
     MailBox.DRAFTS -> CemailIcons.Drafts
     MailBox.ARCHIVE -> CemailIcons.Archive
+    MailBox.OUTBOX -> Icons.Filled.DateRange
+    MailBox.SPAM -> Icons.Filled.Warning
     MailBox.TRASH -> Icons.Filled.Delete
 }
 
@@ -183,9 +187,9 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                     DrawerContent(state, acc, unified = unifiedView, onOpenSettings = {
                         showSettings = true
                         scope.launch { drawer.close() }
-                    }, onAddAccount = startSignIn, onAddMicrosoft = startMicrosoft, onAddImap = { imapForm = true }, onSelectAccount = { id ->
+                    }, onSelectAccount = { id ->
+                        // The menu stays open: the labels of the chosen account load in it.
                         accountVm.select(id)
-                        scope.launch { drawer.close() }
                     }, onToggleLabel = vm::toggleExpanded, onPickLabel = { id ->
                         vm.selectLabel(id)
                         scope.launch { drawer.close() }
@@ -200,7 +204,10 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
             Box(Modifier.fillMaxSize()) {
                 when {
                     draft != null -> ComposeScreen(draft, vm, me)
-                    showSettings -> SettingsScreen(settings, settingsRepo, acc.accounts, accountVm::remove) { showSettings = false }
+                    showSettings -> SettingsScreen(
+                        settings, settingsRepo, acc.accounts, accountVm::remove,
+                        onAddGoogle = startSignIn, onAddMicrosoft = startMicrosoft, onAddImap = { showSettings = false; imapForm = true },
+                    ) { showSettings = false }
                     open != null -> ReadScreen(open, vm, settings.alwaysShowImages, state.labels, state.thread)
                     else -> ListScreen(state, vm, grouped = settings.groupByDate && state.query.isBlank(), stripeOf = stripeOf, showSenderCircle = settings.showSenderCircle, onOpenDrawer = { scope.launch { drawer.open() } })
                 }
@@ -218,9 +225,6 @@ private fun DrawerContent(
     acc: AccountUiState,
     unified: Boolean,
     onOpenSettings: () -> Unit,
-    onAddAccount: () -> Unit,
-    onAddMicrosoft: () -> Unit,
-    onAddImap: () -> Unit,
     onSelectAccount: (String?) -> Unit,
     onPickLabel: (String) -> Unit,
     onToggleLabel: (String) -> Unit,
@@ -252,7 +256,7 @@ private fun DrawerContent(
             Icon(Icons.Filled.Settings, null)
             Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.bodyLarge)
         }
-        AccountSwitcher(acc, onSelectAccount, onAddAccount, onAddMicrosoft, onAddImap)
+        AccountSwitcher(acc, onSelectAccount)
         if (accounts.isEmpty()) {
             Text(
                 stringResource(R.string.demo_banner),
@@ -297,7 +301,7 @@ private fun DrawerContent(
 private fun UndoBar(undo: UndoEvent?, vm: MailViewModel, modifier: Modifier) {
     LaunchedEffect(undo?.id) {
         val id = undo?.id ?: return@LaunchedEffect
-        delay(5_000)
+        delay(undo.durationMillis)
         vm.dismissUndo(id)
     }
     if (undo == null) return
@@ -311,7 +315,7 @@ private fun UndoBar(undo: UndoEvent?, vm: MailViewModel, modifier: Modifier) {
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(stringResource(undo.message), style = MaterialTheme.typography.bodyMedium)
-        if (undo.previous.isNotEmpty()) {
+        if (undo.previous.isNotEmpty() || undo.cancelSend != null) {
             Text(
                 stringResource(R.string.action_undo),
                 Modifier

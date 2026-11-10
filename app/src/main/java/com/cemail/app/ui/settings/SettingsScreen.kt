@@ -25,7 +25,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
@@ -74,6 +77,9 @@ fun SettingsScreen(
     repo: SettingsRepository,
     accounts: List<AccountEntity>,
     onRemoveAccount: (String) -> Unit,
+    onAddGoogle: () -> Unit,
+    onAddMicrosoft: () -> Unit,
+    onAddImap: () -> Unit,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -136,6 +142,23 @@ fun SettingsScreen(
                         )
                     }
                     TextAction(R.string.settings_remove_account, MaterialTheme.colorScheme.error) { removing = account }
+                }
+            }
+            // Adding an account lives here (not in the menu): one pill per kind of account.
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(
+                    R.string.account_add_google to onAddGoogle,
+                    R.string.account_add_microsoft to onAddMicrosoft,
+                    R.string.account_add_other to onAddImap,
+                ).forEach { (label, action) ->
+                    Row(
+                        Modifier.glass(CircleShape, GlassKind.Card).clickable(role = Role.Button, onClick = action).padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(Icons.Filled.Add, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                        Text(stringResource(label), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                    }
                 }
             }
 
@@ -282,6 +305,33 @@ fun SettingsScreen(
                                     repo.setSyncMinutes(minutes)
                                     SyncWorker.schedule(context, minutes)
                                 }
+                                .padding(horizontal = 16.dp, vertical = 10.dp),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
+            }
+
+            Column(
+                Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card).padding(horizontal = 18.dp, vertical = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(stringResource(R.string.settings_undo_send_title), style = MaterialTheme.typography.titleSmall)
+                Text(
+                    stringResource(R.string.settings_undo_send_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(0, 5, 10, 20, 30).forEach { seconds ->
+                        val selected = settings.undoSendSeconds == seconds
+                        Text(
+                            if (seconds == 0) stringResource(R.string.undo_send_off) else stringResource(R.string.undo_send_seconds, seconds),
+                            Modifier
+                                .glass(CircleShape, if (selected) GlassKind.Pinned else GlassKind.Card)
+                                .clickable(role = Role.RadioButton) { repo.setUndoSendSeconds(seconds) }
                                 .padding(horizontal = 16.dp, vertical = 10.dp),
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,

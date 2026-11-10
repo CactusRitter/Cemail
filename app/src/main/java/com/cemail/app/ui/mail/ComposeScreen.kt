@@ -170,6 +170,7 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
             vm.editDraft { d -> d.copy(body = rich.toPlainText(), html = html) }
         }
     }
+    var scheduling by remember { mutableStateOf(false) }
     var showCopies by rememberSaveable { mutableStateOf(draft.cc.isNotBlank() || draft.bcc.isNotBlank()) }
 
     Box(Modifier.fillMaxSize().imePadding()) {
@@ -298,16 +299,34 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
                 PillIcon(CemailIcons.Attachment, stringResource(R.string.compose_attach), { picker.launch("*/*") }, width = 44.dp)
                 PillIcon(Icons.Filled.Delete, stringResource(R.string.compose_discard), vm::discardDraft, width = 44.dp)
                 PillIcon(
+                    CemailIcons.Snooze, stringResource(R.string.compose_schedule), {
+                        if (hasRecipientProblem(draft.to, draft.cc, draft.bcc)) {
+                            Toast.makeText(context, R.string.compose_recipient_problem, Toast.LENGTH_LONG).show()
+                        } else {
+                            scheduling = true
+                        }
+                    },
+                    width = 44.dp,
+                )
+                PillIcon(
                     Icons.AutoMirrored.Filled.Send, stringResource(R.string.compose_send), {
                         if (hasRecipientProblem(draft.to, draft.cc, draft.bcc)) {
                             Toast.makeText(context, R.string.compose_recipient_problem, Toast.LENGTH_LONG).show()
                         } else {
-                            vm.send(me)
+                            val undoSeconds = (context.applicationContext as com.cemail.app.CemailApplication).settings.state.value.undoSendSeconds
+                            vm.send(me, undoMillis = undoSeconds * 1000L)
                         }
                     },
                     selected = true, width = 52.dp,
                 )
             }
+        }
+
+        if (scheduling) {
+            ScheduleSendDialog(
+                onPick = { at -> scheduling = false; vm.send(me, at = at) },
+                onDismiss = { scheduling = false },
+            )
         }
 
         // Formatting toolbar, floating over the keyboard.

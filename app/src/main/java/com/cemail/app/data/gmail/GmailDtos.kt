@@ -55,6 +55,9 @@ data class GmailLabel(val id: String, val name: String, val type: String = "user
 data class AttachmentBody(val size: Int = 0, val data: String = "")
 
 @Serializable
+data class BatchDeleteRequest(val ids: List<String>)
+
+@Serializable
 data class Profile(val historyId: String = "")
 
 @Serializable
