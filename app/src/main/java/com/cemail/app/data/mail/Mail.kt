@@ -23,6 +23,10 @@ data class Mail(
     /** Spark-style snooze: hidden from the inbox until this time. */
     val snoozedUntil: Long? = null,
     val hasAttachment: Boolean = false,
+    /** Gmail label ids (user labels and system ones) this message has. */
+    val labelIds: Set<String> = emptySet(),
+    /** Original HTML of the message, or empty when it only has plain text; null if not downloaded yet. */
+    val bodyHtml: String? = null,
 ) {
     val preview: String get() = body.replace(WHITESPACE, " ").trim()
     fun isSnoozed(now: Long) = snoozedUntil != null && snoozedUntil > now
@@ -46,4 +50,26 @@ fun Mail.matches(query: String): Boolean {
     }
     val hay = "$senderName $senderEmail $subject $body".lowercase()
     return ok && words.all { hay.contains(it) }
+}
+
+/** A Gmail label created by the user. A name like "Shopping/Amazon" means it sits inside "Shopping". */
+data class Label(val id: String, val name: String)
+
+/** A label in the folder tree. [id] is null for a parent that exists only as part of a longer name. */
+data class LabelNode(val name: String, val fullName: String, val id: String?, val children: List<LabelNode>)
+
+/** Builds the nested folder tree from Gmail's flat label names ("A/B/C"). Siblings are sorted by name. */
+fun buildLabelTree(labels: List<Label>): List<LabelNode> {
+    val idByName = labels.associate { it.name to it.id }
+    val allPaths = labels.flatMap { label ->
+        val parts = label.name.split("/")
+        (1..parts.size).map { parts.take(it).joinToString("/") }
+    }.toSet()
+    fun childrenOf(parent: String?): List<LabelNode> = allPaths
+        .filter { path ->
+            if (parent == null) !path.contains("/") else path.startsWith("$parent/") && !path.removePrefix("$parent/").contains("/")
+        }
+        .sortedBy { it.lowercase() }
+        .map { path -> LabelNode(path.substringAfterLast("/"), path, idByName[path], childrenOf(path)) }
+    return childrenOf(null)
 }

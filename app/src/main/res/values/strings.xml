@@ -121,4 +121,12 @@
     <string name="account_remove">Remove account</string>
     <string name="refresh">Refresh</string>
     <string name="sync_failed">Could not sync. Check your connection.</string>
+    <string name="demo_label_shopping">Shopping</string>
+    <string name="demo_label_amazon">Amazon</string>
+    <string name="demo_label_work">Work</string>
+    <string name="labels_title">Labels</string>
+    <string name="label_expand">Expand</string>
+    <string name="label_collapse">Collapse</string>
+    <string name="show_images">Show images</string>
+    <string name="images_blocked">Remote images are blocked to protect your privacy.</string>
 </resources>

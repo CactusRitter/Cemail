@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.cemail.app.R
 import com.cemail.app.data.mail.Folder
+import com.cemail.app.data.mail.Label
 import com.cemail.app.data.mail.Mail
 import com.cemail.app.data.mail.MailBox
 import com.cemail.app.data.mail.MailRepository
@@ -34,6 +35,8 @@ private data class Ui(
     val draft: Draft? = null,
     val snoozeTargets: Set<Long>? = null,
     val undo: UndoEvent? = null,
+    val labelId: String? = null,
+    val expanded: Set<String> = emptySet(),
 )
 
 data class MailUiState(
@@ -49,20 +52,26 @@ data class MailUiState(
     val others: List<Mail> = emptyList(),
     val unreadByBox: Map<MailBox, Int> = emptyMap(),
     val syncing: Boolean = false,
+    val labels: List<Label> = emptyList(),
+    val labelId: String? = null,
+    val expanded: Set<String> = emptySet(),
+    val unreadByLabel: Map<String, Int> = emptyMap(),
 )
 
 class MailViewModel(private val repo: MailRepository) : ViewModel() {
     private val ui = MutableStateFlow(Ui())
     private var undoCounter = 0L
 
-    val state: StateFlow<MailUiState> = combine(repo.mails, ui, repo.syncing) { mails, u, syncing ->
+    val state: StateFlow<MailUiState> = combine(repo.mails, ui, repo.syncing, repo.labels) { mails, u, syncing, labels ->
         val now = System.currentTimeMillis()
-        val inBox = mails.filter { it.inBox(u.box, now) }
+        val inBox = if (u.labelId != null) mails.filter { u.labelId in it.labelIds && it.folder != Folder.TRASH } else mails.filter { it.inBox(u.box, now) }
         val shown = (if (u.query.isBlank()) inBox else mails.filter { it.folder != Folder.TRASH && it.matches(u.query) })
             .sortedByDescending { it.timeMillis }
-        val showPinned = u.box == MailBox.INBOX && u.query.isBlank()
+        val showPinned = u.box == MailBox.INBOX && u.labelId == null && u.query.isBlank()
         MailUiState(
             box = u.box, query = u.query, searching = u.searching, selection = u.selection, syncing = syncing,
+            labels = labels, labelId = u.labelId, expanded = u.expanded,
+            unreadByLabel = labels.associate { l -> l.id to mails.count { !it.read && l.id in it.labelIds && it.folder != Folder.TRASH } },
             open = u.openId?.let { id -> mails.firstOrNull { it.id == id } },
             draft = u.draft, snoozeTargets = u.snoozeTargets, undo = u.undo,
             pinned = if (showPinned) shown.filter { it.pinned } else emptyList(),
@@ -93,7 +102,11 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
     }
 
     // --- navigation ---
-    fun selectBox(box: MailBox) = ui.update { it.copy(box = box, query = "", searching = false, selection = emptySet()) }
+    fun selectBox(box: MailBox) = ui.update { it.copy(box = box, labelId = null, query = "", searching = false, selection = emptySet()) }
+    fun selectLabel(id: String) = ui.update { it.copy(labelId = id, query = "", searching = false, selection = emptySet()) }
+    fun toggleExpanded(fullName: String) = ui.update {
+        it.copy(expanded = if (fullName in it.expanded) it.expanded - fullName else it.expanded + fullName)
+    }
     fun setSearching(on: Boolean) = ui.update { it.copy(searching = on, query = if (on) it.query else "") }
     fun setQuery(q: String) = ui.update { it.copy(query = q) }
     fun open(id: Long) {

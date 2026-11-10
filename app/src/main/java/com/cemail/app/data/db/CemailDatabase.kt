@@ -2,6 +2,7 @@ package com.cemail.app.data.db
 
 import android.content.Context
 import androidx.room.AutoMigration
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Entity
@@ -45,6 +46,10 @@ data class MessageEntity(
     val pinned: Boolean,
     val snoozedUntil: Long?,
     val hasAttachment: Boolean,
+    /** Gmail label ids joined with spaces. */
+    @ColumnInfo(defaultValue = "") val labelIds: String = "",
+    /** null = not downloaded yet, empty = the message has no HTML part. */
+    val bodyHtml: String? = null,
 )
 
 @Dao
@@ -86,15 +91,32 @@ interface MessageDao {
     suspend fun deleteAccount(accountId: String)
 }
 
+/** A Gmail label the user created (system labels like INBOX are not stored). */
+@Entity(tableName = "labels", primaryKeys = ["accountId", "id"])
+data class LabelEntity(val accountId: String, val id: String, val name: String)
+
+@Dao
+interface LabelDao {
+    @Query("SELECT * FROM labels WHERE accountId = :accountId")
+    fun observe(accountId: String): Flow<List<LabelEntity>>
+
+    @Query("DELETE FROM labels WHERE accountId = :accountId")
+    suspend fun clear(accountId: String)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(labels: List<LabelEntity>)
+}
+
 @Database(
-    entities = [AccountEntity::class, MessageEntity::class],
-    version = 2,
+    entities = [AccountEntity::class, MessageEntity::class, LabelEntity::class],
+    version = 3,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2)],
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
 abstract class CemailDatabase : RoomDatabase() {
     abstract fun accounts(): AccountDao
     abstract fun messages(): MessageDao
+    abstract fun labels(): LabelDao
 
     companion object {
         fun create(context: Context): CemailDatabase =

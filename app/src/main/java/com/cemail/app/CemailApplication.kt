@@ -34,14 +34,14 @@ class CemailApplication : Application() {
     fun mailRepositoryFor(accountId: String): MailRepository = synchronized(repositories) {
         repositories.getOrPut(accountId) {
             RoomMailRepository(
-                accountId, database.messages(),
+                accountId, database.messages(), database.labels(),
                 HttpGmailApi(AccountTokenProvider(accountId, tokenStore, googleAuth)), appScope,
             )
         }
     }
 
     /** Demo store until Gmail sync + Room arrive (phases 1-2). */
-    val demoRepository: MailRepository by lazy { DemoMailRepository(DemoData.seed(this)) }
+    val demoRepository: MailRepository by lazy { DemoMailRepository(DemoData.seed(this), DemoData.labels(this)) }
 
     /** Lives as long as the process: work started while leaving a screen always finishes. */
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)

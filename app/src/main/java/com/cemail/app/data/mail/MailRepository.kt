@@ -10,6 +10,9 @@ import kotlinx.coroutines.flow.update
 interface MailRepository {
     val mails: Flow<List<Mail>>
 
+    /** The Gmail labels the user created, shown as folders. */
+    val labels: Flow<List<Label>>
+
     /** true while a sync with the server is running. */
     val syncing: StateFlow<Boolean>
 
@@ -30,7 +33,8 @@ interface MailRepository {
 }
 
 /** In-memory store seeded with example messages (used when no account is signed in). */
-class DemoMailRepository(seed: List<Mail>) : MailRepository {
+class DemoMailRepository(seed: List<Mail>, demoLabels: List<Label> = emptyList()) : MailRepository {
+    override val labels: Flow<List<Label>> = kotlinx.coroutines.flow.flowOf(demoLabels)
     private val state = MutableStateFlow(seed)
     override val mails: StateFlow<List<Mail>> = state.asStateFlow()
     override val syncing: StateFlow<Boolean> = MutableStateFlow(false)

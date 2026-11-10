@@ -17,6 +17,8 @@ data class ParsedMessage(
     val timeMillis: Long,
     val hasAttachment: Boolean,
     val labels: Set<String>,
+    /** The HTML part as sent by the author (unsanitized: run it through HtmlSanitizer before showing it). */
+    val html: String = "",
 )
 
 /** Turns Gmail API messages into [ParsedMessage]. Pure Kotlin, covered by unit tests. */
@@ -61,6 +63,7 @@ object GmailParser {
             timeMillis = message.internalDate?.toLongOrNull() ?: 0L,
             hasAttachment = attachment,
             labels = message.labelIds.toSet(),
+            html = html.toString(),
         )
     }
 

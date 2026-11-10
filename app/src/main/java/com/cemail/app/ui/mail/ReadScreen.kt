@@ -1,6 +1,12 @@
 package com.cemail.app.ui.mail
 
+import android.annotation.SuppressLint
+import android.content.Intent
+import android.net.Uri
 import android.text.format.DateUtils
+import android.webkit.WebResourceRequest
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,11 +39,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.cemail.app.R
+import com.cemail.app.data.gmail.HtmlSanitizer
 import com.cemail.app.data.mail.Mail
 import com.cemail.app.ui.glass.GlassKind
 import com.cemail.app.ui.glass.GlassPill
@@ -61,31 +71,42 @@ fun ReadScreen(mail: Mail, vm: MailViewModel) {
         )
     }
 
+    // The sanitized page, computed once per message. Messages without an HTML part show their text.
+    val html = mail.bodyHtml.orEmpty()
+    val cleanPage = remember(mail.id, html) { if (html.isBlank()) null else HtmlSanitizer.page(HtmlSanitizer.clean(html)) }
+    val hasRemoteImages = remember(mail.id, html) { html.isNotBlank() && HtmlSanitizer.hasRemoteImages(html) }
+    var showImages by remember(mail.id) { mutableStateOf(false) }
+
     Box(Modifier.fillMaxSize()) {
         Column(
             Modifier
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.safeDrawing)
-                .verticalScroll(rememberScrollState())
-                .padding(start = 12.dp, end = 12.dp, top = 80.dp, bottom = 96.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(start = 12.dp, end = 12.dp, top = 80.dp, bottom = 88.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Column(
-                Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card).padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Text(mail.subject.ifBlank { stringResource(R.string.no_subject) }, style = MaterialTheme.typography.titleLarge)
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Avatar(mail.senderName)
                     Column(Modifier.weight(1f)) {
-                        Text(mail.senderName, style = MaterialTheme.typography.titleSmall)
+                        Text(mail.senderName, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(
-                            "${mail.senderEmail} · ${stringResource(R.string.to_me)}",
+                            mail.senderEmail,
                             style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            "${stringResource(R.string.to_me)} · $quoteWhen",
+                            style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    Text(quoteWhen, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 mail.snoozedUntil?.takeIf { mail.isSnoozed(System.currentTimeMillis()) }?.let {
                     val whenText = DateUtils.formatDateTime(
@@ -97,7 +118,36 @@ fun ReadScreen(mail: Mail, vm: MailViewModel) {
                         color = MaterialTheme.colorScheme.primary,
                     )
                 }
-                Text(mail.body, style = MaterialTheme.typography.bodyLarge)
+                if (hasRemoteImages && !showImages) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            stringResource(R.string.images_blocked),
+                            Modifier.weight(1f),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            stringResource(R.string.show_images),
+                            Modifier.clickable(role = Role.Button) { showImages = true }.padding(8.dp),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
+            }
+            Box(
+                Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(24.dp)),
+            ) {
+                if (cleanPage != null) {
+                    HtmlBody(cleanPage, showImages, Modifier.fillMaxSize())
+                } else {
+                    Box(Modifier.fillMaxSize().glass(RoundedCornerShape(24.dp), GlassKind.Card).verticalScroll(rememberScrollState()).padding(16.dp)) {
+                        Text(mail.body, style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
             }
         }
 
@@ -140,9 +190,9 @@ fun ReadScreen(mail: Mail, vm: MailViewModel) {
             }
         }
 
-        // Reply bar
+        // Reply bar: three equal actions that always fit on one line.
         Box(Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.safeDrawing).padding(16.dp)) {
-            GlassPill {
+            GlassPill(Modifier.fillMaxWidth()) {
                 ReplyAction(CemailIcons.Reply, R.string.action_reply) { vm.newDraft(reply(R.string.reply_prefix, mail.senderEmail)) }
                 ReplyAction(CemailIcons.ReplyAll, R.string.action_reply_all) { vm.newDraft(reply(R.string.reply_prefix, mail.senderEmail)) }
                 ReplyAction(CemailIcons.Forward, R.string.action_forward) { vm.newDraft(reply(R.string.forward_prefix, "")) }
@@ -151,17 +201,69 @@ fun ReadScreen(mail: Mail, vm: MailViewModel) {
     }
 }
 
+/**
+ * Shows sanitized email HTML. JavaScript is off, files and content providers are unreachable, remote images
+ * stay blocked until [showImages], and links open in the browser instead of inside the message view.
+ */
+@SuppressLint("SetJavaScriptEnabled")
 @Composable
-private fun ReplyAction(icon: androidx.compose.ui.graphics.vector.ImageVector, label: Int, onClick: () -> Unit) {
+private fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier) {
+    AndroidView(
+        modifier = modifier,
+        factory = { ctx ->
+            WebView(ctx).apply {
+                settings.javaScriptEnabled = false
+                settings.allowFileAccess = false
+                settings.allowContentAccess = false
+                settings.useWideViewPort = true
+                settings.loadWithOverviewMode = true
+                settings.setSupportZoom(true)
+                settings.builtInZoomControls = true
+                settings.displayZoomControls = false
+                // Emails are written for a white page, whatever the app theme is.
+                setBackgroundColor(android.graphics.Color.WHITE)
+                webViewClient = object : WebViewClient() {
+                    override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                        val uri: Uri = request.url
+                        if (uri.scheme in setOf("http", "https", "mailto", "tel")) {
+                            try {
+                                ctx.startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                            } catch (_: Exception) {
+                                // no app can open it
+                            }
+                        }
+                        return true
+                    }
+                }
+            }
+        },
+        update = { web ->
+            web.settings.blockNetworkImage = !showImages
+            val key = "$showImages|$page"
+            if (web.tag != key) {
+                web.tag = key
+                web.loadDataWithBaseURL(null, page, "text/html", "utf-8", null)
+            }
+        },
+        onRelease = { it.destroy() },
+    )
+}
+
+@Composable
+private fun androidx.compose.foundation.layout.RowScope.ReplyAction(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: Int,
+    onClick: () -> Unit,
+) {
     Row(
         Modifier
-            .padding(horizontal = 4.dp)
+            .weight(1f)
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.Center,
     ) {
-        Icon(icon, null, tint = MaterialTheme.colorScheme.primary)
-        Text(stringResource(label), style = MaterialTheme.typography.labelLarge)
+        Icon(icon, null, Modifier.padding(end = 6.dp), tint = MaterialTheme.colorScheme.primary)
+        Text(stringResource(label), style = MaterialTheme.typography.labelMedium, maxLines = 1)
     }
 }

@@ -119,4 +119,12 @@
     <string name="account_remove">Quitar cuenta</string>
     <string name="refresh">Actualizar</string>
     <string name="sync_failed">No se pudo sincronizar. Revisa la conexión.</string>
+    <string name="demo_label_shopping">Compras</string>
+    <string name="demo_label_amazon">Amazon</string>
+    <string name="demo_label_work">Trabajo</string>
+    <string name="labels_title">Etiquetas</string>
+    <string name="label_expand">Expandir</string>
+    <string name="label_collapse">Contraer</string>
+    <string name="show_images">Mostrar imágenes</string>
+    <string name="images_blocked">Las imágenes remotas están bloqueadas para proteger tu privacidad.</string>
 </resources>

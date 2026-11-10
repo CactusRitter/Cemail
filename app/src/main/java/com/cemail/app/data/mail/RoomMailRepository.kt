@@ -1,17 +1,21 @@
 package com.cemail.app.data.mail
 
+import com.cemail.app.data.db.LabelDao
+import com.cemail.app.data.db.LabelEntity
 import com.cemail.app.data.db.MessageDao
 import com.cemail.app.data.db.MessageEntity
 import com.cemail.app.data.gmail.GmailApi
 import com.cemail.app.data.gmail.GmailParser
 import com.cemail.app.data.gmail.MimeBuilder
+import com.cemail.app.data.gmail.ParsedMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -26,12 +30,16 @@ import kotlinx.coroutines.sync.withPermit
 class RoomMailRepository(
     private val accountId: String,
     private val dao: MessageDao,
+    private val labelDao: LabelDao,
     private val api: GmailApi,
     private val scope: CoroutineScope,
 ) : MailRepository {
     override val mails: StateFlow<List<Mail>> = dao.observe(accountId)
         .map { list -> list.map { it.toMail() } }
         .stateIn(scope, SharingStarted.Eagerly, emptyList())
+
+    override val labels: Flow<List<Label>> = labelDao.observe(accountId)
+        .map { list -> list.map { Label(it.id, it.name) } }
 
     private val _syncing = MutableStateFlow(false)
     override val syncing: StateFlow<Boolean> = _syncing
@@ -101,6 +109,7 @@ class RoomMailRepository(
     }
 
     private suspend fun sync() {
+        syncLabels()
         val remoteIds = api.listMessageIds(QUERY, LIMIT)
         val cached = dao.remoteOnes(accountId).associateBy { it.remoteId!! }
         val gate = Semaphore(6)
@@ -109,14 +118,22 @@ class RoomMailRepository(
                 async(Dispatchers.IO) {
                     gate.withPermit {
                         val old = cached[id]
-                        if (old == null) {
-                            val parsed = GmailParser.parse(api.getMessage(id))
-                            dao.insert(parsed.toEntity(accountId, id))
+                        if (old == null || old.bodyHtml == null) {
+                            // New message, or one saved before HTML was kept: download it whole.
+                            val entity = GmailParser.parse(api.getMessage(id)).toEntity(accountId, id)
+                            if (old == null) {
+                                dao.insert(entity)
+                            } else {
+                                dao.update(entity.copy(localId = old.localId, pinned = old.pinned, snoozedUntil = old.snoozedUntil))
+                            }
                         } else {
                             val labels = api.getLabels(id).toSet()
                             val state = LabelDiff.stateOf(labels)
-                            if (state.folder.name != old.folder || state.read != old.read || state.starred != old.starred) {
-                                dao.update(old.copy(folder = state.folder.name, read = state.read, starred = state.starred))
+                            val joined = labels.sorted().joinToString(" ")
+                            if (state.folder.name != old.folder || state.read != old.read || state.starred != old.starred ||
+                                joined != old.labelIds
+                            ) {
+                                dao.update(old.copy(folder = state.folder.name, read = state.read, starred = state.starred, labelIds = joined))
                             }
                         }
                     }
@@ -125,6 +142,12 @@ class RoomMailRepository(
         }
         val gone = cached.filterKeys { it !in remoteIds }.values.map { it.localId }
         gone.chunked(500).forEach { dao.deleteAll(accountId, it) }
+    }
+
+    private suspend fun syncLabels() {
+        val labels = api.listUserLabels()
+        labelDao.clear(accountId)
+        labelDao.insertAll(labels.map { LabelEntity(accountId, it.id, it.name) })
     }
 
     private companion object {
@@ -137,20 +160,23 @@ private fun MessageEntity.toMail() = Mail(
     id = localId, senderName = senderName, senderEmail = senderEmail, subject = subject, body = body,
     timeMillis = timeMillis, folder = Folder.valueOf(folder), read = read, starred = starred, pinned = pinned,
     snoozedUntil = snoozedUntil, hasAttachment = hasAttachment,
+    labelIds = labelIds.split(" ").filter { it.isNotEmpty() }.toSet(), bodyHtml = bodyHtml,
 )
 
 private fun Mail.toEntity(accountId: String, remoteId: String?) = MessageEntity(
     localId = id, accountId = accountId, remoteId = remoteId, folder = folder.name, senderName = senderName,
     senderEmail = senderEmail, subject = subject, body = body, timeMillis = timeMillis, read = read,
     starred = starred, pinned = pinned, snoozedUntil = snoozedUntil, hasAttachment = hasAttachment,
+    labelIds = labelIds.sorted().joinToString(" "), bodyHtml = bodyHtml ?: "",
 )
 
-private fun com.cemail.app.data.gmail.ParsedMessage.toEntity(accountId: String, remoteId: String): MessageEntity {
+private fun ParsedMessage.toEntity(accountId: String, remoteId: String): MessageEntity {
     val state = LabelDiff.stateOf(labels)
     return MessageEntity(
         accountId = accountId, remoteId = remoteId, folder = state.folder.name,
         senderName = fromName, senderEmail = fromEmail, subject = subject, body = body, timeMillis = timeMillis,
         read = state.read, starred = state.starred, pinned = false, snoozedUntil = null, hasAttachment = hasAttachment,
+        labelIds = labels.sorted().joinToString(" "), bodyHtml = html,
     )
 }
 

@@ -130,7 +130,8 @@ fun ListScreen(
                 else -> GlassPill(Modifier.fillMaxWidth(), hazeState = haze) {
                     PillIcon(Icons.Filled.Menu, stringResource(R.string.menu_open), onOpenDrawer)
                     Text(
-                        stringResource(state.box.labelRes()),
+                        state.labelId?.let { id -> state.labels.firstOrNull { it.id == id }?.name?.substringAfterLast("/") }
+                            ?: stringResource(state.box.labelRes()),
                         Modifier.weight(1f).padding(horizontal = 8.dp),
                         style = MaterialTheme.typography.titleMedium,
                     )

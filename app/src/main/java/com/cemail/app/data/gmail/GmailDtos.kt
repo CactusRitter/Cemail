@@ -41,3 +41,10 @@ data class ModifyRequest(val addLabelIds: List<String> = emptyList(), val remove
 
 @Serializable
 data class SendRequest(val raw: String)
+
+@Serializable
+data class LabelList(val labels: List<GmailLabel> = emptyList())
+
+/** [type] is "system" (INBOX, SENT, ...) or "user". */
+@Serializable
+data class GmailLabel(val id: String, val name: String, val type: String = "user")

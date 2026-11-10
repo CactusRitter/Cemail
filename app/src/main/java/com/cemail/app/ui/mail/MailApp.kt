@@ -101,7 +101,10 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel) {
             gesturesEnabled = state.draft == null && state.open == null,
             drawerContent = {
                 ModalDrawerSheet(drawerContainerColor = Color.Transparent, windowInsets = WindowInsets(0)) {
-                    DrawerContent(state, acc, onAddAccount = startSignIn, onRemoveAccount = accountVm::remove, onPick = { box ->
+                    DrawerContent(state, acc, onAddAccount = startSignIn, onRemoveAccount = accountVm::remove, onToggleLabel = vm::toggleExpanded, onPickLabel = { id ->
+                        vm.selectLabel(id)
+                        scope.launch { drawer.close() }
+                    }, onPick = { box ->
                         vm.selectBox(box)
                         scope.launch { drawer.close() }
                     })
@@ -129,6 +132,8 @@ private fun DrawerContent(
     acc: AccountUiState,
     onAddAccount: () -> Unit,
     onRemoveAccount: (String) -> Unit,
+    onPickLabel: (String) -> Unit,
+    onToggleLabel: (String) -> Unit,
     onPick: (MailBox) -> Unit,
 ) {
     val accounts = acc.accounts
@@ -181,7 +186,7 @@ private fun DrawerContent(
             )
         }
         MailBox.entries.forEach { box ->
-            val selected = box == state.box
+            val selected = box == state.box && state.labelId == null
             val unread = state.unreadByBox[box] ?: 0
             Row(
                 Modifier
@@ -204,6 +209,7 @@ private fun DrawerContent(
                 }
             }
         }
+        LabelSection(state, onPickLabel, onToggleLabel)
         Row(
             Modifier
                 .fillMaxWidth()

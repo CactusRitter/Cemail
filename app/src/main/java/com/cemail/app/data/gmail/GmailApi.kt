@@ -25,6 +25,7 @@ interface GmailApi {
     suspend fun listMessageIds(query: String, max: Int): List<String>
     suspend fun getMessage(id: String): GmailMessage
     suspend fun getLabels(id: String): List<String>
+    suspend fun listUserLabels(): List<GmailLabel>
     suspend fun modify(id: String, add: List<String>, remove: List<String>)
     suspend fun send(raw: ByteArray)
 }
@@ -63,6 +64,11 @@ class HttpGmailApi(
         val url = BASE.newBuilder().addPathSegment("messages").addPathSegment(id)
             .addQueryParameter("format", "minimal").build()
         return json.decodeFromString<GmailMessage>(call(Request.Builder().url(url).build())).labelIds
+    }
+
+    override suspend fun listUserLabels(): List<GmailLabel> {
+        val url = BASE.newBuilder().addPathSegment("labels").build()
+        return json.decodeFromString<LabelList>(call(Request.Builder().url(url).build())).labels.filter { it.type == "user" }
     }
 
     override suspend fun modify(id: String, add: List<String>, remove: List<String>) {
