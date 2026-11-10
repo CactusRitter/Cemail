@@ -1,6 +1,7 @@
 package com.cemail.app
 
 import android.Manifest
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -17,10 +18,18 @@ import com.cemail.app.ui.mail.MailViewModel
 import com.cemail.app.ui.theme.CemailTheme
 
 class MainActivity : ComponentActivity() {
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        Launches.handle(intent)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val app = application as CemailApplication
+        // Opened from the launcher menu or a widget: MailApp carries the request out once its account is on screen.
+        if (savedInstanceState == null) Launches.handle(intent)
         // Android 13+ asks once, the first time the app opens; Settings can ask again.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !app.settings.askedNotificationPermission) {
             app.settings.askedNotificationPermission = true

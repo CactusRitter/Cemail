@@ -48,6 +48,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.cemail.app.R
+import com.cemail.app.LaunchRequest
+import com.cemail.app.Launches
 import androidx.compose.foundation.layout.size
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -102,6 +104,35 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
     val open = state.open
     val drawer = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+
+    // A request from outside (launcher menu, widget): switch to the right account first, then carry it out.
+    val request by Launches.pending.collectAsStateWithLifecycle()
+    LaunchedEffect(request, acc.selectedId, vm) {
+        val r = request ?: return@LaunchedEffect
+        val wanted = when (r) {
+            is LaunchRequest.Compose -> r.accountId
+            is LaunchRequest.OpenBox -> r.accountId
+            is LaunchRequest.OpenMail -> r.accountId
+            LaunchRequest.Search -> null
+        }
+        val several = acc.accounts.size > 1
+        if (wanted != null && acc.accounts.any { it.id == wanted } && acc.selectedId != wanted) {
+            accountVm.select(wanted)
+            return@LaunchedEffect // runs again with the new account's ViewModel
+        }
+        if (r is LaunchRequest.OpenBox && wanted == null && several && acc.selectedId != null) {
+            accountVm.select(null)
+            return@LaunchedEffect
+        }
+        showSettings = false
+        when (r) {
+            is LaunchRequest.Compose -> vm.newDraft()
+            is LaunchRequest.OpenBox -> { vm.closeMail(); vm.selectBox(r.box) }
+            LaunchRequest.Search -> { vm.closeMail(); vm.setSearching(true) }
+            is LaunchRequest.OpenMail -> vm.open(r.localId)
+        }
+        Launches.pending.value = null
+    }
 
     // In the unified inbox every message carries a thin line in the colour of its account.
     val palette = accountPalette()

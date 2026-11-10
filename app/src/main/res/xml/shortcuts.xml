@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The menu that opens when the app icon is pressed and held. -->
+    <shortcut
+        android:shortcutId="compose"
+        android:enabled="true"
+        android:icon="@drawable/ic_action_compose"
+        android:shortcutShortLabel="@string/shortcut_compose_short"
+        android:shortcutLongLabel="@string/shortcut_compose">
+        <intent
+            android:action="com.cemail.app.action.COMPOSE"
+            android:targetPackage="com.cemail.app"
+            android:targetClass="com.cemail.app.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="inbox"
+        android:enabled="true"
+        android:icon="@drawable/ic_action_inbox"
+        android:shortcutShortLabel="@string/shortcut_inbox_short"
+        android:shortcutLongLabel="@string/shortcut_inbox">
+        <intent
+            android:action="com.cemail.app.action.OPEN_BOX"
+            android:targetPackage="com.cemail.app"
+            android:targetClass="com.cemail.app.MainActivity">
+            <extra android:name="box" android:value="INBOX" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="search"
+        android:enabled="true"
+        android:icon="@drawable/ic_action_search"
+        android:shortcutShortLabel="@string/shortcut_search_short"
+        android:shortcutLongLabel="@string/shortcut_search">
+        <intent
+            android:action="com.cemail.app.action.SEARCH"
+            android:targetPackage="com.cemail.app"
+            android:targetClass="com.cemail.app.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="starred"
+        android:enabled="true"
+        android:icon="@drawable/ic_action_star"
+        android:shortcutShortLabel="@string/shortcut_starred_short"
+        android:shortcutLongLabel="@string/shortcut_starred">
+        <intent
+            android:action="com.cemail.app.action.OPEN_BOX"
+            android:targetPackage="com.cemail.app"
+            android:targetClass="com.cemail.app.MainActivity">
+            <extra android:name="box" android:value="STARRED" />
+        </intent>
+    </shortcut>
+</shortcuts>

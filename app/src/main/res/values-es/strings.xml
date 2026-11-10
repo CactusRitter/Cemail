@@ -214,4 +214,13 @@
     <string name="font_mono">Monoespaciada</string>
     <string name="font_cursive">Cursiva manuscrita</string>
     <string name="compose_recipient_problem">Revisa los destinatarios: tiene que haber al menos uno en Para y todas las direcciones deben ser válidas.</string>
+    <string name="shortcut_compose_short">Redactar</string>
+    <string name="shortcut_compose">Redactar un mensaje nuevo</string>
+    <string name="shortcut_inbox_short">Recibidos</string>
+    <string name="shortcut_inbox">Abrir la bandeja de entrada</string>
+    <string name="shortcut_search_short">Buscar</string>
+    <string name="shortcut_search">Buscar en el correo</string>
+    <string name="shortcut_starred_short">Destacados</string>
+    <string name="shortcut_starred">Mensajes destacados</string>
+    <string name="shortcut_compose_from">Redactar desde %1$s</string>
 </resources>

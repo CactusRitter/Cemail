@@ -60,6 +60,27 @@ class CemailApplication : Application() {
         unified.getOrPut(accountIds.joinToString(" ")) { UnifiedMailRepository(accountIds.map(::mailRepositoryFor), appScope) }
     }
 
+
+    /** With several accounts the launcher menu also offers "Write from <account>" for each (up to 3). */
+    private fun updateShortcuts(accounts: List<com.cemail.app.data.db.AccountEntity>) {
+        val shortcuts = if (accounts.size < 2) {
+            emptyList()
+        } else {
+            accounts.take(3).map { account ->
+                androidx.core.content.pm.ShortcutInfoCompat.Builder(this, "compose-${account.id}")
+                    .setShortLabel(account.displayName ?: account.email.substringBefore('@'))
+                    .setLongLabel(getString(R.string.shortcut_compose_from, account.email))
+                    .setIcon(androidx.core.graphics.drawable.IconCompat.createWithResource(this, R.drawable.ic_action_compose))
+                    .setIntent(Launches.intent(this, LaunchRequest.Compose(account.id)))
+                    .build()
+            }
+        }
+        try {
+            androidx.core.content.pm.ShortcutManagerCompat.setDynamicShortcuts(this, shortcuts)
+        } catch (e: Exception) {
+            AppLog.e("shortcuts", "could not update the launcher shortcuts", e)
+        }
+    }
     val notifier: MailNotifier by lazy { MailNotifier(this) }
 
     /** Number of activities on screen: the app counts as open while it is above 0. */
@@ -90,6 +111,7 @@ class CemailApplication : Application() {
         AppLog.init(this)
         CrashLog.install(this)
         notifier.createChannel()
+        appScope.launch { accountRepository.accounts.collect { updateShortcuts(it) } }
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             override fun onActivityStarted(activity: android.app.Activity) { visibleActivities++ }
             override fun onActivityStopped(activity: android.app.Activity) { visibleActivities-- }

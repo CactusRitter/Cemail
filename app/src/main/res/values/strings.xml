@@ -216,4 +216,13 @@
     <string name="font_mono">Monospace</string>
     <string name="font_cursive">Cursive</string>
     <string name="compose_recipient_problem">Check the recipients: there must be at least one in To, and every address must be valid.</string>
+    <string name="shortcut_compose_short">Write</string>
+    <string name="shortcut_compose">Write a new message</string>
+    <string name="shortcut_inbox_short">Inbox</string>
+    <string name="shortcut_inbox">Open the inbox</string>
+    <string name="shortcut_search_short">Search</string>
+    <string name="shortcut_search">Search mail</string>
+    <string name="shortcut_starred_short">Starred</string>
+    <string name="shortcut_starred">Starred messages</string>
+    <string name="shortcut_compose_from">Write from %1$s</string>
 </resources>
