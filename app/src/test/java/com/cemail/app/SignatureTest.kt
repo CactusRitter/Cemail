@@ -75,3 +75,45 @@ class SignatureTest {
         assertEquals("César\nCEO", SignatureHtml.toText("<div><b>César</b><br>CEO</div>"))
     }
 }
+
+/** The same structure as a signature written in Gmail (nested tables, remote icons), with invented data. */
+class GmailStyleSignatureTest {
+    private val eml = """
+        MIME-Version: 1.0
+        Subject: Prueba
+        Content-Type: multipart/mixed; boundary="mix"
+
+        --mix
+        Content-Type: multipart/alternative; boundary="alt"
+
+        --alt
+        Content-Type: text/plain; charset="UTF-8"
+
+        Buenos dias, texto del mensaje
+        --alt
+        Content-Type: text/html; charset="UTF-8"
+
+        <div dir="ltr"><div>Buenos dias, texto del mensaje</div><div><div dir="ltr" class="gmail_signature" data-smartmail="gmail_signature"><div dir="ltr"><table cellspacing="0" cellpadding="0" border="0" style="width:450px;color:rgb(68,68,68)"><tbody><tr><td style="border-bottom:2px solid rgb(2,60,79)"><span style="font-size:16px;font-weight:700">Ana Ejemplo</span><span style="display:block">Ingeniera</span><a href="https://example.com/in/ana"><img src="https://img.icons8.com/ios-filled/48/023C4F/linkedin.png" alt="LinkedIn" width="22" height="22"></a></td></tr><tr><td><strong>Phone:</strong>&nbsp;+00 000 000</td></tr></tbody></table></div></div></div></div>
+        --alt--
+        --mix
+        Content-Type: application/pdf; name="x.pdf"
+        Content-Transfer-Encoding: base64
+
+        JVBERi0xLjQK
+        --mix--
+    """.trimIndent().replace("\n", "\r\n")
+
+    @Test
+    fun importsTheSignatureOfAGmailMessageWithAnAttachment() {
+        val signature = SignatureHtml.extract(EmlParser.parse(eml.toByteArray()))!!
+        assertTrue(signature.contains("Ana Ejemplo"))
+        assertTrue(signature.contains("Phone:"))
+        assertTrue(signature.contains("https://img.icons8.com/ios-filled/48/023C4F/linkedin.png"))
+        assertTrue(signature.contains("border-bottom"))
+        assertFalse(signature.contains("texto del mensaje"))
+        val (html, images) = SignatureHtml.merge("<p>Hola</p>", signature)
+        assertEquals(0, images.size)
+        assertTrue(html.startsWith("<p>Hola</p>"))
+        assertEquals("Ana Ejemplo\nIngeniera", SignatureHtml.toText(signature).lines().take(2).joinToString("\n"))
+    }
+}

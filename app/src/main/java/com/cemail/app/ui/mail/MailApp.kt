@@ -47,6 +47,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.runtime.remember
 import com.cemail.app.R
 import com.cemail.app.LaunchRequest
 import com.cemail.app.Launches
@@ -166,7 +167,12 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
             drawerState = drawer,
             gesturesEnabled = state.draft == null && state.open == null,
             drawerContent = {
-                ModalDrawerSheet(drawerContainerColor = Color.Transparent, windowInsets = WindowInsets(0)) {
+                // The sheet itself is transparent and full height: a tap on it (outside the glass menu) closes the drawer.
+                ModalDrawerSheet(
+                    modifier = Modifier.clickable(interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null) { scope.launch { drawer.close() } },
+                    drawerContainerColor = Color.Transparent,
+                    windowInsets = WindowInsets(0),
+                ) {
                     DrawerContent(state, acc, unified = unifiedView, onOpenSettings = {
                         showSettings = true
                         scope.launch { drawer.close() }
@@ -217,6 +223,8 @@ private fun DrawerContent(
             .windowInsetsPadding(WindowInsets.safeDrawing)
             .padding(12.dp)
             .fillMaxWidth(0.82f)
+            // Swallows taps on the menu so only the area around it closes the drawer.
+            .clickable(interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null) {}
             .glass(RoundedCornerShape(28.dp), GlassKind.Menu, elevation = 12.dp)
             .verticalScroll(rememberScrollState())
             .padding(vertical = 16.dp, horizontal = 12.dp),

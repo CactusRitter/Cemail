@@ -42,6 +42,8 @@ object SignatureHtml {
         val doc: Document = Jsoup.parse(html)
         doc.outputSettings().prettyPrint(false)
         doc.select("p, div, tr, li, h1, h2, h3").append("\\n")
+        // A span shown as a block starts its own line.
+        doc.select("span[style*='display:block'], span[style*='display: block']").prepend("\\n")
         return doc.wholeText().replace("\\n", "\n").lines().joinToString("\n") { it.trimEnd() }
             .replace(Regex("\n{3,}"), "\n\n").trim()
     }

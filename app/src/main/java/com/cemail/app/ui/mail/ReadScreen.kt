@@ -241,7 +241,9 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
             Box(
                 Modifier
                     .size(52.dp)
-                    .glass(CircleShape, GlassKind.Chrome, elevation = 10.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surface)
+                    .glass(CircleShape, GlassKind.Chrome)
                     .clickable(role = Role.Button) { panel = true },
                 contentAlignment = Alignment.Center,
             ) {
@@ -250,7 +252,9 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
             Box(
                 Modifier
                     .size(60.dp)
-                    .glass(CircleShape, GlassKind.Pinned, elevation = 10.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surface)
+                    .glass(CircleShape, GlassKind.Pinned)
                     .clickable(role = Role.Button) { reply() },
                 contentAlignment = Alignment.Center,
             ) {
