@@ -68,7 +68,14 @@ import com.cemail.app.ui.glass.glass
 import com.cemail.app.ui.icons.CemailIcons
 
 @Composable
-fun ReadScreen(mail: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
+fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
+    // The list only holds the start of each text: the whole message is read when it is opened. Flags
+    // (read, star...) keep coming from the list so they stay current.
+    val loaded by produceState<Mail?>(null, summary.id) { value = vm.full(summary.id) }
+    val mail = loaded?.copy(
+        read = summary.read, starred = summary.starred, pinned = summary.pinned, folder = summary.folder,
+        snoozedUntil = summary.snoozedUntil, labelIds = summary.labelIds, senderName = summary.senderName,
+    ) ?: summary
     val context = LocalContext.current
     val one = setOf(mail.id)
     val quoteWhen = DateUtils.formatDateTime(

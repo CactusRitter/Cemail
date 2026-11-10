@@ -31,6 +31,12 @@ interface MailRepository {
     /** Brings the local copy up to date with the server. Returns false if it failed. */
     suspend fun refresh(quick: Boolean = false): Boolean
 
+    /**
+     * The whole message (text and HTML). The list holds only the start of each text, so what is opened is
+     * read from here. null if it is gone.
+     */
+    suspend fun full(id: Long): Mail?
+
     /** The pictures embedded in a message, as Content-ID → `data:` URI (downloaded once, then kept on the phone). */
     suspend fun inlineImages(id: Long): Map<String, String>
 }
@@ -57,5 +63,6 @@ class DemoMailRepository(seed: List<Mail>, demoLabels: List<Label> = emptyList()
     override fun nextId() = counter++
     override fun remove(id: Long) = state.update { l -> l.filter { it.id != id } }
     override suspend fun refresh(quick: Boolean) = true
+    override suspend fun full(id: Long): Mail? = state.value.firstOrNull { it.id == id }
     override suspend fun inlineImages(id: Long) = emptyMap<String, String>()
 }

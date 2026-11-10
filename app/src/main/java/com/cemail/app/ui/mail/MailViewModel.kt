@@ -209,6 +209,7 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
     }
 
     suspend fun inlineImages(id: Long): Map<String, String> = repo.inlineImages(id)
+    suspend fun full(id: Long): Mail? = repo.full(id)
 
     class Factory(private val repo: MailRepository) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")

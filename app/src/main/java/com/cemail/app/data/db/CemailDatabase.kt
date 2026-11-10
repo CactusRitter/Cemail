@@ -68,11 +68,63 @@ interface AccountDao {
 
 @Dao
 interface MessageDao {
-    @Query("SELECT * FROM messages WHERE accountId = :accountId ORDER BY timeMillis DESC")
+    /**
+     * The list: every column except the HTML, with the text cut to the start (drafts keep it whole, they are
+     * edited from here). Android reads query results through a 2 MB window, so one huge newsletter in a
+     * `SELECT *` made the whole list fail ("Couldn't read row 14"). The full message comes from [get].
+     */
+    @Query(
+        "SELECT localId, accountId, remoteId, folder, senderName, senderEmail, subject, " +
+            "CASE WHEN folder = 'DRAFTS' THEN body ELSE substr(body, 1, 2000) END AS body, " +
+            "timeMillis, read, starred, pinned, snoozedUntil, hasAttachment, labelIds, NULL AS bodyHtml " +
+            "FROM messages WHERE accountId = :accountId ORDER BY timeMillis DESC",
+    )
     fun observe(accountId: String): Flow<List<MessageEntity>>
 
-    @Query("SELECT * FROM messages WHERE accountId = :accountId AND remoteId IS NOT NULL")
+    /**
+     * What the sync needs to compare with the server, without the texts. [MessageEntity.bodyHtml] is null if
+     * the HTML was never downloaded and empty otherwise. Never write these rows back: use [updateState].
+     */
+    @Query(
+        "SELECT localId, accountId, remoteId, folder, senderName, senderEmail, subject, '' AS body, " +
+            "timeMillis, read, starred, pinned, snoozedUntil, hasAttachment, labelIds, " +
+            "CASE WHEN bodyHtml IS NULL THEN NULL ELSE '' END AS bodyHtml " +
+            "FROM messages WHERE accountId = :accountId AND remoteId IS NOT NULL",
+    )
     suspend fun remoteOnes(accountId: String): List<MessageEntity>
+
+    /** One message without its texts (see [bodyChunk] and [htmlChunk] for those). */
+    @Query(
+        "SELECT localId, accountId, remoteId, folder, senderName, senderEmail, subject, '' AS body, " +
+            "timeMillis, read, starred, pinned, snoozedUntil, hasAttachment, labelIds, NULL AS bodyHtml " +
+            "FROM messages WHERE localId = :localId",
+    )
+    suspend fun light(localId: Long): MessageEntity?
+
+    /** Characters [start]..[start]+[length] of the text; read piece by piece so no row nears the 2 MB window. */
+    @Query("SELECT substr(body, :start, :length) FROM messages WHERE localId = :localId")
+    suspend fun bodyChunk(localId: Long, start: Int, length: Int): String?
+
+    @Query("SELECT substr(bodyHtml, :start, :length) FROM messages WHERE localId = :localId")
+    suspend fun htmlChunk(localId: Long, start: Int, length: Int): String?
+
+    @Query("SELECT remoteId FROM messages WHERE accountId = :accountId AND remoteId IS NOT NULL AND bodyHtml LIKE '%cid:%'")
+    suspend fun remoteIdsWithInlineImages(accountId: String): List<String>
+
+    @Query("SELECT remoteId FROM messages WHERE localId = :localId AND accountId = :accountId")
+    suspend fun remoteIdOf(localId: Long, accountId: String): String?
+
+    @Query("SELECT remoteId FROM messages WHERE localId = :localId")
+    suspend fun remoteIdOf(localId: Long): String?
+
+    @Query("UPDATE messages SET folder = :folder, read = :read, starred = :starred, pinned = :pinned, snoozedUntil = :snoozedUntil WHERE localId = :localId")
+    suspend fun updateFlags(localId: Long, folder: String, read: Boolean, starred: Boolean, pinned: Boolean, snoozedUntil: Long?)
+
+    @Query("UPDATE messages SET folder = :folder, read = :read, starred = :starred, labelIds = :labelIds WHERE localId = :localId")
+    suspend fun updateState(localId: Long, folder: String, read: Boolean, starred: Boolean, labelIds: String)
+
+    @Query("UPDATE messages SET folder = :folder WHERE localId = :localId")
+    suspend fun updateFolder(localId: Long, folder: String)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(message: MessageEntity): Long

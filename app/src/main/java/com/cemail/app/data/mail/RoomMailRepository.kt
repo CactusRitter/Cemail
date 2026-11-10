@@ -69,12 +69,9 @@ class RoomMailRepository(
     private fun write(changes: List<Pair<Mail, Mail>>) {
         scope.launch(Dispatchers.IO) {
             for ((before, after) in changes) {
-                val entity = dao.get(after.id) ?: continue
-                dao.update(entity.copy(
-                    folder = after.folder.name, read = after.read, starred = after.starred,
-                    pinned = after.pinned, snoozedUntil = after.snoozedUntil,
-                ))
-                val remote = entity.remoteId ?: continue
+                // Only the flags are written, so the (possibly huge) texts are never loaded here.
+                dao.updateFlags(after.id, after.folder.name, after.read, after.starred, after.pinned, after.snoozedUntil)
+                val remote = dao.remoteIdOf(after.id) ?: continue
                 val (add, remove) = LabelDiff.between(before, after)
                 if (add.isNotEmpty() || remove.isNotEmpty()) {
                     try { api.modify(remote, add, remove) } catch (_: Exception) { /* next sync puts the server state back */ }
@@ -96,7 +93,7 @@ class RoomMailRepository(
                 refresh()
             } catch (_: Exception) {
                 // Keep it as a draft so the text is not lost.
-                dao.get(localId)?.let { dao.update(it.copy(folder = Folder.DRAFTS.name)) }
+                dao.updateFolder(localId, Folder.DRAFTS.name)
             }
         }
     }
@@ -119,9 +116,35 @@ class RoomMailRepository(
         }
     }
 
+    override suspend fun full(id: Long): Mail? = withContext(Dispatchers.IO) {
+        try {
+            val light = dao.light(id)?.takeIf { it.accountId == accountId } ?: return@withContext null
+            // Texts are read in pieces: a very long one (stored before they were capped) must not break the cursor.
+            val body = StringBuilder()
+            var start = 1
+            while (true) {
+                val piece = dao.bodyChunk(id, start, CHUNK).orEmpty()
+                body.append(piece)
+                if (piece.length < CHUNK) break
+                start += CHUNK
+            }
+            var html: StringBuilder? = null
+            start = 1
+            while (true) {
+                val piece = dao.htmlChunk(id, start, CHUNK) ?: break // null: the HTML was never downloaded
+                (html ?: StringBuilder().also { html = it }).append(piece)
+                if (piece.length < CHUNK) break
+                start += CHUNK
+            }
+            light.copy(body = body.toString(), bodyHtml = html?.toString()).toMail()
+        } catch (e: Exception) {
+            AppLog.e("db", "could not read message ${id}", e)
+            null
+        }
+    }
+
     override suspend fun inlineImages(id: Long): Map<String, String> = withContext(Dispatchers.IO) {
-        val entity = dao.get(id)?.takeIf { it.accountId == accountId } ?: return@withContext emptyMap()
-        val remote = entity.remoteId ?: return@withContext emptyMap()
+        val remote = dao.remoteIdOf(id, accountId) ?: return@withContext emptyMap()
         val dir = File(inlineDir, remote)
         try {
             saveInlineImages(remote, null) // normally already done by the sync: then this returns at once
@@ -178,7 +201,7 @@ class RoomMailRepository(
                         if (old == null || old.bodyHtml == null) {
                             // New message, or one saved before HTML was kept: download it whole.
                             val message = api.getMessage(id)
-                            val entity = GmailParser.parse(message).toEntity(accountId, id)
+                            val entity = GmailParser.parse(message).toEntity(accountId, id).capped()
                             // Embedded pictures first, so they are already there when the message shows up.
                             if (entity.bodyHtml?.contains("cid:", ignoreCase = true) == true) {
                                 try { saveInlineImages(id, message) } catch (_: Exception) { /* retried when the message is opened */ }
@@ -198,7 +221,7 @@ class RoomMailRepository(
                             if (state.folder.name != old.folder || state.read != old.read || state.starred != old.starred ||
                                 joined != old.labelIds
                             ) {
-                                dao.update(old.copy(folder = state.folder.name, read = state.read, starred = state.starred, labelIds = joined))
+                                dao.updateState(old.localId, state.folder.name, state.read, state.starred, joined)
                             }
                         }
                     }
@@ -215,9 +238,8 @@ class RoomMailRepository(
         if (!quick) {
             // Messages saved by an older version may still lack their embedded pictures: fetch them in the background.
             scope.launch(Dispatchers.IO) {
-                dao.remoteOnes(accountId)
-                    .filter { it.bodyHtml?.contains("cid:", ignoreCase = true) == true }
-                    .forEach { try { saveInlineImages(it.remoteId!!, null) } catch (_: Exception) { /* next time */ } }
+                dao.remoteIdsWithInlineImages(accountId)
+                    .forEach { try { saveInlineImages(it, null) } catch (_: Exception) { /* next time */ } }
             }
         }
     }
@@ -233,11 +255,15 @@ class RoomMailRepository(
         const val LIMIT = 120
         const val MAX_INLINE_BYTES = 4 * 1024 * 1024
         const val RECENT_MILLIS = 3L * 24 * 60 * 60 * 1000
+        const val CHUNK = 250_000
 
         /** Renamed whenever the way embedded pictures are found changes, so they are fetched again. */
         const val INLINE_INDEX = "index.v2"
     }
 }
+
+/** No single row may come close to Android's 2 MB cursor window: very long texts are cut. */
+private fun MessageEntity.capped() = copy(body = body.take(400_000), bodyHtml = bodyHtml?.take(1_200_000))
 
 private fun MessageEntity.toMail() = Mail(
     id = localId, senderName = senderName, senderEmail = senderEmail, subject = subject, body = body,

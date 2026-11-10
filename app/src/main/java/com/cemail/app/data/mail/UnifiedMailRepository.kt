@@ -41,6 +41,11 @@ class UnifiedMailRepository(private val accounts: List<MailRepository>, scope: C
         accounts.map { async { it.refresh(quick) } }.awaitAll().all { it }
     }
 
+    override suspend fun full(id: Long): Mail? {
+        for (account in accounts) account.full(id)?.let { return it }
+        return null
+    }
+
     override suspend fun inlineImages(id: Long): Map<String, String> {
         for (account in accounts) {
             val images = account.inlineImages(id)
