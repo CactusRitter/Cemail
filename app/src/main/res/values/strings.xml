@@ -215,4 +215,5 @@
     <string name="font_serif">Serif</string>
     <string name="font_mono">Monospace</string>
     <string name="font_cursive">Cursive</string>
+    <string name="compose_recipient_problem">Check the recipients: there must be at least one in To, and every address must be valid.</string>
 </resources>

@@ -3,6 +3,11 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.18.0 — 2026-11-10
+- Varios destinatarios: Para, CC y CCO muestran cada dirección como una píldora con su X. La píldora se forma al escribir coma, espacio o Intro, o al salir del campo; Retroceso en un campo vacío recupera la última para editarla. Las direcciones no válidas salen en rojo.
+- Al enviar se comprueba que haya al menos un destinatario en «Para» y que todas las direcciones sean válidas.
+- Las respuestas ya salen con el remitente como píldora.
+
 ## 0.17.0 — 2026-11-10
 - Editor con formato al escribir: negrita, cursiva, subrayado, cuatro fuentes (sin serifa, con serifa, monoespaciada, manuscrita), listas con viñetas y numeradas, y «quitar formato». Se ve al instante (nada de asteriscos) y la barra flota sobre el teclado. Se envía como HTML con una copia en texto plano; si no hay formato, sale como texto plano de siempre.
 - CC y CCO desplegables bajo «Para» (flecha a la derecha del campo). Se abren solos si ya tienen contenido.

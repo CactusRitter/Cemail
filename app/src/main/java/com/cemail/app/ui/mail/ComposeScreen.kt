@@ -112,6 +112,8 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
     val rich = rememberRichTextState()
     val currentDraft by rememberUpdatedState(draft)
     LaunchedEffect(rich) {
+        // Addresses that arrive already filled in (a reply) show as pills from the start.
+        currentDraft.let { vm.updateDraft(it.copy(to = committedRecipients(it.to), cc = committedRecipients(it.cc), bcc = committedRecipients(it.bcc))) }
         if (currentDraft.body.isNotEmpty()) rich.setText(currentDraft.body)
         snapshotFlow { rich.annotatedString }.collect {
             val html = rich.toMailHtml()
@@ -130,15 +132,11 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Column(Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card)) {
-                TextField(
+                RecipientField(
+                    label = stringResource(R.string.compose_to),
                     value = draft.to,
                     onValueChange = { vm.updateDraft(draft.copy(to = it)) },
-                    label = { Text(stringResource(R.string.compose_to)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    colors = colors,
-                    trailingIcon = {
+                    trailing = {
                         Box(
                             Modifier.size(48.dp).clip(CircleShape).clickable(role = Role.Button) { showCopies = !showCopies },
                             contentAlignment = Alignment.Center,
@@ -157,24 +155,16 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
                 ) {
                     Column {
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                        TextField(
+                        RecipientField(
+                            label = stringResource(R.string.compose_cc),
                             value = draft.cc,
                             onValueChange = { vm.updateDraft(draft.copy(cc = it)) },
-                            label = { Text(stringResource(R.string.compose_cc)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                            colors = colors,
                         )
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                        TextField(
+                        RecipientField(
+                            label = stringResource(R.string.compose_bcc),
                             value = draft.bcc,
                             onValueChange = { vm.updateDraft(draft.copy(bcc = it)) },
-                            label = { Text(stringResource(R.string.compose_bcc)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                            colors = colors,
                         )
                     }
                 }
@@ -238,7 +228,13 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
                 PillIcon(CemailIcons.Attachment, stringResource(R.string.compose_attach), { picker.launch("*/*") }, width = 44.dp)
                 PillIcon(Icons.Filled.Delete, stringResource(R.string.compose_discard), vm::discardDraft, width = 44.dp)
                 PillIcon(
-                    Icons.AutoMirrored.Filled.Send, stringResource(R.string.compose_send), { vm.send(me) },
+                    Icons.AutoMirrored.Filled.Send, stringResource(R.string.compose_send), {
+                        if (hasRecipientProblem(draft.to, draft.cc, draft.bcc)) {
+                            Toast.makeText(context, R.string.compose_recipient_problem, Toast.LENGTH_LONG).show()
+                        } else {
+                            vm.send(me)
+                        }
+                    },
                     selected = true, width = 52.dp,
                 )
             }

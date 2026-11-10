@@ -213,4 +213,5 @@
     <string name="font_serif">Con serifa</string>
     <string name="font_mono">Monoespaciada</string>
     <string name="font_cursive">Cursiva manuscrita</string>
+    <string name="compose_recipient_problem">Revisa los destinatarios: tiene que haber al menos uno en Para y todas las direcciones deben ser válidas.</string>
 </resources>

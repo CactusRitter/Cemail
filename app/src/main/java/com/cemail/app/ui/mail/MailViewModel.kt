@@ -211,9 +211,9 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
     }
 
     private fun Draft.toMail(id: Long, me: String, folder: Folder) = Mail(
-        id = id, senderName = to, senderEmail = me, subject = subject, body = body,
+        id = id, senderName = cleanRecipients(to).joinToString(", "), senderEmail = me, subject = subject, body = body,
         timeMillis = System.currentTimeMillis(), folder = folder, read = true,
-        hasAttachment = attachments.isNotEmpty(), outgoing = attachments, cc = cc, bcc = bcc, outgoingHtml = html,
+        hasAttachment = attachments.isNotEmpty(), outgoing = attachments, cc = cleanRecipients(cc).joinToString(", "), bcc = cleanRecipients(bcc).joinToString(", "), outgoingHtml = html,
     )
 
     /** Adds files to the message being written, within Gmail's size limit; returns false if some did not fit. */
