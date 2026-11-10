@@ -58,6 +58,14 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.size
 import com.cemail.app.R
 import com.cemail.app.data.gmail.HtmlSanitizer
 import com.cemail.app.data.mail.Mail
@@ -140,7 +148,7 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
             Modifier
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(start = 12.dp, end = 12.dp, top = 80.dp, bottom = 88.dp),
+                .padding(start = 12.dp, end = 12.dp, top = 80.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Column(
@@ -261,51 +269,121 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
             }
         }
 
-        // Top actions
+        // Top bar: back, the two actions used most (reply, archive) and the panel with everything else.
+        var panel by remember { mutableStateOf(false) }
         Box(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 12.dp, vertical = 8.dp)) {
-            var more by remember { mutableStateOf(false) }
             GlassPill(Modifier.fillMaxWidth()) {
                 PillIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), vm::closeMail)
                 Box(Modifier.weight(1f))
-                PillIcon(CemailIcons.Archive, stringResource(R.string.action_archive), { vm.archive(one) }, width = 44.dp)
-                PillIcon(Icons.Filled.Delete, stringResource(R.string.action_trash), { vm.trash(one) }, width = 44.dp)
-                PillIcon(CemailIcons.Snooze, stringResource(R.string.action_snooze), { vm.askSnooze(one) }, width = 44.dp)
-                PillIcon(
-                    if (mail.starred) Icons.Filled.Star else CemailIcons.StarOutline,
-                    stringResource(if (mail.starred) R.string.action_unstar else R.string.action_star),
-                    { vm.toggleStar(one) },
-                    selected = mail.starred,
-                    width = 44.dp,
-                )
-                Box {
-                    PillIcon(Icons.Filled.MoreVert, stringResource(R.string.action_more), { more = true }, width = 44.dp)
-                    DropdownMenu(expanded = more, onDismissRequest = { more = false }) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(if (mail.pinned) R.string.action_unpin else R.string.action_pin)) },
-                            leadingIcon = { Icon(CemailIcons.Pin, null) },
-                            onClick = { more = false; vm.togglePin(one) },
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.action_mark_unread)) },
-                            leadingIcon = { Icon(Icons.Filled.Email, null) },
-                            onClick = { more = false; vm.markRead(one, false) },
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.action_move_inbox)) },
-                            leadingIcon = { Icon(CemailIcons.Inbox, null) },
-                            onClick = { more = false; vm.moveToInbox(one) },
-                        )
-                    }
-                }
+                PillIcon(CemailIcons.Reply, stringResource(R.string.action_reply), { vm.newDraft(reply(R.string.reply_prefix, mail.senderEmail)) }, width = 48.dp)
+                PillIcon(CemailIcons.Archive, stringResource(R.string.action_archive), { vm.archive(one) }, width = 48.dp)
+                PillIcon(Icons.Filled.MoreVert, stringResource(R.string.action_more), { panel = true }, width = 48.dp)
             }
         }
 
-        // Reply bar: three equal actions that always fit on one line.
-        Box(Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.safeDrawing).padding(16.dp)) {
-            GlassPill(Modifier.fillMaxWidth()) {
-                ReplyAction(CemailIcons.Reply, R.string.action_reply) { vm.newDraft(reply(R.string.reply_prefix, mail.senderEmail)) }
-                ReplyAction(CemailIcons.ReplyAll, R.string.action_reply_all) { vm.newDraft(reply(R.string.reply_prefix, mail.senderEmail)) }
-                ReplyAction(CemailIcons.Forward, R.string.action_forward) { vm.newDraft(reply(R.string.forward_prefix, "")) }
+        // Delete: the round button in the bottom corner (the same place as "write" in the list).
+        Box(
+            Modifier
+                .align(Alignment.BottomEnd)
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(16.dp)
+                .size(60.dp)
+                .glass(CircleShape, GlassKind.Chrome, elevation = 10.dp)
+                .clickable(role = Role.Button) { vm.trash(one) },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Filled.Delete, stringResource(R.string.action_trash), tint = MaterialTheme.colorScheme.error)
+        }
+
+        if (panel) {
+            ActionPanel(
+                onDismiss = { panel = false },
+                reply = listOf(
+                    PanelItem(CemailIcons.Reply, R.string.action_reply) { vm.newDraft(reply(R.string.reply_prefix, mail.senderEmail)) },
+                    PanelItem(CemailIcons.ReplyAll, R.string.action_reply_all) { vm.newDraft(reply(R.string.reply_prefix, mail.senderEmail)) },
+                    PanelItem(CemailIcons.Forward, R.string.action_forward) { vm.newDraft(reply(R.string.forward_prefix, "")) },
+                ),
+                organize = listOf(
+                    PanelItem(CemailIcons.Archive, R.string.action_archive) { vm.archive(one) },
+                    PanelItem(CemailIcons.Snooze, R.string.action_snooze) { vm.askSnooze(one) },
+                    PanelItem(
+                        if (mail.starred) Icons.Filled.Star else CemailIcons.StarOutline,
+                        if (mail.starred) R.string.action_unstar else R.string.action_star, selected = mail.starred,
+                    ) { vm.toggleStar(one) },
+                    PanelItem(CemailIcons.Pin, if (mail.pinned) R.string.action_unpin else R.string.action_pin, selected = mail.pinned) { vm.togglePin(one) },
+                    PanelItem(Icons.Filled.Email, R.string.action_mark_unread) { vm.markRead(one, false) },
+                    PanelItem(CemailIcons.Inbox, R.string.action_move_inbox) { vm.moveToInbox(one) },
+                ),
+            )
+        }
+    }
+}
+
+private class PanelItem(val icon: ImageVector, val label: Int, val selected: Boolean = false, val onClick: () -> Unit)
+
+/**
+ * Every action on the open message, in a glass panel with a name under each icon, grouped into
+ * "Reply" and "Organize". Tapping outside closes it.
+ */
+@Composable
+private fun ActionPanel(onDismiss: () -> Unit, reply: List<PanelItem>, organize: List<PanelItem>) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.28f))
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss),
+    ) {
+        Column(
+            Modifier
+                .align(Alignment.TopEnd)
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(top = 76.dp, end = 12.dp, start = 12.dp)
+                .widthIn(max = 320.dp)
+                .fillMaxWidth()
+                // Swallows taps so only the area around the panel closes it.
+                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
+                .glass(RoundedCornerShape(28.dp), GlassKind.Menu, elevation = 12.dp)
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            PanelGroup(R.string.panel_group_reply, reply, onDismiss)
+            PanelGroup(R.string.panel_group_organize, organize, onDismiss)
+        }
+    }
+}
+
+@Composable
+private fun PanelGroup(title: Int, items: List<PanelItem>, onDismiss: () -> Unit) {
+    Text(
+        stringResource(title),
+        Modifier.padding(start = 6.dp, top = 4.dp),
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.primary,
+    )
+    items.chunked(3).forEach { row ->
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            row.forEach { item ->
+                val tint = if (item.selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(if (item.selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
+                        .clickable(role = Role.Button) { onDismiss(); item.onClick() }
+                        .padding(vertical = 10.dp, horizontal = 4.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Icon(item.icon, null, tint = tint)
+                    Text(
+                        stringResource(item.label),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = tint,
+                        maxLines = 2,
+                        textAlign = TextAlign.Center,
+                    )
+                }
             }
         }
     }
@@ -361,24 +439,6 @@ private fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier, onSc
     )
 }
 
-@Composable
-private fun androidx.compose.foundation.layout.RowScope.ReplyAction(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: Int,
-    onClick: () -> Unit,
-) {
-    Row(
-        Modifier
-            .weight(1f)
-            .clickable(role = Role.Button, onClick = onClick)
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
-    ) {
-        Icon(icon, null, Modifier.padding(end = 6.dp), tint = MaterialTheme.colorScheme.primary)
-        Text(stringResource(label), style = MaterialTheme.typography.labelMedium, maxLines = 1)
-    }
-}
 
 
 /** How small the subject gets once the header is collapsed (1 = its full size). */
