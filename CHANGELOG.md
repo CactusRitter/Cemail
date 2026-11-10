@@ -3,6 +3,13 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.24.1 — 2026-11-10
+Arreglos tras la prueba de envío real desde el móvil (correo con negrita y adjunto entre dos cuentas: llegó bien).
+- La parte de texto plano de un correo ya no lleva las marcas `*negrita*`: se saca del HTML del editor, con viñetas (`• `) y numeración (`1. `) en las listas. Se nota en la vista previa de la lista y en los clientes que enseñan el texto plano.
+- Pantalla de redacción: el autocompletado de Android ya no escribe a la vez tu correo en Para, Cc, Cco, asunto y cuerpo (la pantalla se excluye de Autofill).
+- Campos de destinatarios: el teclado ya no autocorrige mientras se escribe una dirección.
+- Tests nuevos del texto plano (negrita, párrafos, listas, entidades).
+
 ## 0.24.0 — 2026-11-10
 - El menú de las tres barras se cierra al tocar fuera de él (antes solo con el botón atrás: el panel transparente se comía los toques).
 - Botones flotantes de la lectura (responder y «⋮»): sin la sombra que se transparentaba por el cristal y dejaba formas raras sobre el mensaje; ahora llevan una base opaca bajo el cristal.

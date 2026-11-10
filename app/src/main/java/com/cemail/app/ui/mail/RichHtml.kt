@@ -44,6 +44,46 @@ fun RichTextState.toMailHtml(): String? {
     return doc.body().html()
 }
 
+/** The editor's text as plain text for the plain half of the message: no `*marks*`, lists with bullets or numbers. */
+fun RichTextState.toPlainText(): String = htmlToPlainText(toHtml())
+
+/** Plain text of the editor's HTML: one line per paragraph or list item, `• ` and `1. ` for lists. */
+fun htmlToPlainText(html: String): String {
+    val doc = Jsoup.parseBodyFragment(html)
+    doc.outputSettings().prettyPrint(false)
+    val out = StringBuilder()
+    fun walk(node: Node) {
+        when (node) {
+            is TextNode -> out.append(node.wholeText)
+            is Element -> when (node.normalName()) {
+                "br" -> out.append('\n')
+                "ul", "ol" -> {
+                    var number = 0
+                    for (child in node.children()) {
+                        if (child.normalName() == "li") {
+                            number++
+                            out.append(if (node.normalName() == "ol") "$number. " else "• ")
+                            child.childNodes().forEach(::walk)
+                            if (!out.endsWith("\n")) out.append('\n')
+                        } else {
+                            walk(child)
+                        }
+                    }
+                }
+                "p", "div", "h1", "h2", "h3", "blockquote" -> {
+                    val before = out.length
+                    node.childNodes().forEach(::walk)
+                    // An empty paragraph (only a line break) is one blank line, not two.
+                    if (!(out.length > before && out.endsWith("\n"))) out.append('\n')
+                }
+                else -> node.childNodes().forEach(::walk)
+            }
+        }
+    }
+    doc.body().childNodes().forEach(::walk)
+    return out.toString().trimEnd('\n')
+}
+
 private fun textNodes(root: Element): List<TextNode> {
     val found = mutableListOf<TextNode>()
     fun walk(node: Node) {

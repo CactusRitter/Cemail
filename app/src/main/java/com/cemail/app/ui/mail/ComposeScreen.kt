@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.text.format.Formatter
+import android.view.View
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -47,6 +48,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,6 +63,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.SpanStyle
@@ -100,7 +103,15 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
     )
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
+    // Android's autofill would put the same e-mail address into To, Cc, Bcc, subject and body at once: these
+    // fields are not a form to fill in, so autofill is turned off for the whole screen.
+    val hostView = LocalView.current
+    DisposableEffect(hostView) {
+        val previous = hostView.importantForAutofill
+        hostView.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+        onDispose { hostView.importantForAutofill = previous }
+    }
+    val picker =rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
         if (uris.isEmpty()) return@rememberLauncherForActivityResult
         scope.launch {
             // Files are read here, off the main thread, and kept in memory until the message is sent.
@@ -136,7 +147,7 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
         }
         snapshotFlow { rich.annotatedString }.collect {
             val html = rich.toMailHtml()
-            vm.editDraft { d -> d.copy(body = rich.toText(), html = html) }
+            vm.editDraft { d -> d.copy(body = rich.toPlainText(), html = html) }
         }
     }
     var showCopies by rememberSaveable { mutableStateOf(draft.cc.isNotBlank() || draft.bcc.isNotBlank()) }
