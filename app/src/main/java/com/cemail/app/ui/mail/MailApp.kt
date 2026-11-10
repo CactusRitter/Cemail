@@ -30,6 +30,9 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
@@ -243,20 +246,20 @@ private fun DrawerContent(
             .padding(vertical = 16.dp, horizontal = 12.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        // Settings sits at the top of the menu, so it never needs a scroll to be reached.
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .glass(RoundedCornerShape(50), GlassKind.Card)
-                .clickable(role = Role.Button, onClick = onOpenSettings)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Icon(Icons.Filled.Settings, null)
-            Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.bodyLarge)
+        // Settings is a small button in the top corner of the menu: always reachable, without taking a row.
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            Box(
+                Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .clickable(role = Role.Button, onClickLabel = stringResource(R.string.settings_title), onClick = onOpenSettings),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.Settings, stringResource(R.string.settings_title), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
         AccountSwitcher(acc, onSelectAccount)
+        HorizontalDivider(Modifier.padding(vertical = 6.dp, horizontal = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
         if (accounts.isEmpty()) {
             Text(
                 stringResource(R.string.demo_banner),

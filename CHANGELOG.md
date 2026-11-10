@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.30.1 — 2026-11-11
+- **Menú lateral rehecho** (como referencia, el de Samsung Email): todas las cuentas a la vista, cada una con su color y una marca en la activa, y «Todas las cuentas» al final de la lista; los ajustes pasan a un icono pequeño arriba a la derecha y una línea separa las cuentas de las carpetas. A diferencia de Samsung, tocar una cuenta no cierra el menú: se queda abierto con las carpetas y etiquetas de esa cuenta.
+
 ## 0.30.0 — 2026-11-10
 Cinco funciones nuevas para el uso diario.
 - **Posponer de verdad:** a la hora elegida el mensaje vuelve a la bandeja como no leído y Cemail avisa con una notificación (también con la app cerrada, con WorkManager).
