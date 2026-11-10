@@ -3,6 +3,11 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.21.0 — 2026-11-10
+- Dos widgets (Jetpack Glance, gratis): **Cemail · Inbox** (4×3: los últimos correos de todas tus cuentas con remitente, asunto y hora, en negrita los no leídos; botones de buscar y redactar; tocar un correo lo abre; tocar el título abre la bandeja) y **Cemail · Tools** (4×1: botones redondos de redactar, bandeja con el número de no leídos, buscar y destacados).
+- Se redibujan solos cuando cambia la bandeja (con una pausa corta para que una sincronización cuente como un cambio).
+- Los widgets llevan un panel translúcido en tonos suaves, en claro y oscuro (un widget no puede desenfocar lo que tiene detrás).
+
 ## 0.20.0 — 2026-11-10
 - Menú del icono (al dejarlo pulsado): Redactar, Bandeja de entrada, Buscar y Destacados. Con dos o más cuentas añade «Redactar desde …» por cada una (hasta 3).
 - La app entiende peticiones de fuera (menú del icono y, próximamente, widgets): cambia a la cuenta que toca y abre la carpeta, la búsqueda, un mensaje o el editor.

@@ -143,6 +143,25 @@ interface MessageDao {
 
     @Query("DELETE FROM messages WHERE accountId = :accountId")
     suspend fun deleteAccount(accountId: String)
+
+    /** The newest Inbox messages of every account, without their texts (for the widgets). */
+    @Query(
+        "SELECT localId, accountId, remoteId, folder, senderName, senderEmail, subject, '' AS body, " +
+            "timeMillis, read, starred, pinned, snoozedUntil, hasAttachment, labelIds, NULL AS bodyHtml " +
+            "FROM messages WHERE folder = 'INBOX' AND (snoozedUntil IS NULL OR snoozedUntil < :now) " +
+            "ORDER BY timeMillis DESC LIMIT :limit",
+    )
+    suspend fun recentInbox(now: Long, limit: Int): List<MessageEntity>
+
+    @Query("SELECT COUNT(*) FROM messages WHERE folder = 'INBOX' AND read = 0 AND (snoozedUntil IS NULL OR snoozedUntil < :now)")
+    suspend fun unreadInboxCount(now: Long): Int
+
+    /** Changes whenever the Inbox does: the widgets redraw then. */
+    @Query(
+        "SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN read = 0 THEN 1 ELSE 0 END), 0) AS unread, " +
+            "COALESCE(MAX(timeMillis), 0) AS latest FROM messages WHERE folder = 'INBOX'",
+    )
+    fun inboxSignature(): Flow<InboxSignature>
 }
 
 /** A Gmail label the user created (system labels like INBOX are not stored). */
@@ -184,3 +203,5 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
         db.execSQL("UPDATE messages SET bodyHtml = NULL")
     }
 }
+
+data class InboxSignature(val total: Int, val unread: Int, val latest: Long)

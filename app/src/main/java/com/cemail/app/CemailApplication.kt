@@ -19,6 +19,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import com.cemail.app.widget.updateWidgets
 import kotlinx.coroutines.launch
 import com.cemail.app.notify.MailNotifier
 
@@ -112,6 +115,12 @@ class CemailApplication : Application() {
         CrashLog.install(this)
         notifier.createChannel()
         appScope.launch { accountRepository.accounts.collect { updateShortcuts(it) } }
+        // The widgets redraw whenever the Inbox changes (a short pause first, so a sync counts as one change).
+        appScope.launch {
+            database.messages().inboxSignature().distinctUntilChanged().debounce(1_500).collect {
+                try { updateWidgets(this@CemailApplication) } catch (e: Exception) { AppLog.e("widget", "could not update the widgets", e) }
+            }
+        }
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             override fun onActivityStarted(activity: android.app.Activity) { visibleActivities++ }
             override fun onActivityStopped(activity: android.app.Activity) { visibleActivities-- }

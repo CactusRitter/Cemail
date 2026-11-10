@@ -28,6 +28,26 @@
             <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
         </activity>
 
+        <!-- Home-screen widgets (Glance) -->
+        <receiver
+            android:name=".widget.InboxWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_inbox_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_inbox_info" />
+        </receiver>
+        <receiver
+            android:name=".widget.ToolsWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_tools_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_tools_info" />
+        </receiver>
+
         <!-- The "Read" and "Delete" buttons of a new-mail notification -->
         <receiver android:name=".notify.MailActionReceiver" android:exported="false" />
 

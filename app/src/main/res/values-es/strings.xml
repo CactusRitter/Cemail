@@ -223,4 +223,8 @@
     <string name="shortcut_starred_short">Destacados</string>
     <string name="shortcut_starred">Mensajes destacados</string>
     <string name="shortcut_compose_from">Redactar desde %1$s</string>
+    <string name="widget_inbox_name">Cemail · Recibidos</string>
+    <string name="widget_inbox_description">Los mensajes más recientes de tu bandeja, con botones para buscar y redactar.</string>
+    <string name="widget_tools_name">Cemail · Herramientas</string>
+    <string name="widget_tools_description">Botones rápidos: redactar, recibidos con el número de no leídos, buscar y destacados.</string>
 </resources>
