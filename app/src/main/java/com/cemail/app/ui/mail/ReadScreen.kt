@@ -34,7 +34,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import kotlin.math.roundToInt
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -73,9 +82,32 @@ fun ReadScreen(mail: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
 
     // The sanitized page, computed once per message. Messages without an HTML part show their text.
     val html = mail.bodyHtml.orEmpty()
-    val cleanPage = remember(mail.id, html) { if (html.isBlank()) null else HtmlSanitizer.page(HtmlSanitizer.clean(html)) }
+    // Pictures that travel inside the message (cid:) are not "remote": they are fetched from Gmail once and always shown.
+    val inline by produceState(emptyMap<String, String>(), mail.id, html) {
+        value = if (HtmlSanitizer.hasInlineImages(html)) vm.inlineImages(mail.id) else emptyMap()
+    }
     val hasRemoteImages = remember(mail.id, html) { html.isNotBlank() && HtmlSanitizer.hasRemoteImages(html) }
     var showImages by remember(mail.id, alwaysShowImages) { mutableStateOf(alwaysShowImages) }
+
+    // The header's details (sender, date...) slide away exactly as much as the message has been scrolled,
+    // until only the subject is left. The body keeps a fixed height meanwhile (its lower edge is simply
+    // hidden while the details are showing), so scrolling never changes how far one can scroll.
+    var scrollPx by remember(mail.id) { mutableIntStateOf(0) }
+    val textScroll = rememberScrollState()
+    var detailsPx by remember(mail.id) { mutableIntStateOf(0) }
+    val density = LocalDensity.current
+    val detailsDp = with(density) { detailsPx.toDp() }
+    val hiddenPx = (if (html.isNotBlank()) scrollPx else textScroll.value).coerceIn(0, detailsPx)
+    val progress = if (detailsPx > 0) hiddenPx / detailsPx.toFloat() else 0f
+    // Extra room at the end of the message, so its last lines can always be scrolled into view.
+    val cleanPage = remember(mail.id, html, inline, detailsDp) {
+        if (html.isBlank()) null else HtmlSanitizer.page(HtmlSanitizer.clean(html, inline), detailsDp.value.roundToInt())
+    }
+    val fixedBody = Modifier.layout { measurable, constraints ->
+        val height = constraints.maxHeight + (detailsPx - hiddenPx)
+        val placeable = measurable.measure(constraints.copy(minHeight = height, maxHeight = height))
+        layout(placeable.width, constraints.maxHeight) { placeable.place(0, 0) }
+    }
 
     Box(Modifier.fillMaxSize()) {
         Column(
@@ -86,10 +118,30 @@ fun ReadScreen(mail: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Column(
-                Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card).padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                Modifier
+                    .fillMaxWidth()
+                    .glass(RoundedCornerShape(24.dp), GlassKind.Card)
+                    .padding(16.dp),
             ) {
-                Text(mail.subject.ifBlank { stringResource(R.string.no_subject) }, style = MaterialTheme.typography.titleLarge)
+                Text(
+                    mail.subject.ifBlank { stringResource(R.string.no_subject) },
+                    style = MaterialTheme.typography.titleLarge,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                // Everything but the subject: its height and opacity follow the scroll.
+                Column(
+                    Modifier
+                        .clipToBounds()
+                        .layout { measurable, constraints ->
+                            val placeable = measurable.measure(constraints)
+                            layout(placeable.width, (placeable.height - hiddenPx).coerceAtLeast(0)) { placeable.place(0, 0) }
+                        }
+                        .graphicsLayer { alpha = 1f - progress }
+                        .onSizeChanged { detailsPx = it.height }
+                        .padding(top = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Avatar(mail.senderName)
                     Column(Modifier.weight(1f)) {
@@ -134,6 +186,7 @@ fun ReadScreen(mail: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
                         )
                     }
                 }
+                }
             }
             Box(
                 Modifier
@@ -142,10 +195,13 @@ fun ReadScreen(mail: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
                     .clip(RoundedCornerShape(24.dp)),
             ) {
                 if (cleanPage != null) {
-                    HtmlBody(cleanPage, showImages, Modifier.fillMaxSize())
+                    HtmlBody(cleanPage, showImages, fixedBody.fillMaxSize()) { scrollPx = it }
                 } else {
-                    Box(Modifier.fillMaxSize().glass(RoundedCornerShape(24.dp), GlassKind.Card).verticalScroll(rememberScrollState()).padding(16.dp)) {
-                        Text(mail.body, style = MaterialTheme.typography.bodyLarge)
+                    Box(
+                        fixedBody.fillMaxSize().glass(RoundedCornerShape(24.dp), GlassKind.Card)
+                            .verticalScroll(textScroll).padding(16.dp),
+                    ) {
+                        Text(mail.body, Modifier.padding(bottom = detailsDp), style = MaterialTheme.typography.bodyLarge)
                     }
                 }
             }
@@ -207,7 +263,8 @@ fun ReadScreen(mail: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
  */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-private fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier) {
+private fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier, onScroll: (Int) -> Unit) {
+    val currentOnScroll by rememberUpdatedState(onScroll)
     AndroidView(
         modifier = modifier,
         factory = { ctx ->
@@ -222,6 +279,7 @@ private fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier) {
                 settings.displayZoomControls = false
                 // Emails are written for a white page, whatever the app theme is.
                 setBackgroundColor(android.graphics.Color.WHITE)
+                setOnScrollChangeListener { _, _, y, _, _ -> currentOnScroll(y) }
                 webViewClient = object : WebViewClient() {
                     override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                         val uri: Uri = request.url
@@ -267,3 +325,4 @@ private fun androidx.compose.foundation.layout.RowScope.ReplyAction(
         Text(stringResource(label), style = MaterialTheme.typography.labelMedium, maxLines = 1)
     }
 }
+

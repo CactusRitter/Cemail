@@ -137,4 +137,7 @@
     <string name="section_yesterday">Ayer</string>
     <string name="section_last_week">Última semana</string>
     <string name="section_older">Antiguos</string>
+    <string name="settings_section_appearance">Apariencia</string>
+    <string name="settings_transparency_title">Transparencia del cristal</string>
+    <string name="settings_transparency_body">Cuánto se transparentan las tarjetas y las barras.</string>
 </resources>

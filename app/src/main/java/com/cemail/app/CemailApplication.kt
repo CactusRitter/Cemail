@@ -26,7 +26,7 @@ class CemailApplication : Application() {
     val database: CemailDatabase by lazy { CemailDatabase.create(this) }
     val googleAuth: GoogleAuth by lazy { GoogleAuth(this) }
     val tokenStore: TokenStore by lazy { TokenStore(this) }
-    val accountRepository: AccountRepository by lazy { AccountRepository(database.accounts(), database.messages(), tokenStore) }
+    val accountRepository: AccountRepository by lazy { AccountRepository(database.accounts(), database.messages(), tokenStore, java.io.File(filesDir, "inline")) }
 
     private val repositories = HashMap<String, MailRepository>()
 
@@ -36,6 +36,7 @@ class CemailApplication : Application() {
             RoomMailRepository(
                 accountId, database.messages(), database.labels(),
                 HttpGmailApi(AccountTokenProvider(accountId, tokenStore, googleAuth)), appScope,
+                java.io.File(filesDir, "inline/$accountId"),
             )
         }
     }

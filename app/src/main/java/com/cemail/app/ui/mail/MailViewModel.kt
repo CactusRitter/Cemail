@@ -201,6 +201,8 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
         timeMillis = System.currentTimeMillis(), folder = folder, read = true,
     )
 
+    suspend fun inlineImages(id: Long): Map<String, String> = repo.inlineImages(id)
+
     class Factory(private val repo: MailRepository) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T = MailViewModel(repo) as T

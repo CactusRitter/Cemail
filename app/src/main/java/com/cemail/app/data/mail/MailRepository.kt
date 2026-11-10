@@ -30,6 +30,9 @@ interface MailRepository {
 
     /** Brings the local copy up to date with the server. Returns false if it failed. */
     suspend fun refresh(): Boolean
+
+    /** The pictures embedded in a message, as Content-ID → `data:` URI (downloaded once, then kept on the phone). */
+    suspend fun inlineImages(id: Long): Map<String, String>
 }
 
 /** In-memory store seeded with example messages (used when no account is signed in). */
@@ -54,4 +57,5 @@ class DemoMailRepository(seed: List<Mail>, demoLabels: List<Label> = emptyList()
     override fun nextId() = counter++
     override fun remove(id: Long) = state.update { l -> l.filter { it.id != id } }
     override suspend fun refresh() = true
+    override suspend fun inlineImages(id: Long) = emptyMap<String, String>()
 }

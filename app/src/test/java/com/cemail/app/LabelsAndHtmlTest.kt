@@ -26,7 +26,7 @@ class LabelsAndHtmlTest {
 
     @Test fun sanitizerRemovesScriptsHandlersAndCssUrls() {
         val out = HtmlSanitizer.clean(
-            """<div style="background:url(http://t.example/x.png);color:red" onclick="evil()">Hi<script>alert(1)</script>
+            """<div style="background:url(javascript:evil());color:red" onclick="evil()">Hi<script>alert(1)</script>
                <iframe src="http://x"></iframe><a href="javascript:evil()">x</a><a href="https://ok.example">ok</a></div>""",
         )
         assertFalse(out.contains("script", true))

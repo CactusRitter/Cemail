@@ -6,7 +6,11 @@ import com.cemail.app.data.db.MessageDao
 import com.cemail.app.data.db.MessageEntity
 import com.cemail.app.data.gmail.GmailApi
 import com.cemail.app.data.gmail.GmailParser
+import com.cemail.app.data.gmail.InlineImages
 import com.cemail.app.data.gmail.MimeBuilder
+import java.io.File
+import java.util.Base64
+import kotlinx.coroutines.withContext
 import com.cemail.app.data.gmail.ParsedMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +37,8 @@ class RoomMailRepository(
     private val labelDao: LabelDao,
     private val api: GmailApi,
     private val scope: CoroutineScope,
+    /** Folder where this account's embedded pictures are kept, one sub-folder per message. */
+    private val inlineDir: File,
 ) : MailRepository {
     override val mails: StateFlow<List<Mail>> = dao.observe(accountId)
         .map { list -> list.map { it.toMail() } }
@@ -108,6 +114,31 @@ class RoomMailRepository(
         }
     }
 
+    override suspend fun inlineImages(id: Long): Map<String, String> = withContext(Dispatchers.IO) {
+        val remote = dao.get(id)?.remoteId ?: return@withContext emptyMap()
+        val dir = File(inlineDir, remote)
+        val index = File(dir, "index")
+        try {
+            if (!index.exists()) {
+                dir.mkdirs()
+                val lines = mutableListOf<String>()
+                InlineImages.find(api.getMessage(remote)).forEachIndexed { n, part ->
+                    val bytes = part.data ?: part.attachmentId?.let { api.getAttachment(remote, it) } ?: return@forEachIndexed
+                    if (bytes.size > MAX_INLINE_BYTES) return@forEachIndexed
+                    File(dir, "$n").writeBytes(bytes)
+                    lines += "${part.cid}\t${part.mimeType}\t$n"
+                }
+                index.writeText(lines.joinToString("\n"))
+            }
+            index.readLines().filter { it.isNotBlank() }.associate { line ->
+                val (cid, mime, file) = line.split("\t")
+                cid to "data:$mime;base64," + Base64.getEncoder().encodeToString(File(dir, file).readBytes())
+            }
+        } catch (_: Exception) {
+            emptyMap() // offline or the message is gone: the pictures simply are not shown
+        }
+    }
+
     private suspend fun sync() {
         syncLabels()
         val remoteIds = api.listMessageIds(QUERY, LIMIT)
@@ -153,6 +184,7 @@ class RoomMailRepository(
     private companion object {
         const val QUERY = "in:anywhere -in:spam -in:chats"
         const val LIMIT = 120
+        const val MAX_INLINE_BYTES = 4 * 1024 * 1024
     }
 }
 

@@ -116,7 +116,7 @@ object GmailParser {
         } catch (_: Exception) {
             Charsets.UTF_8
         }
-        return String(Base64.getUrlDecoder().decode(data), charset)
+        return decodeText(Base64.getUrlDecoder().decode(data), charset)
     }
 
     /** Readable plain text from HTML: block elements and <br> become line breaks. */

@@ -16,7 +16,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
+import java.text.NumberFormat
+import kotlin.math.roundToInt
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -73,6 +76,37 @@ fun SettingsScreen(settings: AppSettings, repo: SettingsRepository, onBack: () -
                 checked = settings.groupByDate,
                 onChange = repo::setGroupByDate,
             )
+            Text(
+                stringResource(R.string.settings_section_appearance),
+                Modifier.padding(start = 8.dp, top = 8.dp),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .glass(RoundedCornerShape(24.dp), GlassKind.Card)
+                    .padding(horizontal = 18.dp, vertical = 14.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.settings_transparency_title), Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        NumberFormat.getPercentInstance().format(settings.transparency / 100.0),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                Text(
+                    stringResource(R.string.settings_transparency_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Slider(
+                    value = settings.transparency.toFloat(),
+                    onValueChange = { repo.setTransparency(it.roundToInt()) },
+                    valueRange = 0f..100f,
+                )
+            }
         }
     }
 }

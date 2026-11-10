@@ -26,6 +26,7 @@ interface GmailApi {
     suspend fun getMessage(id: String): GmailMessage
     suspend fun getLabels(id: String): List<String>
     suspend fun listUserLabels(): List<GmailLabel>
+    suspend fun getAttachment(messageId: String, attachmentId: String): ByteArray
     suspend fun modify(id: String, add: List<String>, remove: List<String>)
     suspend fun send(raw: ByteArray)
 }
@@ -69,6 +70,13 @@ class HttpGmailApi(
     override suspend fun listUserLabels(): List<GmailLabel> {
         val url = BASE.newBuilder().addPathSegment("labels").build()
         return json.decodeFromString<LabelList>(call(Request.Builder().url(url).build())).labels.filter { it.type == "user" }
+    }
+
+    override suspend fun getAttachment(messageId: String, attachmentId: String): ByteArray {
+        val url = BASE.newBuilder().addPathSegment("messages").addPathSegment(messageId)
+            .addPathSegment("attachments").addPathSegment(attachmentId).build()
+        val body = json.decodeFromString<AttachmentBody>(call(Request.Builder().url(url).build()))
+        return Base64.getUrlDecoder().decode(body.data)
     }
 
     override suspend fun modify(id: String, add: List<String>, remove: List<String>) {

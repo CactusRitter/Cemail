@@ -10,6 +10,8 @@ class AccountRepository(
     private val dao: AccountDao,
     private val messages: MessageDao,
     private val tokens: TokenStore,
+    /** Root folder of the embedded pictures kept on the phone (one sub-folder per account). */
+    private val inlineRoot: java.io.File,
 ) {
     val accounts: Flow<List<AccountEntity>> = dao.observeAll()
 
@@ -27,6 +29,7 @@ class AccountRepository(
     suspend fun remove(accountId: String) {
         tokens.clear(accountId)
         messages.deleteAccount(accountId)
+        java.io.File(inlineRoot, accountId).deleteRecursively()
         dao.delete(accountId)
     }
 

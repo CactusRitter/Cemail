@@ -48,3 +48,6 @@ data class LabelList(val labels: List<GmailLabel> = emptyList())
 /** [type] is "system" (INBOX, SENT, ...) or "user". */
 @Serializable
 data class GmailLabel(val id: String, val name: String, val type: String = "user")
+
+@Serializable
+data class AttachmentBody(val size: Int = 0, val data: String = "")

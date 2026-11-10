@@ -15,6 +15,8 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.Update
 import androidx.room.Upsert
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.flow.Flow
 
 /** A signed-in Google account. [id] is Google's stable subject id (not the email, which can change). */
@@ -109,7 +111,7 @@ interface LabelDao {
 
 @Database(
     entities = [AccountEntity::class, MessageEntity::class, LabelEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = true,
     autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
@@ -120,6 +122,13 @@ abstract class CemailDatabase : RoomDatabase() {
 
     companion object {
         fun create(context: Context): CemailDatabase =
-            Room.databaseBuilder(context, CemailDatabase::class.java, "cemail.db").build()
+            Room.databaseBuilder(context, CemailDatabase::class.java, "cemail.db").addMigrations(MIGRATION_3_4).build()
+    }
+}
+
+/** 0.4.0 fixed how message text is decoded: forget the cached bodies so the next sync downloads them again. */
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("UPDATE messages SET bodyHtml = NULL")
     }
 }
