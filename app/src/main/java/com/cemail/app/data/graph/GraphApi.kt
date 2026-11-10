@@ -69,7 +69,7 @@ data class GraphAttachment(
 /** What the Microsoft repository needs from Microsoft Graph. */
 class GraphApi(
     private val tokens: AccessTokenProvider,
-    private val client: OkHttpClient = OkHttpClient(),
+    private val client: OkHttpClient = OkHttpClient.Builder().dns(Ipv4First).build(),
 ) {
     private val json = Json { ignoreUnknownKeys = true }
     private val textType = "text/plain".toMediaType()
@@ -141,11 +141,21 @@ class GraphApi(
 
     private suspend fun <T> execute(builder: Request.Builder, read: (okhttp3.Response) -> T): T {
         val token = tokens.accessToken() ?: throw GmailHttpException(401, "not signed in")
+        val request = builder.header("Authorization", "Bearer $token").build()
         return withContext(Dispatchers.IO) {
-            client.newCall(builder.header("Authorization", "Bearer $token").build()).execute().use { response ->
-                if (!response.isSuccessful) throw GmailHttpException(response.code, "Microsoft Graph ${response.code}")
-                read(response)
+            var attempt = 0
+            while (true) {
+                try {
+                    return@withContext client.newCall(request).execute().use { response ->
+                        if (!response.isSuccessful) throw GmailHttpException(response.code, "Microsoft Graph ${response.code}")
+                        read(response)
+                    }
+                } catch (e: java.net.ConnectException) {
+                    // A first attempt on a dead route (often right after the app starts): one more try before giving up.
+                    if (++attempt > 1) throw e
+                }
             }
+            @Suppress("UNREACHABLE_CODE") error("unreachable")
         }
     }
 
@@ -155,4 +165,10 @@ class GraphApi(
         val PAGE: KSerializer<GraphPage<GraphMessage>> = GraphPage.serializer(GraphMessage.serializer())
         val ATTACHMENTS: KSerializer<GraphPage<GraphAttachment>> = GraphPage.serializer(GraphAttachment.serializer())
     }
+}
+
+/** Tries IPv4 addresses before IPv6 ones: some networks have an IPv6 route to Microsoft that does not work. */
+private object Ipv4First : okhttp3.Dns {
+    override fun lookup(hostname: String): List<java.net.InetAddress> =
+        okhttp3.Dns.SYSTEM.lookup(hostname).sortedBy { it is java.net.Inet6Address }
 }

@@ -120,7 +120,7 @@
     <string name="account_add">Add account</string>
     <string name="account_remove">Remove account</string>
     <string name="refresh">Refresh</string>
-    <string name="sync_failed">Could not sync. Check your connection.</string>
+    <string name="sync_failed">Could not sync one of your accounts. Check your connection; details are in Settings, Activity log.</string>
     <string name="demo_label_shopping">Shopping</string>
     <string name="demo_label_amazon">Amazon</string>
     <string name="demo_label_work">Work</string>
@@ -203,7 +203,7 @@
     <string name="compose_cc">Cc</string>
     <string name="compose_bcc">Bcc</string>
     <string name="compose_copies_toggle">Show Cc and Bcc</string>
-    <string name="compose_unsaved">Attachments, Cc/Bcc and formatting are not kept in saved drafts.</string>
+    <string name="compose_unsaved">Attachments are not kept in saved drafts.</string>
     <string name="format_bold">Bold</string>
     <string name="format_italic">Italic</string>
     <string name="format_underline">Underline</string>

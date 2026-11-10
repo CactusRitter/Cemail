@@ -3,6 +3,14 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.28.1 — 2026-11-10
+- Microsoft: se prueban primero las direcciones IPv4 y se reintenta una vez si la primera conexión falla (en algunas redes la ruta IPv6 a Microsoft no funciona y la primera sincronización fallaba).
+- Un borrador se abre para editarlo desde cualquier lista (también desde la búsqueda), no solo desde Borradores.
+
+## 0.28.0 — 2026-11-10
+- **Borradores completos (en el teléfono):** al guardar un borrador se conservan ahora Cc, Cco, el formato (negrita, listas…) y los datos de la respuesta (hilo, In-Reply-To, References); al reabrirlo vuelve todo. Los adjuntos siguen sin guardarse (el aviso lo dice). Base de datos v7.
+- Aviso de error de sincronización más claro: dice que fue alguna cuenta y dónde mirar los detalles (Ajustes, Registro de actividad).
+
 ## 0.27.0 — 2026-11-10
 Cuentas Microsoft (Outlook.com, Hotmail, Microsoft 365) con Microsoft Graph, e IMAP (ver 0.26.0). Primera versión: sin probar todavía con una cuenta real.
 - App registrada en Azure («Cemail», cuentas personales y de empresa, cliente público con PKCE y sin secreto). El identificador va en `local.properties` (`cemail.oauth.microsoft.clientId`) y llega por `BuildConfig`.

@@ -55,6 +55,7 @@ import androidx.compose.runtime.remember
 import com.cemail.app.R
 import com.cemail.app.data.mail.DateSection
 import com.cemail.app.data.mail.Mail
+import com.cemail.app.data.mail.Folder
 import com.cemail.app.data.mail.MailBox
 import androidx.compose.ui.graphics.Color
 import com.cemail.app.data.mail.dateSectionOf
@@ -211,7 +212,7 @@ private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsA
         mail = mail,
         selected = mail.id in state.selection,
         selectionMode = state.selection.isNotEmpty(),
-        onClick = { if (state.selection.isNotEmpty()) vm.toggleSelect(mail.id) else if (state.box == MailBox.DRAFTS) vm.editDraft(mail) else vm.open(mail.id) },
+        onClick = { if (state.selection.isNotEmpty()) vm.toggleSelect(mail.id) else if (mail.folder == Folder.DRAFTS) vm.editDraft(mail) else vm.open(mail.id) },
         onLongClick = { vm.toggleSelect(mail.id) },
         onToggleStar = { vm.toggleStar(one) },
         onSwipeStart = { if (startIsArchive) vm.archive(one) else vm.moveToInbox(one) },

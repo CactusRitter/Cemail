@@ -240,7 +240,15 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
     /** Re-opens a saved draft for editing (the stored copy is removed; it is saved again on close). */
     fun editDraft(mail: Mail) {
         repo.remove(mail.id)
-        ui.update { it.copy(draft = Draft(mail.senderName, mail.subject, mail.body, signed = true)) }
+        ui.update {
+            it.copy(
+                draft = Draft(
+                    to = mail.senderName, subject = mail.subject, body = mail.body,
+                    cc = mail.cc, bcc = mail.bcc, html = mail.bodyHtml?.takeIf { h -> h.isNotBlank() },
+                    signed = true, threadId = mail.threadId, inReplyTo = mail.inReplyTo, references = mail.references,
+                ),
+            )
+        }
     }
 
     /** Leaves the compose screen: an empty draft is dropped, anything else is kept in Drafts. */

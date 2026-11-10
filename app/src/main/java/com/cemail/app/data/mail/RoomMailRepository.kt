@@ -439,13 +439,16 @@ internal fun MessageEntity.toMail() = Mail(
     snoozedUntil = snoozedUntil, hasAttachment = hasAttachment,
     labelIds = labelIds.split(" ").filter { it.isNotEmpty() }.toSet(), bodyHtml = bodyHtml, accountId = accountId,
     threadId = threadId,
+    cc = cc, bcc = bcc,
+    inReplyTo = replyRefs.substringBefore('\n').ifBlank { null }, references = replyRefs.substringAfter('\n', "").ifBlank { null },
 )
 
 internal fun Mail.toEntity(accountId: String, remoteId: String?) = MessageEntity(
     localId = id, accountId = accountId, remoteId = remoteId, folder = folder.name, senderName = senderName,
     senderEmail = senderEmail, subject = subject, body = body, timeMillis = timeMillis, read = read,
     starred = starred, pinned = pinned, snoozedUntil = snoozedUntil, hasAttachment = hasAttachment,
-    labelIds = labelIds.sorted().joinToString(" "), bodyHtml = bodyHtml ?: "", threadId = threadId,
+    labelIds = labelIds.sorted().joinToString(" "), bodyHtml = outgoingHtml ?: bodyHtml ?: "", threadId = threadId,
+    cc = cc, bcc = bcc, replyRefs = inReplyTo.orEmpty() + "\n" + references.orEmpty(),
 )
 
 private fun ParsedMessage.toEntity(accountId: String, remoteId: String): MessageEntity {

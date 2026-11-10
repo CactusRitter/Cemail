@@ -156,7 +156,12 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
                 vm.editDraft { d -> d.copy(signed = true) }
             }
         }
-        if (initial.isNotEmpty()) {
+        val savedHtml = currentDraft.html
+        if (savedHtml != null) {
+            // A saved draft comes back with its formatting.
+            rich.setHtml(savedHtml)
+            rich.selection = androidx.compose.ui.text.TextRange(0)
+        } else if (initial.isNotEmpty()) {
             rich.setText(initial)
             rich.selection = androidx.compose.ui.text.TextRange(0)
         }
@@ -275,7 +280,7 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
                     ) { Icon(Icons.Filled.Close, stringResource(R.string.compose_attach_remove)) }
                 }
             }
-            if (draft.attachments.isNotEmpty() || draft.cc.isNotBlank() || draft.bcc.isNotBlank() || draft.html != null) {
+            if (draft.attachments.isNotEmpty()) {
                 Text(
                     stringResource(R.string.compose_unsaved),
                     Modifier.padding(horizontal = 8.dp),

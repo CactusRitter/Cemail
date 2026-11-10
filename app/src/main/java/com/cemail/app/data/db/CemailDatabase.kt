@@ -56,6 +56,11 @@ data class MessageEntity(
     val bodyHtml: String? = null,
     /** Gmail's conversation id (null for messages saved before it was kept, and for local drafts). */
     val threadId: String? = null,
+    /** Copy and blind-copy recipients of a saved draft (comma separated), and the reply ids as "In-Reply-To
+References". */
+    @ColumnInfo(defaultValue = "") val cc: String = "",
+    @ColumnInfo(defaultValue = "") val bcc: String = "",
+    @ColumnInfo(defaultValue = "") val replyRefs: String = "",
 )
 
 @Dao
@@ -83,7 +88,8 @@ interface MessageDao {
     @Query(
         "SELECT localId, accountId, remoteId, folder, senderName, senderEmail, subject, " +
             "CASE WHEN folder = 'DRAFTS' THEN body ELSE substr(body, 1, 2000) END AS body, " +
-            "timeMillis, read, starred, pinned, snoozedUntil, hasAttachment, labelIds, NULL AS bodyHtml, threadId " +
+            "timeMillis, read, starred, pinned, snoozedUntil, hasAttachment, labelIds, " +
+            "CASE WHEN folder = 'DRAFTS' THEN bodyHtml ELSE NULL END AS bodyHtml, threadId, cc, bcc, replyRefs " +
             "FROM messages WHERE accountId = :accountId ORDER BY timeMillis DESC",
     )
     fun observe(accountId: String): Flow<List<MessageEntity>>
@@ -95,7 +101,7 @@ interface MessageDao {
     @Query(
         "SELECT localId, accountId, remoteId, folder, senderName, senderEmail, subject, '' AS body, " +
             "timeMillis, read, starred, pinned, snoozedUntil, hasAttachment, labelIds, " +
-            "CASE WHEN bodyHtml IS NULL THEN NULL ELSE '' END AS bodyHtml, threadId " +
+            "CASE WHEN bodyHtml IS NULL THEN NULL ELSE '' END AS bodyHtml, threadId, cc, bcc, replyRefs " +
             "FROM messages WHERE accountId = :accountId AND remoteId IS NOT NULL",
     )
     suspend fun remoteOnes(accountId: String): List<MessageEntity>
@@ -103,7 +109,7 @@ interface MessageDao {
     /** One message without its texts (see [bodyChunk] and [htmlChunk] for those). */
     @Query(
         "SELECT localId, accountId, remoteId, folder, senderName, senderEmail, subject, '' AS body, " +
-            "timeMillis, read, starred, pinned, snoozedUntil, hasAttachment, labelIds, NULL AS bodyHtml, threadId " +
+            "timeMillis, read, starred, pinned, snoozedUntil, hasAttachment, labelIds, NULL AS bodyHtml, threadId, cc, bcc, replyRefs " +
             "FROM messages WHERE localId = :localId",
     )
     suspend fun light(localId: Long): MessageEntity?
@@ -157,7 +163,7 @@ interface MessageDao {
     /** The newest Inbox messages of every account, without their texts (for the widgets). */
     @Query(
         "SELECT localId, accountId, remoteId, folder, senderName, senderEmail, subject, '' AS body, " +
-            "timeMillis, read, starred, pinned, snoozedUntil, hasAttachment, labelIds, NULL AS bodyHtml, threadId " +
+            "timeMillis, read, starred, pinned, snoozedUntil, hasAttachment, labelIds, NULL AS bodyHtml, threadId, cc, bcc, replyRefs " +
             "FROM messages WHERE folder = 'INBOX' AND (snoozedUntil IS NULL OR snoozedUntil < :now) " +
             "ORDER BY timeMillis DESC LIMIT :limit",
     )
@@ -192,7 +198,7 @@ interface LabelDao {
 
 @Database(
     entities = [AccountEntity::class, MessageEntity::class, LabelEntity::class],
-    version = 6,
+    version = 7,
     exportSchema = true,
     autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
@@ -203,7 +209,7 @@ abstract class CemailDatabase : RoomDatabase() {
 
     companion object {
         fun create(context: Context): CemailDatabase =
-            Room.databaseBuilder(context, CemailDatabase::class.java, "cemail.db").addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).build()
+            Room.databaseBuilder(context, CemailDatabase::class.java, "cemail.db").addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7).build()
     }
 }
 
@@ -219,6 +225,15 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE messages ADD COLUMN threadId TEXT")
         db.execSQL("UPDATE messages SET bodyHtml = NULL WHERE remoteId IS NOT NULL")
+    }
+}
+
+/** 0.28.0: saved drafts keep Cc, Bcc and the reply ids. */
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE messages ADD COLUMN cc TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE messages ADD COLUMN bcc TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE messages ADD COLUMN replyRefs TEXT NOT NULL DEFAULT ''")
     }
 }
 

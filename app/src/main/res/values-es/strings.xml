@@ -118,7 +118,7 @@
     <string name="account_add">Añadir cuenta</string>
     <string name="account_remove">Quitar cuenta</string>
     <string name="refresh">Actualizar</string>
-    <string name="sync_failed">No se pudo sincronizar. Revisa la conexión.</string>
+    <string name="sync_failed">No se pudo sincronizar alguna cuenta. Revisa la conexión; los detalles están en Ajustes, Registro de actividad.</string>
     <string name="demo_label_shopping">Compras</string>
     <string name="demo_label_amazon">Amazon</string>
     <string name="demo_label_work">Trabajo</string>
@@ -201,7 +201,7 @@
     <string name="compose_cc">CC</string>
     <string name="compose_bcc">CCO</string>
     <string name="compose_copies_toggle">Mostrar CC y CCO</string>
-    <string name="compose_unsaved">Los adjuntos, CC/CCO y el formato no se guardan en los borradores.</string>
+    <string name="compose_unsaved">Los adjuntos no se guardan en los borradores.</string>
     <string name="format_bold">Negrita</string>
     <string name="format_italic">Cursiva</string>
     <string name="format_underline">Subrayado</string>
