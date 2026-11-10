@@ -168,8 +168,8 @@
     <string name="copy">Copy</string>
     <string name="clear">Clear</string>
     <string name="copied">Copied</string>
-    <string name="settings_circle_title">Sender circle</string>
-    <string name="settings_circle_body">Show a round picture with the sender\'s initial next to each message. Contact photos will come when Cemail can read your contacts.</string>
+    <string name="settings_circle_title">Sender label</string>
+    <string name="settings_circle_body">Show the sender in a coloured label above each message. When off, it appears as plain text. Contact photos will come when Cemail can read your contacts.</string>
     <plurals name="accounts_count">
         <item quantity="one">%d account</item>
         <item quantity="other">%d accounts</item>

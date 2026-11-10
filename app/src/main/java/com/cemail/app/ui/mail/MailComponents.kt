@@ -31,7 +31,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -138,27 +147,21 @@ fun MailRow(
         Row(
             Modifier
                 .glass(shape, kind)
+                .clip(shape)
+                .then(if (stripe != null) Modifier.accountCorner(stripe, shape) else Modifier)
                 .combinedClickable(role = Role.Button, onClick = onClick, onLongClick = onLongClick)
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            if (stripe != null) Box(Modifier.width(4.dp).height(44.dp).background(stripe, CircleShape))
-            if (showCircle) {
-                Box(Modifier.clickable(onClick = onLongClick)) { Avatar(mail.senderName, selected) }
-            } else if (selected) {
-                Icon(Icons.Filled.Check, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
-            }
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        mail.senderName,
-                        Modifier.weight(1f),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = if (mail.read) FontWeight.Normal else FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                        if (selected) {
+                            Icon(Icons.Filled.Check, null, Modifier.padding(end = 4.dp).size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                        }
+                        SenderTag(mail.senderName, mail.read, showCircle)
+                    }
                     if (mail.hasAttachment) {
                         Icon(
                             CemailIcons.Attachment, stringResource(R.string.attachment),
@@ -175,17 +178,17 @@ fun MailRow(
                 Text(
                     mail.subject.ifBlank { stringResource(R.string.no_subject) },
                     style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = if (mail.read) FontWeight.Normal else FontWeight.SemiBold,
+                    fontWeight = if (mail.read) FontWeight.Normal else FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Row(verticalAlignment = Alignment.Top) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         mail.preview,
                         Modifier.weight(1f),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
+                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                     Icon(
@@ -197,6 +200,64 @@ fun MailRow(
                 }
             }
         }
+    }
+}
+
+/**
+ * The sender as a small label (unread: accent colour, read: neutral). With [asLabel] false it is plain text.
+ * A long name is cut with an ellipsis so it never pushes the time away.
+ */
+@Composable
+private fun SenderTag(name: String, read: Boolean, asLabel: Boolean) {
+    val c = MaterialTheme.colorScheme
+    if (!asLabel) {
+        Text(
+            name, style = MaterialTheme.typography.titleSmall,
+            fontWeight = if (read) FontWeight.Normal else FontWeight.Bold,
+            maxLines = 1, overflow = TextOverflow.Ellipsis,
+        )
+        return
+    }
+    Text(
+        name,
+        Modifier
+            .background(if (read) c.surfaceVariant.copy(alpha = 0.6f) else c.primary.copy(alpha = 0.16f), RoundedCornerShape(8.dp))
+            .padding(horizontal = 8.dp, vertical = 1.dp),
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.Bold,
+        color = if (read) c.onSurfaceVariant else c.primary,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+    )
+}
+
+/**
+ * Account colour in the card's top-start corner: a crescent that is thickest in the corner (about 4 dp) and
+ * thins to nothing along the top (~110 dp) and down the side (~34 dp), over a soft glow of the same colour.
+ * Used in the unified inbox only. Mirrored in right-to-left layouts.
+ */
+private fun Modifier.accountCorner(color: Color, shape: RoundedCornerShape): Modifier = this.drawWithContent {
+    drawContent()
+    val d = density
+    val rtl = layoutDirection == LayoutDirection.Rtl
+    val r = 20f * d
+    val crescent = Path().apply {
+        moveTo(0f, 34f * d)
+        lineTo(0f, r)
+        arcTo(Rect(0f, 0f, 2 * r, 2 * r), 180f, 90f, false)
+        lineTo(112f * d, 0f)
+        cubicTo(72f * d, 0.5f * d, 40f * d, 2f * d, 22f * d, 5.5f * d)
+        cubicTo(9f * d, 9f * d, 1.5f * d, 18f * d, 0f, 34f * d)
+        close()
+    }
+    val fade = Brush.linearGradient(
+        0f to color, 0.5f to color.copy(alpha = 0.6f), 1f to color.copy(alpha = 0f),
+        start = Offset.Zero, end = Offset(120f * d, 18f * d),
+    )
+    val glow = Brush.radialGradient(listOf(color.copy(alpha = 0.22f), Color.Transparent), center = Offset.Zero, radius = 110f * d)
+    withTransform({ if (rtl) scale(-1f, 1f, pivot = Offset(size.width / 2f, 0f)) }) {
+        drawRect(glow, size = Size(size.width, size.height))
+        drawPath(crescent, fade)
     }
 }
 

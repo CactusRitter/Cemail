@@ -166,8 +166,8 @@
     <string name="copy">Copiar</string>
     <string name="clear">Borrar</string>
     <string name="copied">Copiado</string>
-    <string name="settings_circle_title">Círculo del remitente</string>
-    <string name="settings_circle_body">Muestra un círculo con la inicial del remitente junto a cada mensaje. Las fotos de los contactos llegarán cuando Cemail pueda leer tus contactos.</string>
+    <string name="settings_circle_title">Etiqueta del remitente</string>
+    <string name="settings_circle_body">Muestra al remitente dentro de una etiqueta con color sobre cada mensaje. Si lo desactivas aparece como texto normal. Las fotos de los contactos llegarán cuando Cemail pueda leer tus contactos.</string>
     <plurals name="accounts_count">
         <item quantity="one">%d cuenta</item>
         <item quantity="other">%d cuentas</item>
