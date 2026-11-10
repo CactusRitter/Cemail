@@ -112,7 +112,7 @@ private fun openFile(context: Context, file: File, mime: String) {
     }
 }
 
-private fun shareFile(context: Context, file: File, mime: String) {
+fun shareFile(context: Context, file: File, mime: String) {
     val send = Intent(Intent.ACTION_SEND).setType(mime).putExtra(Intent.EXTRA_STREAM, uriFor(context, file))
         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     context.startActivity(Intent.createChooser(send, null))

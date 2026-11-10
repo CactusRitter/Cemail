@@ -47,6 +47,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.cemail.app.AppLog
 import com.cemail.app.CrashLog
+import android.widget.Toast
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.draw.clip
+import com.cemail.app.data.gmail.HtmlSanitizer
+import com.cemail.app.ui.mail.HtmlBody
 import com.cemail.app.R
 import com.cemail.app.data.AppSettings
 import com.cemail.app.data.SettingsRepository
@@ -131,29 +138,65 @@ fun SettingsScreen(
                 }
             }
 
-            // --- Signatures: one per account, added when a message is written from it ---
+            // --- Signatures: one per account, added when a message is written from it. It can be plain text or HTML
+            // imported from a message (.eml) or an .html file, which then shows exactly as it was designed. ---
             if (accounts.isNotEmpty()) {
                 SectionTitle(R.string.settings_section_signature)
+                var importFor by remember { mutableStateOf<String?>(null) }
+                var version by remember { mutableIntStateOf(0) }
+                val importer = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+                    val email = importFor
+                    importFor = null
+                    if (uri == null || email == null) return@rememberLauncherForActivityResult
+                    val html = readSignatureFile(context, uri)
+                    if (html == null) {
+                        Toast.makeText(context, R.string.settings_signature_import_failed, Toast.LENGTH_LONG).show()
+                    } else {
+                        repo.setSignatureHtml(email, html)
+                        version++
+                    }
+                }
                 accounts.forEach { account ->
                     var text by remember(account.email) { mutableStateOf(repo.signature(account.email)) }
+                    val html = remember(account.email, version) { repo.signatureHtml(account.email) }
                     Column(
                         Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card).padding(horizontal = 18.dp, vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Text(account.email, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        androidx.compose.material3.TextField(
-                            value = text,
-                            onValueChange = { text = it; repo.setSignature(account.email, it) },
-                            placeholder = { Text(stringResource(R.string.settings_signature_hint)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            minLines = 2,
-                            colors = androidx.compose.material3.TextFieldDefaults.colors(
-                                focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                                unfocusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                                focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                                unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                            ),
-                        )
+                        if (html != null) {
+                            Box(Modifier.fillMaxWidth().height(170.dp).clip(RoundedCornerShape(16.dp))) {
+                                HtmlBody(HtmlSanitizer.page(html, 0, ""), true, Modifier.fillMaxSize()) { }
+                            }
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                TextAction(R.string.settings_signature_replace, MaterialTheme.colorScheme.primary) {
+                                    importFor = account.email
+                                    importer.launch("*/*")
+                                }
+                                TextAction(R.string.settings_signature_remove, MaterialTheme.colorScheme.error) {
+                                    repo.setSignatureHtml(account.email, null)
+                                    version++
+                                }
+                            }
+                        } else {
+                            androidx.compose.material3.TextField(
+                                value = text,
+                                onValueChange = { text = it; repo.setSignature(account.email, it) },
+                                placeholder = { Text(stringResource(R.string.settings_signature_hint)) },
+                                modifier = Modifier.fillMaxWidth(),
+                                minLines = 2,
+                                colors = androidx.compose.material3.TextFieldDefaults.colors(
+                                    focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                                    unfocusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                                    focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+                                    unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+                                ),
+                            )
+                            TextAction(R.string.settings_signature_import, MaterialTheme.colorScheme.primary) {
+                                importFor = account.email
+                                importer.launch("*/*")
+                            }
+                        }
                     }
                 }
             }

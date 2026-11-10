@@ -24,6 +24,7 @@ data class AppSettings(
 
 /** Small app preferences, kept in SharedPreferences and exposed as a StateFlow (same approach as Cenotes). */
 class SettingsRepository(context: Context) {
+    private val signatureDir = java.io.File(context.filesDir, "signatures")
     private val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
 
     private val _state = MutableStateFlow(read())
@@ -46,6 +47,18 @@ class SettingsRepository(context: Context) {
 
     fun setSignature(email: String, text: String) {
         prefs.edit().putString("signature_${email.lowercase()}", text).apply()
+    }
+
+    private fun signatureFile(email: String) =
+        java.io.File(signatureDir, email.lowercase().filter { it.isLetterOrDigit() || it == '@' || it == '.' } + ".html")
+
+    /** The account's HTML signature (imported from a message), or null. */
+    fun signatureHtml(email: String): String? = signatureFile(email).takeIf { it.exists() }?.readText()?.takeIf { it.isNotBlank() }
+
+    fun setSignatureHtml(email: String, html: String?) {
+        signatureDir.mkdirs()
+        val file = signatureFile(email)
+        if (html.isNullOrBlank()) file.delete() else file.writeText(html)
     }
     fun setNotifications(value: Boolean) {
         prefs.edit().putBoolean(KEY_NOTIFICATIONS, value).apply()

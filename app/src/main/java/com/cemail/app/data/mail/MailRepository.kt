@@ -40,6 +40,9 @@ interface MailRepository {
     /** What a reply to this message needs (thread, Message-ID, recipients); null offline or in the demo. */
     suspend fun replyInfo(id: Long): Pair<com.cemail.app.data.gmail.ReplyInfo, String?>?
 
+    /** Saves the message as an .eml file in the cache and returns it (needs a connection); null if it fails. */
+    suspend fun emlFile(id: Long): java.io.File?
+
     /** The files attached to a message (needs a connection; empty if there are none or it fails). */
     suspend fun attachments(id: Long): List<com.cemail.app.data.gmail.AttachmentInfo>
 
@@ -74,6 +77,7 @@ class DemoMailRepository(seed: List<Mail>, demoLabels: List<Label> = emptyList()
     override suspend fun refresh(quick: Boolean) = true
     override suspend fun full(id: Long): Mail? = state.value.firstOrNull { it.id == id }
     override suspend fun replyInfo(id: Long): Pair<com.cemail.app.data.gmail.ReplyInfo, String?>? = null
+    override suspend fun emlFile(id: Long): java.io.File? = null
     override suspend fun attachments(id: Long) = emptyList<com.cemail.app.data.gmail.AttachmentInfo>()
     override suspend fun attachmentFile(id: Long, attachment: com.cemail.app.data.gmail.AttachmentInfo): java.io.File? = null
     override suspend fun inlineImages(id: Long) = emptyMap<String, String>()

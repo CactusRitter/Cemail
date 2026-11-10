@@ -3,6 +3,11 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.23.0 — 2026-11-10
+- **Descargar un correo como .eml**: en el menú «⋮» de la lectura, «Guardar como .eml» baja el mensaje tal cual lo guarda Gmail (cabeceras, HTML, adjuntos) y abre el menú de compartir (Drive, Telegram, correo...). Hace falta conexión.
+- **Firma en HTML**: Ajustes → Firma → «Importar desde un mensaje (.eml) o archivo .html». Se busca el bloque de firma del mensaje (Gmail, Outlook, Thunderbird) o se usa todo el HTML; se limpia (sin scripts) y las imágenes incrustadas se conservan. Se ve como se diseñó, con vista previa en Ajustes y debajo del editor (con una X para quitarla en ese mensaje), y se añade al enviar en las dos mitades del correo (HTML y texto); las imágenes de la firma van como partes incrustadas.
+- Si no hay firma HTML, sigue valiendo la firma de texto.
+
 ## 0.22.0 — 2026-11-10
 - Firma por cuenta (Ajustes → Firma): se añade una sola vez al escribir un mensaje nuevo o una respuesta (debajo del cursor y encima del texto citado). Al reabrir un borrador no se repite.
 

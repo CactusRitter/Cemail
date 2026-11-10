@@ -22,6 +22,7 @@ object MimeBuilder {
         html: String? = null,
         inReplyTo: String? = null,
         references: String? = null,
+        inlineImages: List<InlineImage> = emptyList(),
     ): ByteArray {
         val head = StringBuilder().apply {
             append("To: ").append(oneLine(to)).append("\r\n")
@@ -40,7 +41,7 @@ object MimeBuilder {
         } else {
             val alt = boundary()
             "Content-Type: multipart/alternative; boundary=\"$alt\"\r\n\r\n" +
-                "--$alt\r\n$text\r\n--$alt\r\n${htmlPart(html)}\r\n--$alt--"
+                "--$alt\r\n$text\r\n--$alt\r\n${htmlPart(html, inlineImages)}\r\n--$alt--"
         }
         if (attachments.isEmpty()) return (head.toString() + content).toByteArray(Charsets.US_ASCII)
 
@@ -69,9 +70,26 @@ object MimeBuilder {
         "Content-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" +
             Base64.getMimeEncoder(76, CRLF).encodeToString(body.toByteArray(Charsets.UTF_8))
 
-    private fun htmlPart(html: String) =
-        "Content-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" +
+    /** The HTML half; with pictures it becomes "related": the HTML followed by each picture (referenced by cid). */
+    private fun htmlPart(html: String, images: List<InlineImage>): String {
+        val htmlOnly = "Content-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" +
             Base64.getMimeEncoder(76, CRLF).encodeToString(html.toByteArray(Charsets.UTF_8))
+        if (images.isEmpty()) return htmlOnly
+        val related = boundary()
+        return buildString {
+            append("Content-Type: multipart/related; type=\"text/html\"; boundary=\"$related\"\r\n\r\n")
+            append("--$related\r\n").append(htmlOnly).append("\r\n")
+            for (image in images) {
+                append("--$related\r\n")
+                append("Content-Type: ${image.mimeType}\r\n")
+                append("Content-ID: <${image.cid}>\r\n")
+                append("Content-Disposition: inline\r\n")
+                append("Content-Transfer-Encoding: base64\r\n\r\n")
+                append(Base64.getMimeEncoder(76, CRLF).encodeToString(image.bytes)).append("\r\n")
+            }
+            append("--$related--")
+        }
+    }
 
     /** ASCII subjects go as they are; anything else becomes an RFC 2047 encoded word. */
     fun encodeHeader(value: String): String {

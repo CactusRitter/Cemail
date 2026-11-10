@@ -40,6 +40,8 @@ data class Mail(
     val threadId: String? = null,
     val inReplyTo: String? = null,
     val references: String? = null,
+    /** Pictures inside the formatted text (the signature's), sent as inline parts. */
+    val outgoingImages: List<com.cemail.app.data.gmail.InlineImage> = emptyList(),
 ) {
     /** One-line summary for the list: no line breaks and no "[image: ...]" placeholders of text-only versions. */
     val preview: String get() = body.replace(IMAGE_PLACEHOLDER, " ").replace(WHITESPACE, " ").trim()

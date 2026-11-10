@@ -72,6 +72,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.cemail.app.AppLog
+import com.cemail.app.data.gmail.HtmlSanitizer
+import androidx.compose.foundation.layout.height
 import com.cemail.app.R
 import com.cemail.app.data.gmail.OutAttachment
 import com.cemail.app.ui.glass.GlassKind
@@ -117,9 +119,16 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
         // The account's signature goes in once, below the cursor (and above the quoted text of a reply).
         var initial = currentDraft.body
         if (!currentDraft.signed) {
-            val signature = (context.applicationContext as com.cemail.app.CemailApplication).settings.signature(me).trim()
-            if (signature.isNotEmpty()) initial = "\n\n-- \n$signature" + initial
-            vm.editDraft { d -> d.copy(signed = true) }
+            val settings = (context.applicationContext as com.cemail.app.CemailApplication).settings
+            val html = settings.signatureHtml(me)
+            if (html != null) {
+                // An HTML signature is not typed into the editor: it is shown below it and added when sending.
+                vm.editDraft { d -> d.copy(signed = true, signatureHtml = html) }
+            } else {
+                val signature = settings.signature(me).trim()
+                if (signature.isNotEmpty()) initial = "\n\n-- \n$signature" + initial
+                vm.editDraft { d -> d.copy(signed = true) }
+            }
         }
         if (initial.isNotEmpty()) {
             rich.setText(initial)
@@ -198,6 +207,18 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
                         unfocusedIndicatorColor = Color.Transparent,
                     ),
                 )
+            }
+            draft.signatureHtml?.let { signature ->
+                // The HTML signature, as it will look; the x leaves it out of this message.
+                Box(Modifier.fillMaxWidth().height(170.dp).clip(RoundedCornerShape(24.dp))) {
+                    HtmlBody(HtmlSanitizer.page(signature, 0, ""), true, Modifier.fillMaxSize()) { }
+                    Box(
+                        Modifier.align(Alignment.TopEnd).padding(6.dp).size(40.dp)
+                            .glass(CircleShape, GlassKind.Chrome)
+                            .clickable(role = Role.Button) { vm.editDraft { d -> d.copy(signatureHtml = null) } },
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(Icons.Filled.Close, stringResource(R.string.compose_signature_remove), Modifier.size(20.dp)) }
+                }
             }
             draft.attachments.forEach { file ->
                 Row(

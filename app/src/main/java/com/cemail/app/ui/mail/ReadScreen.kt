@@ -69,6 +69,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.layout.width
+import android.widget.Toast
+import kotlinx.coroutines.launch
 import com.cemail.app.R
 import com.cemail.app.data.gmail.HtmlSanitizer
 import com.cemail.app.data.mail.Folder
@@ -95,6 +97,7 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
     }
     val context = LocalContext.current
     val one = setOf(mail.id)
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
     val quoteWhen = DateUtils.formatDateTime(
         context, mail.timeMillis, DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_SHOW_TIME or DateUtils.FORMAT_ABBREV_MONTH,
     )
@@ -276,6 +279,16 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
                     ) { vm.toggleStar(one) },
                     PanelItem(CemailIcons.Pin, if (mail.pinned) R.string.action_unpin else R.string.action_pin, selected = mail.pinned) { vm.togglePin(one) },
                     PanelItem(Icons.Filled.Email, R.string.action_mark_unread) { vm.markRead(one, false) },
+                    PanelItem(CemailIcons.Download, R.string.action_save_eml) {
+                        scope.launch {
+                            val file = vm.emlFile(mail.id)
+                            if (file == null) {
+                                Toast.makeText(context, R.string.eml_failed, Toast.LENGTH_LONG).show()
+                            } else {
+                                shareFile(context, file, "message/rfc822")
+                            }
+                        }
+                    },
                     PanelItem(Icons.Filled.Delete, R.string.action_trash, danger = true) { vm.trash(one) },
                 ),
             )
@@ -314,7 +327,7 @@ private fun ActionGrid(onDismiss: () -> Unit, items: List<PanelItem>) {
                 .padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            items.chunked(3).forEach { row ->
+            items.chunked(4).forEach { row ->
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     row.forEach { item ->
                         val tint = when {
@@ -372,7 +385,7 @@ private fun AttachmentsPopup(messageId: Long, attachments: List<com.cemail.app.d
  */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-private fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier, onScroll: (Int) -> Unit) {
+fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier, onScroll: (Int) -> Unit) {
     val currentOnScroll by rememberUpdatedState(onScroll)
     AndroidView(
         modifier = modifier,

@@ -229,4 +229,11 @@
     <string name="widget_tools_description">Botones rápidos: redactar, recibidos con el número de no leídos, buscar y destacados.</string>
     <string name="settings_section_signature">Firma</string>
     <string name="settings_signature_hint">Se añade al final de los mensajes que escribes desde esta cuenta</string>
+    <string name="action_save_eml">Guardar como .eml</string>
+    <string name="eml_failed">No se pudo descargar el mensaje. Comprueba tu conexión.</string>
+    <string name="compose_signature_remove">Quitar la firma de este mensaje</string>
+    <string name="settings_signature_import">Importar desde un mensaje (.eml) o archivo .html</string>
+    <string name="settings_signature_replace">Cambiar</string>
+    <string name="settings_signature_remove">Quitar</string>
+    <string name="settings_signature_import_failed">No se pudo leer ninguna firma de ese archivo.</string>
 </resources>

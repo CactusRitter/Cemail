@@ -97,7 +97,7 @@ class RoomMailRepository(
             try {
                 api.send(MimeBuilder.build(
                     mail.senderName, mail.subject, mail.body, mail.outgoing, mail.cc, mail.bcc, mail.outgoingHtml,
-                    mail.inReplyTo, mail.references,
+                    mail.inReplyTo, mail.references, mail.outgoingImages,
                 ), mail.threadId)
                 AppLog.i("send", "sent, ${mail.outgoing.size} attachment(s)")
                 dao.delete(localId) // the real copy arrives with the next sync
@@ -125,6 +125,21 @@ class RoomMailRepository(
             false
         } finally {
             _syncing.value = false
+        }
+    }
+
+    override suspend fun emlFile(id: Long): File? = withContext(Dispatchers.IO) {
+        val remote = dao.remoteIdOf(id, accountId) ?: return@withContext null
+        try {
+            val subject = dao.light(id)?.subject.orEmpty()
+            val dir = File(attachmentsDir, "eml").apply { mkdirs() }
+            val file = File(dir, AttachmentFinder.safeFileName(subject.ifBlank { "message" }).take(60) + ".eml")
+            file.writeBytes(api.getRaw(remote))
+            AppLog.i("eml", "saved a message as .eml (${file.length()} bytes)")
+            file
+        } catch (e: Exception) {
+            AppLog.e("eml", "could not save the message as .eml", e)
+            null
         }
     }
 

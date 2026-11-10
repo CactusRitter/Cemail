@@ -19,6 +19,8 @@ data class GmailMessage(
     /** Milliseconds since the epoch, as a string. */
     val internalDate: String? = null,
     val payload: MessagePart? = null,
+    /** The whole message as RFC 822 text, base64url (only with format=raw). */
+    val raw: String? = null,
 )
 
 @Serializable

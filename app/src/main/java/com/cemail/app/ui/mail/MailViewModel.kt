@@ -11,6 +11,7 @@ import com.cemail.app.data.mail.Label
 import com.cemail.app.data.gmail.AttachmentInfo
 import com.cemail.app.data.gmail.OutAttachment
 import com.cemail.app.data.gmail.ReplyInfoParser
+import com.cemail.app.data.gmail.SignatureHtml
 import com.cemail.app.data.mail.Mail
 import com.cemail.app.data.mail.MailBox
 import com.cemail.app.data.mail.MailRepository
@@ -42,6 +43,8 @@ data class Draft(
     val replyToId: Long? = null,
     /** true once the account's signature was put into the text (it is added only once). */
     val signed: Boolean = false,
+    /** The account's HTML signature, added when the message is sent (null = none, or removed for this message). */
+    val signatureHtml: String? = null,
     val threadId: String? = null,
     val inReplyTo: String? = null,
     val references: String? = null,
@@ -246,11 +249,26 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
         ui.update { it.copy(undo = UndoEvent(++undoCounter, R.string.done_sent, emptyList())) }
     }
 
-    private fun Draft.toMail(id: Long, me: String, folder: Folder) = Mail(
-        id = id, senderName = cleanRecipients(to).joinToString(", "), senderEmail = me, subject = subject, body = body,
-        timeMillis = System.currentTimeMillis(), folder = folder, read = true,
-        hasAttachment = attachments.isNotEmpty(), outgoing = attachments, cc = cleanRecipients(cc).joinToString(", "), bcc = cleanRecipients(bcc).joinToString(", "), outgoingHtml = html, threadId = threadId, inReplyTo = inReplyTo, references = references,
-    )
+    private fun Draft.toMail(id: Long, me: String, folder: Folder): Mail {
+        // An HTML signature goes after the text, in both halves of the message (its pictures become inline parts).
+        var finalBody = body
+        var finalHtml = html
+        var images = emptyList<com.cemail.app.data.gmail.InlineImage>()
+        signatureHtml?.let { signature ->
+            val (merged, inline) = SignatureHtml.merge(html ?: SignatureHtml.plainToHtml(body), signature)
+            finalHtml = merged
+            images = inline
+            finalBody = body.trimEnd() + "\n\n-- \n" + SignatureHtml.toText(signature)
+        }
+        return Mail(
+            id = id, senderName = cleanRecipients(to).joinToString(", "), senderEmail = me, subject = subject, body = finalBody,
+            timeMillis = System.currentTimeMillis(), folder = folder, read = true,
+            hasAttachment = attachments.isNotEmpty(), outgoing = attachments,
+            cc = cleanRecipients(cc).joinToString(", "), bcc = cleanRecipients(bcc).joinToString(", "),
+            outgoingHtml = finalHtml, outgoingImages = images,
+            threadId = threadId, inReplyTo = inReplyTo, references = references,
+        )
+    }
 
     /** Adds files to the message being written, within Gmail's size limit; returns false if some did not fit. */
     fun attach(files: List<OutAttachment>): Boolean {
@@ -273,6 +291,7 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
 
     suspend fun inlineImages(id: Long): Map<String, String> = repo.inlineImages(id)
     suspend fun full(id: Long): Mail? = repo.full(id)
+    suspend fun emlFile(id: Long): java.io.File? = repo.emlFile(id)
 
     class Factory(private val repo: MailRepository) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")

@@ -30,6 +30,9 @@ interface GmailApi {
     suspend fun modify(id: String, add: List<String>, remove: List<String>)
     /** The headers a reply needs (Message-ID, References, From, To, Cc...) and the thread id. */
     suspend fun getReplyInfo(id: String): ReplyInfo
+
+    /** The message exactly as RFC 822 text (what an .eml file holds). */
+    suspend fun getRaw(id: String): ByteArray
     suspend fun send(raw: ByteArray, threadId: String? = null)
 }
 
@@ -85,6 +88,12 @@ class HttpGmailApi(
         val url = BASE.newBuilder().addPathSegment("messages").addPathSegment(id).addPathSegment("modify").build()
         val body = json.encodeToString(ModifyRequest(add, remove)).toRequestBody(jsonType)
         call(Request.Builder().url(url).post(body).build())
+    }
+
+    override suspend fun getRaw(id: String): ByteArray {
+        val url = BASE.newBuilder().addPathSegment("messages").addPathSegment(id).addQueryParameter("format", "raw").build()
+        val raw = json.decodeFromString<GmailMessage>(call(Request.Builder().url(url).build())).raw ?: throw GmailHttpException(500, "no raw message")
+        return Base64.getUrlDecoder().decode(raw)
     }
 
     override suspend fun getReplyInfo(id: String): ReplyInfo {
