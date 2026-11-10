@@ -40,6 +40,13 @@ class SettingsRepository(context: Context) {
         notifications = prefs.getBoolean(KEY_NOTIFICATIONS, true),
     )
 
+
+    /** The signature added to new messages written from [email] (empty = none). */
+    fun signature(email: String): String = prefs.getString("signature_${email.lowercase()}", "").orEmpty()
+
+    fun setSignature(email: String, text: String) {
+        prefs.edit().putString("signature_${email.lowercase()}", text).apply()
+    }
     fun setNotifications(value: Boolean) {
         prefs.edit().putBoolean(KEY_NOTIFICATIONS, value).apply()
         _state.value = _state.value.copy(notifications = value)

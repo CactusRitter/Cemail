@@ -4,9 +4,9 @@ Las versiones van siempre por debajo de 1.0. La **1.0** será cuando funcionen b
 
 Cada versión termina con la app compilando, sus tests en verde, probada en el emulador y el APK en Drive.
 
-## Dónde estamos (0.19.0)
+## Dónde estamos (0.22.0)
 
-Hecho: cuenta de Google (varias) con bandeja unificada, sincronización (manual, con la app abierta y en segundo plano), etiquetas como carpetas, lectura de HTML saneado, imágenes incrustadas, adjuntos (ver, abrir, compartir, adjuntar), redactar con formato y destinatarios en píldoras con CC/CCO, enviar de verdad por Gmail, responder en el mismo hilo y «responder a todos», notificaciones con «Leído» y «Borrar», registro de actividad compartible, fijar, posponer (local) y deshacer, ajustes de aspecto.
+Hecho: menú del icono (0.20), widgets Inbox y Tools (0.21), firma por cuenta (0.22), cuenta de Google (varias) con bandeja unificada, sincronización (manual, con la app abierta y en segundo plano), etiquetas como carpetas, lectura de HTML saneado, imágenes incrustadas, adjuntos (ver, abrir, compartir, adjuntar), redactar con formato y destinatarios en píldoras con CC/CCO, enviar de verdad por Gmail, responder en el mismo hilo y «responder a todos», notificaciones con «Leído» y «Borrar», registro de actividad compartible, fijar, posponer (local) y deshacer, ajustes de aspecto.
 
 Todavía sin probar con una cuenta real en el móvil: adjuntos (ver y enviar), envío con formato y CC/CCO, respuestas en hilo. Se prueban con el teléfono conectado por adb (ver más abajo).
 
@@ -19,7 +19,7 @@ Todavía sin probar con una cuenta real en el móvil: adjuntos (ver y enviar), e
 | 0.21.0 | **Widget 1 – Bandeja**: lista de los últimos correos (remitente, asunto, hora, punto de no leído), toque abre el correo, cabecera con botón de redactar y selector de cuenta/carpeta. | Con Jetpack Glance (gratuito). Los widgets no pueden desenfocar el fondo: llevarán un fondo translúcido con el color de acento y esquinas redondeadas, en claro/oscuro. Se refresca con la sincronización y al recibir correo. Configuración al añadirlo: cuenta y carpeta. Esfuerzo: medio. |
 | 0.22.0 | **Widget 2 – Herramientas**: botones redondos (Redactar, Bandeja, Buscar, Destacados), contador de no leídos y, opcional, el último correo. Tamaños 4×1 y 2×2. | Reutiliza los atajos de la 0.20.0. Esfuerzo: bajo-medio. |
 
-### B. Cerrar lo básico del correo
+### B. Cerrar lo básico del correo (firma hecha en 0.22.0; el resto pendiente)
 | Versión | Qué | Notas |
 |---|---|---|
 | 0.23.0 | **Conversaciones**: agrupar los mensajes de un hilo en una sola tarjeta y mostrarlos apilados al abrir. | Hoy cada mensaje es una fila. Gmail ya da `threadId`; para IMAP se agrupa por `References`/`In-Reply-To`. Esfuerzo: medio-alto. |

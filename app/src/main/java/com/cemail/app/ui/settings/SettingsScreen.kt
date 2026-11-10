@@ -131,6 +131,33 @@ fun SettingsScreen(
                 }
             }
 
+            // --- Signatures: one per account, added when a message is written from it ---
+            if (accounts.isNotEmpty()) {
+                SectionTitle(R.string.settings_section_signature)
+                accounts.forEach { account ->
+                    var text by remember(account.email) { mutableStateOf(repo.signature(account.email)) }
+                    Column(
+                        Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card).padding(horizontal = 18.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(account.email, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        androidx.compose.material3.TextField(
+                            value = text,
+                            onValueChange = { text = it; repo.setSignature(account.email, it) },
+                            placeholder = { Text(stringResource(R.string.settings_signature_hint)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 2,
+                            colors = androidx.compose.material3.TextFieldDefaults.colors(
+                                focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                                unfocusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                                focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+                                unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+                            ),
+                        )
+                    }
+                }
+            }
+
             // --- Messages ---
             SectionTitle(R.string.settings_section_messages)
             SwitchRow(

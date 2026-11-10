@@ -227,4 +227,6 @@
     <string name="widget_inbox_description">Los mensajes más recientes de tu bandeja, con botones para buscar y redactar.</string>
     <string name="widget_tools_name">Cemail · Herramientas</string>
     <string name="widget_tools_description">Botones rápidos: redactar, recibidos con el número de no leídos, buscar y destacados.</string>
+    <string name="settings_section_signature">Firma</string>
+    <string name="settings_signature_hint">Se añade al final de los mensajes que escribes desde esta cuenta</string>
 </resources>

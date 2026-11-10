@@ -229,4 +229,6 @@
     <string name="widget_inbox_description">The newest messages of your inbox, with buttons to search and write.</string>
     <string name="widget_tools_name">Cemail · Tools</string>
     <string name="widget_tools_description">Quick buttons: write, inbox with unread count, search and starred.</string>
+    <string name="settings_section_signature">Signature</string>
+    <string name="settings_signature_hint">Added at the end of the messages you write from this account</string>
 </resources>

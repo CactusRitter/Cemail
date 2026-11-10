@@ -40,6 +40,8 @@ data class Draft(
     val attachments: List<OutAttachment> = emptyList(),
     /** Set while answering a message: which one, and the ids that keep the reply in its conversation. */
     val replyToId: Long? = null,
+    /** true once the account's signature was put into the text (it is added only once). */
+    val signed: Boolean = false,
     val threadId: String? = null,
     val inReplyTo: String? = null,
     val references: String? = null,
@@ -223,7 +225,7 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
     /** Re-opens a saved draft for editing (the stored copy is removed; it is saved again on close). */
     fun editDraft(mail: Mail) {
         repo.remove(mail.id)
-        ui.update { it.copy(draft = Draft(mail.senderName, mail.subject, mail.body)) }
+        ui.update { it.copy(draft = Draft(mail.senderName, mail.subject, mail.body, signed = true)) }
     }
 
     /** Leaves the compose screen: an empty draft is dropped, anything else is kept in Drafts. */

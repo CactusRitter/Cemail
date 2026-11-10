@@ -114,7 +114,17 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
     LaunchedEffect(rich) {
         // Addresses that arrive already filled in (a reply) show as pills from the start.
         currentDraft.let { vm.editDraft { d -> d.copy(to = committedRecipients(d.to), cc = committedRecipients(d.cc), bcc = committedRecipients(d.bcc)) } }
-        if (currentDraft.body.isNotEmpty()) rich.setText(currentDraft.body)
+        // The account's signature goes in once, below the cursor (and above the quoted text of a reply).
+        var initial = currentDraft.body
+        if (!currentDraft.signed) {
+            val signature = (context.applicationContext as com.cemail.app.CemailApplication).settings.signature(me).trim()
+            if (signature.isNotEmpty()) initial = "\n\n-- \n$signature" + initial
+            vm.editDraft { d -> d.copy(signed = true) }
+        }
+        if (initial.isNotEmpty()) {
+            rich.setText(initial)
+            rich.selection = androidx.compose.ui.text.TextRange(0)
+        }
         snapshotFlow { rich.annotatedString }.collect {
             val html = rich.toMailHtml()
             vm.editDraft { d -> d.copy(body = rich.toText(), html = html) }

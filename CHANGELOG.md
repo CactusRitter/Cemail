@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.22.0 — 2026-11-10
+- Firma por cuenta (Ajustes → Firma): se añade una sola vez al escribir un mensaje nuevo o una respuesta (debajo del cursor y encima del texto citado). Al reabrir un borrador no se repite.
+
 ## 0.21.0 — 2026-11-10
 - Dos widgets (Jetpack Glance, gratis): **Cemail · Inbox** (4×3: los últimos correos de todas tus cuentas con remitente, asunto y hora, en negrita los no leídos; botones de buscar y redactar; tocar un correo lo abre; tocar el título abre la bandeja) y **Cemail · Tools** (4×1: botones redondos de redactar, bandeja con el número de no leídos, buscar y destacados).
 - Se redibujan solos cuando cambia la bandeja (con una pausa corta para que una sincronización cuente como un cambio).
