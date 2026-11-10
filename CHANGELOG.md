@@ -3,6 +3,10 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.14.1 — 2026-11-10
+- Se quita la tarjeta de cabecera: el asunto y el remitente ya no salen dos veces. La píldora de arriba lleva el asunto y, debajo, remitente y fecha.
+- El mensaje ocupa todo el espacio. Los avisos (mensaje pospuesto, imágenes bloqueadas) y los adjuntos aparecen en una tarjeta pequeña encima del texto solo cuando hay algo que mostrar.
+
 ## 0.14.0 — 2026-11-10
 - Lectura: una sola píldora flotante arriba con atrás, el asunto (algo más grande) con el remitente debajo, y el menú «⋮». El botón flotante de abajo es solo Responder. Se quita la otra variante y su ajuste.
 - El mensaje gana espacio: la tarjeta de cabecera ya no repite el asunto ni el nombre; solo remitente, fecha y avisos.

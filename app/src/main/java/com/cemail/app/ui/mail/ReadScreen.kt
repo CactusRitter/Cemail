@@ -113,37 +113,12 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
     val hasRemoteImages = remember(mail.id, html) { html.isNotBlank() && HtmlSanitizer.hasRemoteImages(html) }
     var showImages by remember(mail.id, alwaysShowImages) { mutableStateOf(alwaysShowImages) }
 
-    // The header's details (sender, date...) slide away exactly as much as the message has been scrolled,
-    // until only the subject is left. The body keeps a fixed height meanwhile (its lower edge is simply
-    // hidden while the details are showing), so scrolling never changes how far one can scroll.
-    var scrollPx by remember(mail.id) { mutableIntStateOf(0) }
-    val textScroll = rememberScrollState()
-    var detailsPx by remember(mail.id) { mutableIntStateOf(0) }
-    val density = LocalDensity.current
-    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    val detailsDp = with(density) { detailsPx.toDp() }
-    val hiddenPx = (if (html.isNotBlank()) scrollPx else textScroll.value).coerceIn(0, detailsPx)
-    val progress = if (detailsPx > 0) hiddenPx / detailsPx.toFloat() else 0f
-    // While the details go away the subject shrinks (it is scaled, so its lines never re-wrap) and the
-    // sender's name fades in under it, in soft grey.
-    var subjectPx by remember(mail.id) { mutableIntStateOf(0) }
-    var namePx by remember(mail.id) { mutableIntStateOf(0) }
-    val subjectScale = 1f - (1f - SUBJECT_MIN_SCALE) * progress
-    val subjectShownPx = (subjectPx * subjectScale).roundToInt()
-    val subjectMinPx = (subjectPx * SUBJECT_MIN_SCALE).roundToInt()
-    val nameShownPx = (namePx * progress).roundToInt()
-    // Extra room at the end of the message, so its last lines can always be scrolled into view.
-    val bottomSpace = (detailsDp.value + with(density) { (subjectPx - subjectMinPx).toDp() }.value).roundToInt()
-    val cleanPage = remember(mail.id, html, inline, bottomSpace) {
-        if (html.isBlank()) null else HtmlSanitizer.page(HtmlSanitizer.clean(html, inline), bottomSpace, HtmlSanitizer.styles(html))
+    // Extra room at the end of the message, so its last lines can be scrolled clear of the reply button.
+    val cleanPage = remember(mail.id, html, inline) {
+        if (html.isBlank()) null else HtmlSanitizer.page(HtmlSanitizer.clean(html, inline), 76, HtmlSanitizer.styles(html))
     }
-    val fixedBody = Modifier.layout { measurable, constraints ->
-        // The height the body has once the header is fully collapsed.
-        val height = (constraints.maxHeight + (detailsPx - hiddenPx) + (subjectShownPx - subjectMinPx) + (nameShownPx - namePx))
-            .coerceAtLeast(constraints.maxHeight)
-        val placeable = measurable.measure(constraints.copy(minHeight = height, maxHeight = height))
-        layout(placeable.width, constraints.maxHeight) { placeable.place(0, 0) }
-    }
+    val snoozedUntil = mail.snoozedUntil?.takeIf { mail.isSnoozed(System.currentTimeMillis()) }
+    val notices = snoozedUntil != null || (hasRemoteImages && !showImages) || attachments.isNotEmpty()
 
     Box(Modifier.fillMaxSize()) {
         Column(
@@ -153,70 +128,40 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
                 .padding(start = 12.dp, end = 12.dp, top = 88.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .glass(RoundedCornerShape(24.dp), GlassKind.Card)
-                    .padding(16.dp),
-            ) {
-                // Sender, date, notices and attachments: they slide away as the message is scrolled.
+            // The sender and subject are in the pill above; this card only appears when there is something to
+            // say or do before reading: a snooze reminder, blocked images, or attached files.
+            if (notices) {
                 Column(
-                    Modifier
-                        .clipToBounds()
-                        .layout { measurable, constraints ->
-                            val placeable = measurable.measure(constraints)
-                            layout(placeable.width, (placeable.height - hiddenPx).coerceAtLeast(0)) { placeable.place(0, 0) }
-                        }
-                        .graphicsLayer { alpha = 1f - progress }
-                        .onSizeChanged { detailsPx = it.height }
-                        .padding(top = 10.dp),
+                    Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card).padding(14.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Avatar(mail.senderName)
-                    Column(Modifier.weight(1f)) {
-                        Text(mail.senderName, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(
-                            mail.senderEmail,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
+                    snoozedUntil?.let {
+                        val whenText = DateUtils.formatDateTime(
+                            context, it, DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_SHOW_TIME or DateUtils.FORMAT_ABBREV_MONTH,
                         )
                         Text(
-                            "${stringResource(R.string.to_me)} · $quoteWhen",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-                mail.snoozedUntil?.takeIf { mail.isSnoozed(System.currentTimeMillis()) }?.let {
-                    val whenText = DateUtils.formatDateTime(
-                        context, it, DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_SHOW_TIME or DateUtils.FORMAT_ABBREV_MONTH,
-                    )
-                    Text(
-                        stringResource(R.string.snoozed_until, whenText),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
-                if (hasRemoteImages && !showImages) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            stringResource(R.string.images_blocked),
-                            Modifier.weight(1f),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Text(
-                            stringResource(R.string.show_images),
-                            Modifier.clickable(role = Role.Button) { showImages = true }.padding(8.dp),
+                            stringResource(R.string.snoozed_until, whenText),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary,
                         )
                     }
-                }
-                if (attachments.isNotEmpty()) AttachmentRow(mail.id, attachments, vm)
+                    if (hasRemoteImages && !showImages) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                stringResource(R.string.images_blocked),
+                                Modifier.weight(1f),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                stringResource(R.string.show_images),
+                                Modifier.clickable(role = Role.Button) { showImages = true }.padding(8.dp),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    }
+                    if (attachments.isNotEmpty()) AttachmentRow(mail.id, attachments, vm)
                 }
             }
             Box(
@@ -226,13 +171,14 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
                     .clip(RoundedCornerShape(24.dp)),
             ) {
                 if (cleanPage != null) {
-                    HtmlBody(cleanPage, showImages, fixedBody.fillMaxSize()) { scrollPx = it }
+                    HtmlBody(cleanPage, showImages, Modifier.fillMaxSize()) { }
                 } else {
                     Box(
-                        fixedBody.fillMaxSize().glass(RoundedCornerShape(24.dp), GlassKind.Card)
-                            .verticalScroll(textScroll).padding(16.dp),
+                        Modifier.fillMaxSize().glass(RoundedCornerShape(24.dp), GlassKind.Card)
+                            .verticalScroll(rememberScrollState()).padding(16.dp),
                     ) {
-                        Text(mail.body, Modifier.padding(bottom = detailsDp), style = MaterialTheme.typography.bodyLarge)
+                        // The extra room at the end keeps the last lines clear of the reply button.
+                        Text(mail.body, Modifier.padding(bottom = 72.dp), style = MaterialTheme.typography.bodyLarge)
                     }
                 }
             }
@@ -251,7 +197,7 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        mail.senderName,
+                        "${mail.senderName} · $quoteWhen",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -447,5 +393,3 @@ private fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier, onSc
 
 
 
-/** How small the subject gets once the header is collapsed (1 = its full size). */
-private const val SUBJECT_MIN_SCALE = 0.72f
