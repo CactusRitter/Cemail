@@ -13,12 +13,15 @@ import com.cemail.app.data.mail.Folder
 import com.cemail.app.data.mail.Label
 import com.cemail.app.data.mail.Mail
 import com.cemail.app.data.mail.MailRepository
+import com.cemail.app.data.mail.InlineCache
 import com.cemail.app.data.mail.SyncMarks
 import com.cemail.app.data.mail.capped
 import com.cemail.app.data.mail.toEntity
 import com.cemail.app.data.mail.toMail
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -136,15 +139,20 @@ class ImapMailRepository(
 
     override suspend fun refresh(quick: Boolean): Boolean {
         if (!_syncing.compareAndSet(expect = false, update = true)) return true
-        return try {
-            withContext(Dispatchers.IO) { sync(quick) }
-            true
-        } catch (e: Exception) {
-            AppLog.e("sync", "...${accountId.takeLast(4)} IMAP ${if (quick) "quick" else "full"} sync failed", e)
-            false
-        } finally {
-            _syncing.value = false
-        }
+        // Runs in the app's scope: see RoomMailRepository.refresh.
+        return scope.async(Dispatchers.IO) {
+            try {
+                sync(quick)
+                true
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                AppLog.e("sync", "...${accountId.takeLast(4)} IMAP ${if (quick) "quick" else "full"} sync failed", e)
+                false
+            } finally {
+                _syncing.value = false
+            }
+        }.await()
     }
 
     private fun <T> db(block: suspend () -> T): T = runBlocking { block() } // already on an IO thread
@@ -305,8 +313,20 @@ class ImapMailRepository(
         }
     }
 
-    /** Pictures embedded in IMAP messages are not fetched yet: they simply stay out of the page. */
-    override suspend fun inlineImages(id: Long): Map<String, String> = emptyMap()
+    /** The pictures embedded in a message, fetched when it is opened and then kept in the cache folder. */
+    override suspend fun inlineImages(id: Long): Map<String, String> = withContext(Dispatchers.IO) {
+        val remote = dao.remoteIdOf(id, accountId) ?: return@withContext emptyMap()
+        val (path, uid) = parseRemote(remote)
+        try {
+            val dir = File(attachmentsDir, "inline/" + remote.filter { it.isLetterOrDigit() }.takeLast(60))
+            InlineCache.load(dir) {
+                client.withStore { store -> client.inFolder(store, path, readOnly = true) { client.inlineImages(it, uid) } }
+            }
+        } catch (e: Exception) {
+            AppLog.e("inline", "could not fetch the embedded pictures", e)
+            emptyMap()
+        }
+    }
 
     private fun folderOf(remote: String) = remote.substringBeforeLast('|')
 

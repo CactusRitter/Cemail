@@ -230,6 +230,25 @@ class ImapClient(private val config: ImapConfig) {
         return found
     }
 
+    /** The pictures a message embeds (parts with a Content-ID), downloaded in full. */
+    fun inlineImages(folder: IMAPFolder, uid: Long): List<com.cemail.app.data.mail.FetchedImage> {
+        val message = byUid(folder, uid) ?: return emptyList()
+        val found = mutableListOf<com.cemail.app.data.mail.FetchedImage>()
+        fun walk(part: Part) {
+            if (part.isMimeType("multipart/*")) {
+                val multipart = part.content as Multipart
+                for (i in 0 until multipart.count) walk(multipart.getBodyPart(i))
+            } else if (part.isMimeType("image/*")) {
+                val cid = com.cemail.app.data.mail.InlineCache.cleanCid((part as? javax.mail.internet.MimePart)?.contentID)
+                if (cid != null) {
+                    found += com.cemail.app.data.mail.FetchedImage(cid, part.contentType.substringBefore(';').trim().lowercase(), part.inputStream.readBytes())
+                }
+            }
+        }
+        try { walk(message) } catch (_: Exception) { /* keep what was read */ }
+        return found
+    }
+
     fun attachmentBytes(folder: IMAPFolder, uid: Long, partPath: String): ByteArray? {
         var part: Part = byUid(folder, uid) ?: return null
         for (index in partPath.split('.').filter { it.isNotEmpty() }.map { it.toInt() }) {

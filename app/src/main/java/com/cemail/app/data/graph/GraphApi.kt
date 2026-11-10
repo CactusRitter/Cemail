@@ -66,6 +66,14 @@ data class GraphAttachment(
     val isInline: Boolean = false,
 )
 
+@Serializable
+data class GraphInline(
+    val contentType: String = "",
+    val contentId: String? = null,
+    val contentBytes: String? = null,
+    val isInline: Boolean = false,
+)
+
 /** What the Microsoft repository needs from Microsoft Graph. */
 class GraphApi(
     private val tokens: AccessTokenProvider,
@@ -126,6 +134,18 @@ class GraphApi(
         return json.decodeFromString(ATTACHMENTS, get(url)).value
             .filter { !it.isInline && it.name.isNotBlank() }
             .map { AttachmentInfo(it.id, it.name, it.contentType, it.size) }
+    }
+
+    /** The pictures a message embeds (inline attachments with a Content-ID), with their bytes. */
+    suspend fun inlineImages(id: String): List<com.cemail.app.data.mail.FetchedImage> {
+        val url = "$BASE/messages/$id/attachments".toHttpUrl().newBuilder()
+            .addQueryParameter("${'$'}filter", "isInline eq true").build().toString()
+        return json.decodeFromString(GraphPage.serializer(GraphInline.serializer()), get(url)).value.mapNotNull { a ->
+            val cid = com.cemail.app.data.mail.InlineCache.cleanCid(a.contentId) ?: return@mapNotNull null
+            val bytes = a.contentBytes?.let { runCatching { Base64.getMimeDecoder().decode(it) }.getOrNull() } ?: return@mapNotNull null
+            if (!a.contentType.startsWith("image/", ignoreCase = true)) null
+            else com.cemail.app.data.mail.FetchedImage(cid, a.contentType.lowercase(), bytes)
+        }
     }
 
     suspend fun attachmentBytes(messageId: String, attachmentId: String): ByteArray =

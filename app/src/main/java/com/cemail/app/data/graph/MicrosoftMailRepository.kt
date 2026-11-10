@@ -16,8 +16,10 @@ import com.cemail.app.data.mail.MailRepository
 import com.cemail.app.data.mail.capped
 import com.cemail.app.data.mail.toEntity
 import com.cemail.app.data.mail.toMail
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -26,6 +28,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
 import java.io.File
@@ -129,15 +132,20 @@ class MicrosoftMailRepository(
     override suspend fun refresh(quick: Boolean): Boolean {
         if (pending.get() > 0) return true // changes are on their way; the next sync will see them done
         if (!_syncing.compareAndSet(expect = false, update = true)) return true
-        return try {
-            sync(quick)
-            true
-        } catch (e: Exception) {
-            AppLog.e("sync", "...${accountId.takeLast(4)} Microsoft ${if (quick) "quick" else "full"} sync failed", e)
-            false
-        } finally {
-            _syncing.value = false
-        }
+        // Runs in the app's scope: see RoomMailRepository.refresh.
+        return scope.async(Dispatchers.IO) {
+            try {
+                sync(quick)
+                true
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                AppLog.e("sync", "...${accountId.takeLast(4)} Microsoft ${if (quick) "quick" else "full"} sync failed", e)
+                false
+            } finally {
+                _syncing.value = false
+            }
+        }.await()
     }
 
     private suspend fun sync(quick: Boolean) {
@@ -262,8 +270,17 @@ class MicrosoftMailRepository(
         }
     }
 
-    /** Pictures embedded in these messages are not fetched yet: they simply stay out of the page. */
-    override suspend fun inlineImages(id: Long): Map<String, String> = emptyMap()
+    /** The pictures embedded in a message, fetched when it is opened and then kept in the cache folder. */
+    override suspend fun inlineImages(id: Long): Map<String, String> = withContext(Dispatchers.IO) {
+        val remote = dao.remoteIdOf(id, accountId) ?: return@withContext emptyMap()
+        try {
+            val dir = File(attachmentsDir, "inline/" + remote.filter { it.isLetterOrDigit() }.takeLast(60))
+            com.cemail.app.data.mail.InlineCache.load(dir) { runBlocking { api.inlineImages(remote) } }
+        } catch (e: Exception) {
+            AppLog.e("inline", "could not fetch the embedded pictures", e)
+            emptyMap()
+        }
+    }
 
     private fun wellKnown(folder: Folder) = when (folder) {
         Folder.INBOX -> "inbox"

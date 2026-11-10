@@ -18,6 +18,7 @@ import com.cemail.app.data.gmail.ReplyInfo
 import java.util.Base64
 import kotlinx.coroutines.withContext
 import com.cemail.app.data.gmail.ParsedMessage
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -125,15 +126,21 @@ class RoomMailRepository(
 
     override suspend fun refresh(quick: Boolean): Boolean {
         if (!_syncing.compareAndSet(expect = false, update = true)) return true
-        return try {
-            sync(quick)
-            true
-        } catch (e: Exception) {
-            AppLog.e("sync", "...${accountId.takeLast(4)} ${if (quick) "quick" else "full"} sync failed", e)
-            false
-        } finally {
-            _syncing.value = false
-        }
+        // The sync runs in the app's scope, not in the caller's: a screen that goes away (its ViewModel is replaced
+        // when the accounts shown change) must not cancel a sync that the next screen counts on.
+        return scope.async(Dispatchers.IO) {
+            try {
+                sync(quick)
+                true
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                AppLog.e("sync", "...${accountId.takeLast(4)} ${if (quick) "quick" else "full"} sync failed", e)
+                false
+            } finally {
+                _syncing.value = false
+            }
+        }.await()
     }
 
     override suspend fun emlFile(id: Long): File? = withContext(Dispatchers.IO) {

@@ -3,6 +3,14 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.29.1 — 2026-11-10
+- **Arreglo de la sincronización al arrancar:** la pantalla que lanzaba la sincronización la cancelaba al cambiar las cuentas mostradas, la app lo contaba como fallo y la pantalla nueva, al ver que ya había una en marcha, no hacía otra: no se sincronizaba nada hasta la siguiente comprobación automática (y salía el aviso de «no se pudo sincronizar»). Ahora la sincronización corre en el ámbito de la app y no depende de la pantalla que la pidió; una cancelación ya no se cuenta como error.
+
+## 0.29.0 — 2026-11-10
+- **Imágenes incrustadas** (las que viajan dentro del correo, `cid:`) también en las cuentas Microsoft e IMAP: se descargan al abrir el mensaje, se guardan en la caché del teléfono y se muestran siempre, como en Gmail.
+- Tests nuevos de la caché de imágenes.
+- Revisión de reglas del proyecto: sin colores fijos fuera del sistema de diseño y sin textos escritos en el código.
+
 ## 0.28.1 — 2026-11-10
 - Microsoft: se prueban primero las direcciones IPv4 y se reintenta una vez si la primera conexión falla (en algunas redes la ruta IPv6 a Microsoft no funciona y la primera sincronización fallaba).
 - Un borrador se abre para editarlo desde cualquier lista (también desde la búsqueda), no solo desde Borradores.
