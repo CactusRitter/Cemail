@@ -3,6 +3,10 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.16.0 — 2026-11-10
+- El botón «⋮» baja a la esquina, encima del de responder. La píldora de arriba se queda con atrás, asunto/remitente y (si hay) el clip de adjuntos.
+- El menú es una ventana cuadrada de 3 x 3 iconos, sin texto, que se abre encima del «⋮»: responder, a todos, reenviar · archivar, posponer, destacar · fijar, no leído, papelera (roja). Si el mensaje no está en Recibidos, el hueco de archivar pasa a «mover a Recibidos».
+
 ## 0.15.0 — 2026-11-10
 - Menú «⋮» más escueto: una tira vertical de cristal solo con iconos, sin texto, que baja desde el botón (responder, a todos, reenviar · archivar, posponer, destacar, fijar, no leído, a recibidos · papelera en rojo). Los iconos de destacar y fijar se resaltan cuando están activos.
 - Adjuntos: ya no hay tarjeta aparte. Si el mensaje tiene archivos, aparece un clip con el número en la píldora de arriba; al tocarlo baja una lista pequeña para abrir o compartir cada uno.

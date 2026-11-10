@@ -71,6 +71,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.layout.width
 import com.cemail.app.R
 import com.cemail.app.data.gmail.HtmlSanitizer
+import com.cemail.app.data.mail.Folder
 import com.cemail.app.data.mail.Mail
 import com.cemail.app.ui.glass.GlassIconButton
 import com.cemail.app.ui.glass.GlassKind
@@ -218,35 +219,49 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
                         )
                     }
                 }
-                PillIcon(Icons.Filled.MoreVert, stringResource(R.string.action_more), { panel = true })
             }
         }
 
-        // The floating button is reply.
-        Box(
-            Modifier
-                .align(Alignment.BottomEnd)
-                .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(16.dp)
-                .size(60.dp)
-                .glass(CircleShape, GlassKind.Pinned, elevation = 10.dp)
-                .clickable(role = Role.Button) { vm.newDraft(reply(R.string.reply_prefix, mail.senderEmail)) },
-            contentAlignment = Alignment.Center,
+        // Bottom corner: the menu button over the reply button.
+        Column(
+            Modifier.align(Alignment.BottomEnd).windowInsetsPadding(WindowInsets.safeDrawing).padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Icon(CemailIcons.Reply, stringResource(R.string.action_reply), tint = MaterialTheme.colorScheme.primary)
+            Box(
+                Modifier
+                    .size(52.dp)
+                    .glass(CircleShape, GlassKind.Chrome, elevation = 10.dp)
+                    .clickable(role = Role.Button) { panel = true },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.MoreVert, stringResource(R.string.action_more))
+            }
+            Box(
+                Modifier
+                    .size(60.dp)
+                    .glass(CircleShape, GlassKind.Pinned, elevation = 10.dp)
+                    .clickable(role = Role.Button) { vm.newDraft(reply(R.string.reply_prefix, mail.senderEmail)) },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(CemailIcons.Reply, stringResource(R.string.action_reply), tint = MaterialTheme.colorScheme.primary)
+            }
         }
 
         if (attachPanel) AttachmentsPopup(mail.id, attachments, vm) { attachPanel = false }
         if (panel) {
-            ActionStrip(
+            ActionGrid(
                 onDismiss = { panel = false },
-                reply = listOf(
+                items = listOf(
                     PanelItem(CemailIcons.Reply, R.string.action_reply) { vm.newDraft(reply(R.string.reply_prefix, mail.senderEmail)) },
                     PanelItem(CemailIcons.ReplyAll, R.string.action_reply_all) { vm.newDraft(reply(R.string.reply_prefix, mail.senderEmail)) },
                     PanelItem(CemailIcons.Forward, R.string.action_forward) { vm.newDraft(reply(R.string.forward_prefix, "")) },
-                ),
-                organize = listOf(
-                    PanelItem(CemailIcons.Archive, R.string.action_archive) { vm.archive(one) },
+                    // The same slot: archive from the inbox, or bring the message back to it from anywhere else.
+                    if (mail.folder == Folder.INBOX) {
+                        PanelItem(CemailIcons.Archive, R.string.action_archive) { vm.archive(one) }
+                    } else {
+                        PanelItem(CemailIcons.Inbox, R.string.action_move_inbox) { vm.moveToInbox(one) }
+                    },
                     PanelItem(CemailIcons.Snooze, R.string.action_snooze) { vm.askSnooze(one) },
                     PanelItem(
                         if (mail.starred) Icons.Filled.Star else CemailIcons.StarOutline,
@@ -254,9 +269,8 @@ fun ReadScreen(summary: Mail, vm: MailViewModel, alwaysShowImages: Boolean) {
                     ) { vm.toggleStar(one) },
                     PanelItem(CemailIcons.Pin, if (mail.pinned) R.string.action_unpin else R.string.action_pin, selected = mail.pinned) { vm.togglePin(one) },
                     PanelItem(Icons.Filled.Email, R.string.action_mark_unread) { vm.markRead(one, false) },
-                    PanelItem(CemailIcons.Inbox, R.string.action_move_inbox) { vm.moveToInbox(one) },
+                    PanelItem(Icons.Filled.Delete, R.string.action_trash, danger = true) { vm.trash(one) },
                 ),
-                trash = PanelItem(Icons.Filled.Delete, R.string.action_trash, danger = true) { vm.trash(one) },
             )
         }
     }
@@ -271,11 +285,11 @@ private class PanelItem(
 )
 
 /**
- * Every action on the open message as a slim vertical glass strip of icons (no text) that drops down from the
- * menu button, in three groups: reply, organize, and trash on its own at the end. Tapping outside closes it.
+ * Every action on the open message in a small square glass window of icons (no text), 3 x 3, that opens above the
+ * menu button: reply, reply all, forward / archive, snooze, star / pin, unread, trash. Tapping outside closes it.
  */
 @Composable
-private fun ActionStrip(onDismiss: () -> Unit, reply: List<PanelItem>, organize: List<PanelItem>, trash: PanelItem) {
+private fun ActionGrid(onDismiss: () -> Unit, items: List<PanelItem>) {
     Box(
         Modifier
             .fillMaxSize()
@@ -284,42 +298,41 @@ private fun ActionStrip(onDismiss: () -> Unit, reply: List<PanelItem>, organize:
     ) {
         Column(
             Modifier
-                .align(Alignment.TopEnd)
+                .align(Alignment.BottomEnd)
                 .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(top = 80.dp, end = 12.dp)
-                // Swallows taps so only the area around the strip closes it.
+                .padding(bottom = 156.dp, end = 16.dp)
+                // Swallows taps so only the area around the window closes it.
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
                 .glass(RoundedCornerShape(28.dp), GlassKind.Menu, elevation = 12.dp)
-                .verticalScroll(rememberScrollState())
-                .padding(vertical = 6.dp, horizontal = 4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            StripItems(reply, onDismiss)
-            StripDivider()
-            StripItems(organize, onDismiss)
-            StripDivider()
-            StripItems(listOf(trash), onDismiss)
+            items.chunked(3).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    row.forEach { item ->
+                        val tint = when {
+                            item.danger -> MaterialTheme.colorScheme.error
+                            item.selected -> MaterialTheme.colorScheme.primary
+                            else -> MaterialTheme.colorScheme.onSurface
+                        }
+                        Box(
+                            Modifier
+                                .size(60.dp)
+                                .clip(RoundedCornerShape(18.dp))
+                                .background(
+                                    if (item.selected) MaterialTheme.colorScheme.primaryContainer
+                                    else MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                                )
+                                .clickable(role = Role.Button) { onDismiss(); item.onClick() },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(item.icon, stringResource(item.label), tint = tint)
+                        }
+                    }
+                }
+            }
         }
     }
-}
-
-@Composable
-private fun StripItems(items: List<PanelItem>, onDismiss: () -> Unit) {
-    items.forEach { item ->
-        PillIcon(
-            item.icon,
-            stringResource(item.label),
-            { onDismiss(); item.onClick() },
-            selected = item.selected,
-            width = 52.dp,
-            tintOverride = if (item.danger) MaterialTheme.colorScheme.error else null,
-        )
-    }
-}
-
-@Composable
-private fun StripDivider() {
-    HorizontalDivider(Modifier.width(28.dp).padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)
 }
 
 /** The attached files of the open message, in a small glass card that drops down from the paperclip. */
