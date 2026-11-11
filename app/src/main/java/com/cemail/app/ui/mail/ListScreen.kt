@@ -52,6 +52,12 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import kotlinx.coroutines.delay
 import com.cemail.app.ui.theme.LocalGlass
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
@@ -122,6 +128,15 @@ fun ListScreen(
         // Pull down to refresh: the indicator shows only for a refresh the user asked for, not for the automatic ones.
         val pullState = rememberPullToRefreshState()
         var pulled by remember { mutableStateOf(false) }
+        // The list comes down with the finger (up to a bit past the threshold), holds there while it updates, and goes back.
+        val thresholdPx = with(LocalDensity.current) { PullToRefreshDefaults.PositionalThreshold.toPx() }
+        val haptic = LocalHapticFeedback.current
+        LaunchedEffect(pullState) {
+            // A small tick when the pull gets far enough that letting go will update.
+            snapshotFlow { pullState.distanceFraction >= 1f }.distinctUntilChanged().collect { reached ->
+                if (reached) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            }
+        }
         LaunchedEffect(pulled, state.syncing) {
             if (pulled && !state.syncing) {
                 delay(700) // long enough to be seen, and for the sync to start
@@ -146,7 +161,10 @@ fun ListScreen(
             ),
         ) {
         LazyColumn(
-            Modifier.fillMaxSize().hazeSource(haze),
+            Modifier
+                .fillMaxSize()
+                .graphicsLayer { translationY = pullState.distanceFraction.coerceAtMost(1.5f) * thresholdPx }
+                .hazeSource(haze),
             contentPadding = PaddingValues(
                 start = 12.dp,
                 end = 12.dp,

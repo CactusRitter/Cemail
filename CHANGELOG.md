@@ -3,6 +3,12 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.31.3 — 2026-11-11
+Tirar para actualizar más natural.
+- Al tirar hacia abajo, los mensajes bajan con el dedo (hasta un poco más allá del umbral) y el indicador queda en el hueco; al soltar pasado el umbral se actualiza y la lista vuelve a su sitio con un muelle.
+- Un pequeño toque háptico avisa al llegar al umbral.
+- Comprobado en el OPPO y en el Samsung.
+
 ## 0.31.2 — 2026-11-11
 Detalles tras probar en el Samsung con las cuentas reales.
 - El botón «atrás» desde cualquier carpeta o etiqueta vuelve primero a Recibidos (antes salía de la app).
