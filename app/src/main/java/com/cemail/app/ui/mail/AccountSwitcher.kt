@@ -30,6 +30,8 @@ import com.cemail.app.R
 import com.cemail.app.ui.account.AccountUiState
 import com.cemail.app.ui.glass.GlassKind
 import com.cemail.app.ui.glass.glass
+import com.cemail.app.ui.glass.popIn
+import com.cemail.app.ui.glass.pressScale
 
 /** The colours that tell accounts apart in the unified inbox, taken from the theme (they follow the accent). */
 @Composable
@@ -44,12 +46,12 @@ fun accountPalette(): List<Color> {
  * (which load below) can be picked right away. Adding and removing accounts is in Settings.
  */
 @Composable
-fun AccountSwitcher(acc: AccountUiState, onSelect: (String?) -> Unit) {
+fun AccountSwitcher(acc: AccountUiState, onSelect: (String?) -> Unit, revealed: Boolean) {
     val accounts = acc.accounts
     val palette = accountPalette()
     val several = accounts.size > 1
     if (accounts.isEmpty()) {
-        AccountRow(stringResource(R.string.demo_account), DEMO_ME, color = null, selected = true, onClick = {})
+        AccountRow(stringResource(R.string.demo_account), DEMO_ME, color = null, selected = true, onClick = {}, modifier = Modifier.popIn(revealed, 0, 0.8f))
         return
     }
     accounts.forEachIndexed { index, account ->
@@ -59,6 +61,7 @@ fun AccountSwitcher(acc: AccountUiState, onSelect: (String?) -> Unit) {
             color = palette[index % palette.size],
             selected = !several || acc.selectedId == account.id,
             onClick = { onSelect(account.id) },
+            modifier = Modifier.popIn(revealed, index * 22, 0.8f),
         )
     }
     if (several) {
@@ -68,16 +71,18 @@ fun AccountSwitcher(acc: AccountUiState, onSelect: (String?) -> Unit) {
             color = null,
             selected = acc.selectedId == null,
             onClick = { onSelect(null) },
+            modifier = Modifier.popIn(revealed, accounts.size * 22, 0.8f),
         )
     }
 }
 
 /** One account: a ring in its colour, its name over its address, and a check when it is the one on screen. */
 @Composable
-private fun AccountRow(title: String, subtitle: String, color: Color?, selected: Boolean, onClick: () -> Unit) {
+private fun AccountRow(title: String, subtitle: String, color: Color?, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val shape = RoundedCornerShape(50)
     Row(
-        Modifier
+        modifier
+            .pressScale(0.96f)
             .fillMaxWidth()
             .then(if (selected) Modifier.glass(shape, GlassKind.Pinned) else Modifier.clip(shape))
             .clickable(role = Role.RadioButton, onClick = onClick)

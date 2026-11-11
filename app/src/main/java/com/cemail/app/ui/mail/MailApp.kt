@@ -33,6 +33,22 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.ui.graphics.TransformOrigin
+import com.cemail.app.ui.glass.bounceSpring
+import com.cemail.app.ui.glass.glassSpring
+import com.cemail.app.ui.glass.softBounceSpring
+import com.cemail.app.ui.glass.popIn
+import com.cemail.app.ui.glass.pressScale
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
@@ -187,7 +203,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                     drawerContainerColor = Color.Transparent,
                     windowInsets = WindowInsets(0),
                 ) {
-                    DrawerContent(state, acc, unified = unifiedView, onOpenSettings = {
+                    DrawerContent(state, acc, unified = unifiedView, revealed = drawer.targetValue == DrawerValue.Open, onOpenSettings = {
                         showSettings = true
                         scope.launch { drawer.close() }
                     }, onSelectAccount = { id ->
@@ -204,15 +220,42 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
             },
             scrimColor = MaterialTheme.colorScheme.scrim.copy(alpha = 0.3f),
         ) {
+            // The data of a screen that is on its way out must outlive the state that closed it.
+            var lastDraft by remember { mutableStateOf(draft) }
+            if (draft != null) lastDraft = draft
+            var lastOpen by remember { mutableStateOf(open) }
+            if (open != null) lastOpen = open
+            val screen = when {
+                draft != null -> Screen.COMPOSE
+                showSettings -> Screen.SETTINGS
+                open != null -> Screen.READ
+                else -> Screen.LIST
+            }
             Box(Modifier.fillMaxSize()) {
-                when {
-                    draft != null -> ComposeScreen(draft, vm, me)
-                    showSettings -> SettingsScreen(
-                        settings, settingsRepo, acc.accounts, accountVm::remove,
-                        onAddGoogle = startSignIn, onAddMicrosoft = startMicrosoft, onAddImap = { showSettings = false; imapForm = true },
-                    ) { showSettings = false }
-                    open != null -> ReadScreen(open, vm, settings.alwaysShowImages, state.labels, state.thread)
-                    else -> ListScreen(state, vm, grouped = settings.groupByDate && state.query.isBlank(), stripeOf = stripeOf, showSenderCircle = settings.showSenderCircle, onOpenDrawer = { scope.launch { drawer.open() } })
+                // Moving between screens is animated: the new one grows in from a little smaller with a soft bounce
+                // (and the other fades away); going back does the opposite, so it feels like depth.
+                AnimatedContent(
+                    targetState = screen,
+                    transitionSpec = {
+                        if (targetState.depth >= initialState.depth) {
+                            (fadeIn(glassSpring()) + scaleIn(softBounceSpring(), initialScale = 0.9f)) togetherWith
+                                (fadeOut(glassSpring()) + scaleOut(glassSpring(), targetScale = 1.04f))
+                        } else {
+                            (fadeIn(glassSpring()) + scaleIn(softBounceSpring(), initialScale = 1.06f)) togetherWith
+                                (fadeOut(glassSpring()) + scaleOut(glassSpring(), targetScale = 0.9f))
+                        }.using(SizeTransform(clip = false))
+                    },
+                    label = "screen",
+                ) { target ->
+                    when (target) {
+                        Screen.COMPOSE -> lastDraft?.let { ComposeScreen(it, vm, me) }
+                        Screen.SETTINGS -> SettingsScreen(
+                            settings, settingsRepo, acc.accounts, accountVm::remove,
+                            onAddGoogle = startSignIn, onAddMicrosoft = startMicrosoft, onAddImap = { showSettings = false; imapForm = true },
+                        ) { showSettings = false }
+                        Screen.READ -> lastOpen?.let { ReadScreen(it, vm, settings.alwaysShowImages, state.labels, state.thread) }
+                        Screen.LIST -> ListScreen(state, vm, grouped = settings.groupByDate && state.query.isBlank(), stripeOf = stripeOf, showSenderCircle = settings.showSenderCircle, onOpenDrawer = { scope.launch { drawer.open() } })
+                    }
                 }
                 UndoBar(state.undo, vm, Modifier.align(Alignment.BottomCenter))
             }
@@ -227,6 +270,8 @@ private fun DrawerContent(
     state: MailUiState,
     acc: AccountUiState,
     unified: Boolean,
+    /** true while the menu is open: its rows pop in one after another each time. */
+    revealed: Boolean,
     onOpenSettings: () -> Unit,
     onSelectAccount: (String?) -> Unit,
     onPickLabel: (String) -> Unit,
@@ -250,6 +295,7 @@ private fun DrawerContent(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             Box(
                 Modifier
+                    .pressScale(0.85f)
                     .size(44.dp)
                     .clip(CircleShape)
                     .clickable(role = Role.Button, onClickLabel = stringResource(R.string.settings_title), onClick = onOpenSettings),
@@ -258,7 +304,7 @@ private fun DrawerContent(
                 Icon(Icons.Filled.Settings, stringResource(R.string.settings_title), tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-        AccountSwitcher(acc, onSelectAccount)
+        AccountSwitcher(acc, onSelectAccount, revealed)
         HorizontalDivider(Modifier.padding(vertical = 6.dp, horizontal = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
         if (accounts.isEmpty()) {
             Text(
@@ -271,11 +317,13 @@ private fun DrawerContent(
         // All accounts together: only what makes sense across accounts. Drafts, sent, snoozed, archive, trash
         // and labels belong to each account, so they appear once an account is chosen.
         val boxes = if (unified) MailBox.entries.filter { it == MailBox.INBOX || it == MailBox.STARRED } else MailBox.entries
-        boxes.forEach { box ->
+        boxes.forEachIndexed { index, box ->
             val selected = box == state.box && state.labelId == null
             val unread = state.unreadByBox[box] ?: 0
             Row(
                 Modifier
+                    .popIn(revealed, delayMillis = (accounts.size + 1 + index) * 22, initialScale = 0.8f)
+                    .pressScale(0.96f)
                     .fillMaxWidth()
                     .glass(RoundedCornerShape(50), if (selected) GlassKind.Pinned else GlassKind.Card)
                     .clickable(role = Role.Button) { onPick(box) }
@@ -307,9 +355,24 @@ private fun UndoBar(undo: UndoEvent?, vm: MailViewModel, modifier: Modifier) {
         delay(undo.durationMillis)
         vm.dismissUndo(id)
     }
-    if (undo == null) return
+    // The last event stays while the bar slides out, so it does not go blank on its way down.
+    var shown by remember { mutableStateOf(undo) }
+    if (undo != null) shown = undo
+    AnimatedVisibility(
+        visible = undo != null,
+        modifier = modifier,
+        enter = slideInVertically(bounceSpring()) { it } + fadeIn(glassSpring()) +
+            scaleIn(bounceSpring(), initialScale = 0.8f, transformOrigin = TransformOrigin(0.5f, 1f)),
+        exit = slideOutVertically(glassSpring()) { it / 2 } + fadeOut(glassSpring()) + scaleOut(glassSpring(), targetScale = 0.9f),
+    ) {
+        shown?.let { UndoRow(it, vm) }
+    }
+}
+
+@Composable
+private fun UndoRow(undo: UndoEvent, vm: MailViewModel) {
     Row(
-        modifier
+        Modifier
             .windowInsetsPadding(WindowInsets.safeDrawing)
             .padding(start = 16.dp, end = 16.dp, bottom = 96.dp)
             .glass(RoundedCornerShape(50), GlassKind.Menu, elevation = 12.dp)
@@ -337,7 +400,7 @@ private fun UndoBar(undo: UndoEvent?, vm: MailViewModel, modifier: Modifier) {
 private fun SnoozeDialog(onPick: (SnoozeOption) -> Unit, onDismiss: () -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
         Column(
-            Modifier.fillMaxWidth().glass(RoundedCornerShape(28.dp), GlassKind.Menu, elevation = 12.dp).padding(vertical = 16.dp),
+            Modifier.popIn(initialScale = 0.75f).fillMaxWidth().glass(RoundedCornerShape(28.dp), GlassKind.Menu, elevation = 12.dp).padding(vertical = 16.dp),
         ) {
             Text(stringResource(R.string.snooze_title), Modifier.padding(horizontal = 24.dp, vertical = 8.dp), style = MaterialTheme.typography.titleMedium)
             SnoozeOption.entries.forEach { option ->
@@ -356,3 +419,6 @@ private fun SnoozeDialog(onPick: (SnoozeOption) -> Unit, onDismiss: () -> Unit) 
 
 /** How often new mail is looked for while the app is on screen. */
 private const val POLL_MILLIS = 60_000L
+
+/** What is on top; [depth] says how "deep" it is, to choose the direction of the transition. */
+private enum class Screen(val depth: Int) { LIST(0), READ(1), SETTINGS(1), COMPOSE(2) }

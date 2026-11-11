@@ -33,6 +33,8 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import com.cemail.app.ui.glass.popIn
+import com.cemail.app.ui.glass.pressScale
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -264,6 +266,8 @@ fun ReadScreen(
         ) {
             Box(
                 Modifier
+                    .popIn(delayMillis = 140, initialScale = 0.3f)
+                    .pressScale(0.88f)
                     .size(52.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surface)
@@ -275,6 +279,8 @@ fun ReadScreen(
             }
             Box(
                 Modifier
+                    .popIn(delayMillis = 60, initialScale = 0.3f)
+                    .pressScale(0.88f)
                     .size(60.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surface)
@@ -369,15 +375,16 @@ private fun ActionGrid(onDismiss: () -> Unit, items: List<PanelItem>) {
                 .align(Alignment.BottomEnd)
                 .windowInsetsPadding(WindowInsets.safeDrawing)
                 .padding(bottom = 156.dp, end = 16.dp)
+                .popIn(initialScale = 0.3f, origin = TransformOrigin(1f, 1f))
                 // Swallows taps so only the area around the window closes it.
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
                 .glass(RoundedCornerShape(28.dp), GlassKind.Menu, elevation = 12.dp)
                 .padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            items.chunked(4).forEach { row ->
+            items.chunked(4).forEachIndexed { rowIndex, row ->
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    row.forEach { item ->
+                    row.forEachIndexed { column, item ->
                         val tint = when {
                             item.danger -> MaterialTheme.colorScheme.error
                             item.selected -> MaterialTheme.colorScheme.primary
@@ -385,6 +392,8 @@ private fun ActionGrid(onDismiss: () -> Unit, items: List<PanelItem>) {
                         }
                         Box(
                             Modifier
+                                .popIn(delayMillis = 70 + (rowIndex * 4 + column) * 28, initialScale = 0.4f)
+                                .pressScale(0.88f)
                                 .size(60.dp)
                                 .clip(RoundedCornerShape(18.dp))
                                 .background(
@@ -465,6 +474,7 @@ private fun LabelsPopup(mail: Mail, labels: List<Label>, vm: MailViewModel, onDi
                 .align(Alignment.BottomEnd)
                 .windowInsetsPadding(WindowInsets.safeDrawing)
                 .padding(bottom = 156.dp, end = 16.dp, start = 16.dp)
+                .popIn(initialScale = 0.3f, origin = TransformOrigin(1f, 1f))
                 .widthIn(max = 320.dp)
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
                 .glass(RoundedCornerShape(28.dp), GlassKind.Menu, elevation = 12.dp)
@@ -522,6 +532,7 @@ private fun AttachmentsPopup(messageId: Long, attachments: List<com.cemail.app.d
                 .align(Alignment.TopEnd)
                 .windowInsetsPadding(WindowInsets.safeDrawing)
                 .padding(top = 80.dp, end = 12.dp, start = 12.dp)
+                .popIn(initialScale = 0.3f, origin = TransformOrigin(1f, 0f))
                 .widthIn(max = 320.dp)
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
                 .glass(RoundedCornerShape(28.dp), GlassKind.Menu, elevation = 12.dp)

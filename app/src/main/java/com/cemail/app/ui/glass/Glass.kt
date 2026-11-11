@@ -127,6 +127,7 @@ fun GlassIconButton(
 ) {
     Box(
         modifier
+            .pressScale()
             .size(56.dp)
             .glass(CircleShape, GlassKind.Chrome, elevation = 10.dp, hazeState = hazeState)
             .clickable(role = Role.Button, onClick = onClick),
@@ -176,6 +177,7 @@ fun PillIcon(
     )
     Box(
         Modifier
+            .pressScale(0.85f)
             .size(width = width, height = 48.dp)
             .clip(CircleShape)
             .background(container)

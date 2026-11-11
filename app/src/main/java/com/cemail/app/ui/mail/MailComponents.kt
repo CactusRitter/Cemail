@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import com.cemail.app.ui.glass.bumpOn
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
@@ -106,6 +107,7 @@ fun MailRow(
     stripe: Color? = null,
     /** false hides the round sender picture (Settings). */
     showCircle: Boolean = true,
+    modifier: Modifier = Modifier,
 ) {
     val state = rememberSwipeToDismissBoxState(confirmValueChange = { value ->
         when (value) {
@@ -118,6 +120,7 @@ fun MailRow(
     val shape = RoundedCornerShape(20.dp)
     SwipeToDismissBox(
         state = state,
+        modifier = modifier,
         enableDismissFromStartToEnd = !selectionMode,
         enableDismissFromEndToStart = !selectionMode,
         backgroundContent = {
@@ -194,7 +197,7 @@ fun MailRow(
                     Icon(
                         if (mail.starred) Icons.Filled.Star else CemailIcons.StarOutline,
                         stringResource(if (mail.starred) R.string.action_unstar else R.string.action_star),
-                        Modifier.padding(start = 8.dp).size(22.dp).clickable(role = Role.Button, onClick = onToggleStar),
+                        Modifier.padding(start = 8.dp).size(22.dp).bumpOn(mail.starred).clickable(role = Role.Button, onClick = onToggleStar),
                         tint = if (mail.starred) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }

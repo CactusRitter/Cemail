@@ -3,6 +3,15 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.31.0 — 2026-11-11
+Animaciones nuevas y coherentes, todas con resortes (documentadas en docs/DESIGN.md, «Movimiento»).
+- Los botones se encogen al pulsarlos y vuelven con rebote; los botones flotantes (redactar, responder, menú) aparecen desde el centro creciendo hasta su tamaño.
+- Las ventanas salen de su botón (el menú de acciones del mensaje, etiquetas, adjuntos) y los iconos del menú aparecen en cascada; posponer y enviar más tarde crecen desde el centro.
+- Las pantallas ya no cambian de golpe: la nueva crece con un rebote suave y la anterior se desvanece (y al volver atrás, al revés).
+- El menú lateral hace aparecer sus filas una tras otra cada vez que se abre.
+- La lista mueve los mensajes con resorte al reordenarse o desaparecer; la barra superior (buscar, seleccionar) cambia con un pequeño pop; la estrella da un «pop» al marcarla.
+- El aviso de deshacer sube con rebote y baja suave.
+
 ## 0.30.1 — 2026-11-11
 - **Menú lateral rehecho** (como referencia, el de Samsung Email): todas las cuentas a la vista, cada una con su color y una marca en la activa, y «Todas las cuentas» al final de la lista; los ajustes pasan a un icono pequeño arriba a la derecha y una línea separa las cuentas de las carpetas. A diferencia de Samsung, tocar una cuenta no cierra el menú: se queda abierto con las carpetas y etiquetas de esa cuenta.
 

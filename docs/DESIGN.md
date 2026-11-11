@@ -47,3 +47,23 @@ La web de Celander usa Inter (texto), Instrument Serif (titulares) y JetBrains M
 - **Bandeja**: filas como tarjetas de cristal; sin leer = `GlassKind.Pinned`. Botón flotante redondo para redactar y píldora con carpetas.
 - **Lectura**: el cuerpo en una tarjeta de cristal; acciones en una píldora flotante inferior.
 - **Redactar**: campos sobre tarjeta de cristal; el botón de enviar con el color de acento.
+
+## Movimiento (añadido en Cemail 0.31.0; falta llevarlo a Celander y Cenotes)
+
+Todo se mueve con **resortes**, nunca con curvas lineales (ver la regla 2). Hay tres, en `ui/glass/Motion.kt` y `Glass.kt`:
+
+| Resorte | Amortiguación | Para qué |
+|---|---|---|
+| `glassSpring()` | 0,8 · rigidez media-baja | cambios de color y de tamaño; entradas y salidas suaves (fundidos) |
+| `bounceSpring()` | 0,55 · rigidez media | lo que se pulsa o «salta»: botones, iconos, ventanas pequeñas (rebote visible) |
+| `softBounceSpring()` | 0,72 · rigidez media-baja | pantallas enteras y paneles grandes (rebote suave) |
+
+Efectos reutilizables (siempre los mismos, no se inventan otros):
+- `pressScale()`: el elemento se encoge al pulsarlo y vuelve con rebote. Va **el primero** de la cadena de modificadores, antes de `glass` y `clickable`.
+- `popIn(visible, delayMillis, initialScale, origin)`: aparece creciendo desde el centro (o desde el botón del que sale) hasta su tamaño, con rebote y fundido. Con `delayMillis` escalonado, los elementos de un grupo salen uno tras otro.
+- `bumpOn(trigger)`: un «pop» cada vez que cambia algo (la estrella al marcarla).
+- Pantallas: la nueva crece desde un poco más pequeña (0,9) con `softBounceSpring` y la anterior se desvanece; al volver atrás, al revés (profundidad).
+- Listas: `animateItem` con `softBounceSpring` al reordenar y fundido al entrar y salir.
+- Avisos (barra de deshacer): suben desde abajo con rebote y bajan con `glassSpring`.
+
+Reglas: las ventanas y menús salen de su botón (`origin`); lo que está en el centro, del centro. Si Android tiene las animaciones desactivadas, Compose las salta solo.

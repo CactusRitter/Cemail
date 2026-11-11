@@ -66,6 +66,7 @@ import com.cemail.app.ui.glass.GlassKind
 import com.cemail.app.ui.glass.GlassPill
 import com.cemail.app.ui.glass.PillIcon
 import com.cemail.app.ui.glass.glass
+import com.cemail.app.ui.glass.pressScale
 import com.cemail.app.ui.mail.Avatar
 import java.text.NumberFormat
 import kotlin.math.roundToInt
@@ -152,7 +153,7 @@ fun SettingsScreen(
                     R.string.account_add_other to onAddImap,
                 ).forEach { (label, action) ->
                     Row(
-                        Modifier.glass(CircleShape, GlassKind.Card).clickable(role = Role.Button, onClick = action).padding(horizontal = 16.dp, vertical = 10.dp),
+                        Modifier.pressScale(0.94f).glass(CircleShape, GlassKind.Card).clickable(role = Role.Button, onClick = action).padding(horizontal = 16.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
@@ -300,6 +301,7 @@ fun SettingsScreen(
                         Text(
                             label,
                             Modifier
+                                .pressScale(0.94f)
                                 .glass(CircleShape, if (selected) GlassKind.Pinned else GlassKind.Card)
                                 .clickable(role = Role.RadioButton) {
                                     repo.setSyncMinutes(minutes)
@@ -330,6 +332,7 @@ fun SettingsScreen(
                         Text(
                             if (seconds == 0) stringResource(R.string.undo_send_off) else stringResource(R.string.undo_send_seconds, seconds),
                             Modifier
+                                .pressScale(0.94f)
                                 .glass(CircleShape, if (selected) GlassKind.Pinned else GlassKind.Card)
                                 .clickable(role = Role.RadioButton) { repo.setUndoSendSeconds(seconds) }
                                 .padding(horizontal = 16.dp, vertical = 10.dp),

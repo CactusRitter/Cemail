@@ -23,6 +23,7 @@ import androidx.compose.ui.window.Dialog
 import com.cemail.app.R
 import com.cemail.app.ui.glass.GlassKind
 import com.cemail.app.ui.glass.glass
+import com.cemail.app.ui.glass.popIn
 import com.cemail.app.ui.icons.CemailIcons
 import java.util.Calendar
 
@@ -43,7 +44,7 @@ fun ScheduleSendDialog(onPick: (Long) -> Unit, onDismiss: () -> Unit) {
         }.show()
     }
     Dialog(onDismissRequest = onDismiss) {
-        Column(Modifier.fillMaxWidth().glass(RoundedCornerShape(28.dp), GlassKind.Menu, elevation = 12.dp).padding(vertical = 16.dp)) {
+        Column(Modifier.popIn(initialScale = 0.75f).fillMaxWidth().glass(RoundedCornerShape(28.dp), GlassKind.Menu, elevation = 12.dp).padding(vertical = 16.dp)) {
             Text(stringResource(R.string.schedule_title), Modifier.padding(horizontal = 24.dp, vertical = 8.dp), style = MaterialTheme.typography.titleMedium)
             SnoozeOption.entries.forEach { option ->
                 ScheduleRow(stringResource(option.label)) { onPick(option.at(System.currentTimeMillis())) }

@@ -37,6 +37,16 @@ import com.cemail.app.ui.glass.GlassIconButton
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.togetherWith
+import com.cemail.app.ui.glass.bounceSpring
+import com.cemail.app.ui.glass.glassSpring
+import com.cemail.app.ui.glass.softBounceSpring
+import com.cemail.app.ui.glass.popIn
+import com.cemail.app.ui.glass.pressScale
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
@@ -142,7 +152,7 @@ fun ListScreen(
             }
             if (state.pinned.isNotEmpty()) {
                 item(key = "h-pinned") { SectionHeader(stringResource(R.string.section_pinned)) }
-                items(state.pinned, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, stripeOf(mail), showSenderCircle) }
+                items(state.pinned, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, stripeOf(mail), showSenderCircle, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
                 if (state.others.isNotEmpty() && !grouped) item(key = "h-mail") { SectionHeader(stringResource(R.string.section_mail)) }
             }
             if (grouped) {
@@ -152,10 +162,10 @@ fun ListScreen(
                     val list = groups[section] ?: return@forEach
                     val collapsed = section in state.collapsedSections
                     item(key = "d-$section") { DateHeader(section, list.size, collapsed) { vm.toggleSection(section) } }
-                    if (!collapsed) items(list, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, stripeOf(mail), showSenderCircle) }
+                    if (!collapsed) items(list, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, stripeOf(mail), showSenderCircle, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
                 }
             } else {
-                items(state.others, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, stripeOf(mail), showSenderCircle) }
+                items(state.others, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, stripeOf(mail), showSenderCircle, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
             }
         }
 
@@ -163,9 +173,16 @@ fun ListScreen(
         Box(
             Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 12.dp, vertical = 8.dp),
         ) {
-            when {
-                selecting -> SelectionBar(state, vm, haze)
-                state.searching -> SearchBar(state, vm, haze)
+            // Selecting, searching and the normal header swap with a little pop instead of changing at once.
+            val barMode = if (selecting) 0 else if (state.searching) 1 else 2
+            AnimatedContent(
+                targetState = barMode,
+                transitionSpec = { (fadeIn(glassSpring()) + scaleIn(bounceSpring(), initialScale = 0.92f)) togetherWith fadeOut(glassSpring()) },
+                label = "topBar",
+            ) { mode ->
+            when (mode) {
+                0 -> SelectionBar(state, vm, haze)
+                1 -> SearchBar(state, vm, haze)
                 // Same header as Celander and Cenotes: round button on the left, the title in big bold
                 // letters in the middle, and a pill with the actions on the right.
                 else -> Row(Modifier.fillMaxWidth().height(56.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -193,6 +210,7 @@ fun ListScreen(
                     }
                 }
             }
+            }
         }
 
         // Compose button (Thunderbird has a floating "write" button).
@@ -202,6 +220,8 @@ fun ListScreen(
                     .align(Alignment.BottomEnd)
                     .windowInsetsPadding(WindowInsets.safeDrawing)
                     .padding(16.dp)
+                    .popIn(delayMillis = 220, initialScale = 0.3f)
+                    .pressScale(0.88f)
                     .size(60.dp)
                     .glass(CircleShape, GlassKind.Pinned, elevation = 10.dp, hazeState = haze)
                     .clickable(role = Role.Button, onClickLabel = stringResource(R.string.compose)) { vm.newDraft() },
@@ -214,7 +234,7 @@ fun ListScreen(
 }
 
 @Composable
-private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsArchive: Boolean, stripe: Color?, showCircle: Boolean) {
+private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsArchive: Boolean, stripe: Color?, showCircle: Boolean, modifier: Modifier = Modifier) {
     val one = setOf(mail.id)
     MailRow(
         mail = mail,
@@ -228,6 +248,7 @@ private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsA
         startIsArchive = startIsArchive,
         stripe = stripe,
         showCircle = showCircle,
+        modifier = modifier,
     )
 }
 
