@@ -23,3 +23,7 @@ push-worker/secrets.local.txt
 # Claves de cuentas de servicio (nunca al repositorio)
 *-firebase-adminsdk-*.json
 *.local.json
+
+# Caché local de wrangler (contiene el id de la cuenta de Cloudflare)
+push-worker/.wrangler/
+.wrangler/
