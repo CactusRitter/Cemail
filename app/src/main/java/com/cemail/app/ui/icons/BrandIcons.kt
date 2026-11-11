@@ -30,13 +30,15 @@ fun GoogleLogo(size: Dp = 32.dp) {
         val topLeft = Offset(inset, inset)
         fun arc(color: Color, start: Float, sweep: Float) =
             drawArc(color, start, sweep, useCenter = false, topLeft = topLeft, size = arcSize, style = Stroke(stroke, cap = StrokeCap.Butt))
-        arc(GoogleRed, 200f, 100f)
-        arc(GoogleYellow, 140f, 60f)
-        arc(GoogleGreen, 50f, 90f)
-        arc(GoogleBlue, -40f, 90f)
-        // The bar of the G, from the middle to the right edge.
+        // Angles run clockwise from 3 o'clock. The opening of the G is the upper right (315° to 360°): the red arc ends
+        // before it and the blue one starts at the bar, so the ring does not close.
+        arc(GoogleRed, 210f, 105f)
+        arc(GoogleYellow, 150f, 60f)
+        arc(GoogleGreen, 40f, 110f)
+        arc(GoogleBlue, 0f, 40f)
+        // The bar of the G, from the middle to the outer edge of the ring.
         val centre = this.size.height / 2
-        drawRect(GoogleBlue, Offset(this.size.width * 0.5f, centre - stroke / 2), Size(this.size.width * 0.5f - inset * 0.2f, stroke))
+        drawRect(GoogleBlue, Offset(this.size.width * 0.5f, centre - stroke / 2), Size(this.size.width * 0.5f, stroke))
     }
 }
 

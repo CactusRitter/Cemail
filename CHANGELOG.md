@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.32.1 — 2026-11-11
+- El logotipo de Google de la pantalla «Añadir una cuenta» se parece más al real: la «G» queda abierta arriba a la derecha, con la barra azul.
+
 ## 0.32.0 — 2026-11-11
 Ajustes reorganizados, pantalla para añadir cuentas, ajustes por cuenta y gestos configurables.
 - Ajustes ahora es una pantalla corta con una fila grande por sección: Cuentas, Mensajes, Gestos de deslizar, Notificaciones y sincronización, Apariencia y Diagnóstico.
