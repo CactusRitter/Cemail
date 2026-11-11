@@ -3,6 +3,12 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.31.2 — 2026-11-11
+Detalles tras probar en el Samsung con las cuentas reales.
+- El botón «atrás» desde cualquier carpeta o etiqueta vuelve primero a Recibidos (antes salía de la app).
+- La papelera ya no muestra el contador de no leídos.
+- Comprobado en el móvil: tirar para actualizar, el menú lateral con las carpetas nuevas (Programados, Spam), la búsqueda por texto completo, el menú de acciones del mensaje y la ventana de «Enviar más tarde».
+
 ## 0.31.1 — 2026-11-11
 - **Tirar hacia abajo para actualizar** en todas las bandejas y etiquetas: el indicador (con el cristal de la app) solo sale cuando lo pides tú, no en las comprobaciones automáticas, y no funciona mientras buscas o seleccionas.
 

@@ -191,6 +191,11 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
     BackHandler(enabled = state.draft == null && state.open != null) { vm.closeMail() }
     BackHandler(enabled = state.draft == null && state.open == null && state.selection.isNotEmpty()) { vm.clearSelection() }
     BackHandler(enabled = state.draft == null && state.open == null && state.selection.isEmpty() && state.searching) { vm.setSearching(false) }
+    // In any folder or label, Back goes to the Inbox first (and leaves the app only from there).
+    BackHandler(
+        enabled = !drawer.isOpen && !showSettings && state.draft == null && state.open == null && state.selection.isEmpty() &&
+            !state.searching && (state.box != MailBox.INBOX || state.labelId != null),
+    ) { vm.selectBox(MailBox.INBOX) }
 
     GlassBackground {
         ModalNavigationDrawer(

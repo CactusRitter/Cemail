@@ -127,7 +127,8 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
             draft = u.draft, snoozeTargets = u.snoozeTargets, undo = u.undo,
             pinned = if (showPinned) shown.filter { it.pinned } else emptyList(),
             others = if (showPinned) shown.filter { !it.pinned } else shown,
-            unreadByBox = MailBox.entries.associateWith { b -> mails.count { !it.read && it.inBox(b, now) } },
+            // The Trash shows no count (what is in it is not pending).
+            unreadByBox = MailBox.entries.associateWith { b -> if (b == MailBox.TRASH) 0 else mails.count { !it.read && it.inBox(b, now) } },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), MailUiState())
 

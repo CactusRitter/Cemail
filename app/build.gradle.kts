@@ -25,8 +25,8 @@ android {
         applicationId = "com.cemail.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 40
-        versionName = "0.31.1"
+        versionCode = 41
+        versionName = "0.31.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
