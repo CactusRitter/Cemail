@@ -144,9 +144,18 @@ fun ReadScreen(
     val hasRemoteImages = remember(mail.id, html) { html.isNotBlank() && HtmlSanitizer.hasRemoteImages(html) }
     var showImages by remember(mail.id, alwaysShowImages) { mutableStateOf(alwaysShowImages) }
 
-    // Extra room at the end of the message, so its last lines can be scrolled clear of the reply button.
-    val cleanPage = remember(mail.id, html, inline) {
-        if (html.isBlank()) null else HtmlSanitizer.page(HtmlSanitizer.clean(html, inline), 76, HtmlSanitizer.styles(html))
+    // Extra room at the end of the message, so its last lines can be scrolled clear of the reply button. Cleaning a big
+    // newsletter takes a while: it is done away from the main thread so the screen keeps opening smoothly meanwhile.
+    val cleanPage by produceState<String?>(null, mail.id, html, inline) {
+        value = if (html.isBlank()) null else kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+            HtmlSanitizer.page(HtmlSanitizer.clean(html, inline), 76, HtmlSanitizer.styles(html))
+        }
+    }
+    // The web view (costly to create) is put in place only after the opening animation, which runs with the plain text.
+    var settled by remember { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(SETTLE_MILLIS)
+        settled = true
     }
     val snoozedUntil = mail.snoozedUntil?.takeIf { mail.isSnoozed(System.currentTimeMillis()) }
     val notices = snoozedUntil != null || (hasRemoteImages && !showImages)
@@ -201,8 +210,9 @@ fun ReadScreen(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(24.dp)),
             ) {
-                if (cleanPage != null) {
-                    HtmlBody(cleanPage, showImages, Modifier.fillMaxSize()) { }
+                val page = cleanPage
+                if (page != null && settled) {
+                    HtmlBody(page, showImages, Modifier.fillMaxSize()) { }
                 } else {
                     Box(
                         Modifier.fillMaxSize().glass(RoundedCornerShape(24.dp), GlassKind.Card)
@@ -635,3 +645,6 @@ private fun UnsubscribeDialog(sender: String, info: com.cemail.app.data.mail.Uns
         },
     )
 }
+
+/** The opening animation of the reader lasts about this long; the web view waits for it. */
+private const val SETTLE_MILLIS = 520L

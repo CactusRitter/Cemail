@@ -183,6 +183,10 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
         if (!unifiedView) null else acc.accounts.indexOfFirst { it.id == mail.accountId }.takeIf { it >= 0 }?.let { palette[it % palette.size] }
     }
 
+    // The list keeps its place while a message is read; it goes back to the top only when what it shows changes.
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    LaunchedEffect(state.box, state.labelId, acc.selectedId, state.query) { listState.scrollToItem(0) }
+
     // How long the "Undo" bar stays after an action follows Settings.
     LaunchedEffect(vm, settings.swipe.undoSeconds) { vm.actionUndoMillis = settings.swipe.undoSeconds * 1000L }
 
@@ -293,7 +297,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                                 ReadScreen(it, vm, settings.alwaysShowImages, state.labels, state.thread)
                             }
                         }
-                        Screen.LIST -> ListScreen(state, vm, grouped = settings.groupByDate && state.query.isBlank(), stripeOf = stripeOf, showSenderCircle = settings.showSenderCircle, swipe = settings.swipe, onOpenDrawer = { scope.launch { drawer.open() } })
+                        Screen.LIST -> ListScreen(state, vm, grouped = settings.groupByDate && state.query.isBlank(), stripeOf = stripeOf, showSenderCircle = settings.showSenderCircle, swipe = settings.swipe, listState = listState, onOpenDrawer = { scope.launch { drawer.open() } })
                     }
                 }
                 UndoBar(state.undo, vm, Modifier.align(Alignment.BottomCenter))

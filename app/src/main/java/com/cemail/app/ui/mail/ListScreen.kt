@@ -117,6 +117,8 @@ fun ListScreen(
     stripeOf: (Mail) -> Color?,
     showSenderCircle: Boolean,
     swipe: com.cemail.app.data.SwipeConfig,
+    /** Kept by the caller, so the list is where it was left after reading a message. */
+    listState: androidx.compose.foundation.lazy.LazyListState,
     onOpenDrawer: () -> Unit,
 ) {
     val haze = rememberHazeState()
@@ -164,7 +166,8 @@ fun ListScreen(
             ),
         ) {
         LazyColumn(
-            Modifier
+            state = listState,
+            modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer { translationY = pullState.distanceFraction.coerceAtMost(1.5f) * thresholdPx }
                 .hazeSource(haze),

@@ -143,6 +143,12 @@ class CemailApplication : Application() {
         com.cemail.app.data.mail.Outbox.init(java.io.File(filesDir, "outbox"))
         CrashLog.install(this)
         com.cemail.app.data.push.Push.initFirebase(this)
+        // The first web view of the process is slow to create (it starts the browser engine): one is made now, when the app
+        // is idle after starting, so the first message with pictures does not stall its opening animation.
+        android.os.Looper.myQueue().addIdleHandler {
+            try { android.webkit.WebView(this).destroy() } catch (e: Exception) { AppLog.e("webview", "could not warm up the web view", e) }
+            false
+        }
         notifier.createChannel()
         appScope.launch { accountRepository.accounts.collect { updateShortcuts(it) } }
         // The widgets redraw whenever the Inbox changes (a short pause first, so a sync counts as one change).
