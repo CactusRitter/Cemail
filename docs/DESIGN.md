@@ -82,6 +82,13 @@ Reglas: las ventanas y menús salen de su botón (`origin`); lo que está en el 
 - **Campo «De»** al redactar: misma tipografía que «Para» (etiqueta `bodyMedium`, dirección `labelLarge`); el desplegable lista las cuentas con su foto.
 - **Barra de formato** al redactar: solo aparece mientras se escribe el texto del mensaje (entra con muelle `bounceSpring`), para no tapar las sugerencias de destinatarios.
 
+## Color de acento y modo claro/oscuro (añadido en Cemail 1.3.0, igual que Celander)
+- **Ocho colores**, los de Celander y en su orden: índigo `#4A54D6`, azul `#296DB5`, verde azulado `#1C7B77`, verde `#1D7F46`, ocre `#8F6721`, teja `#B54529`, frambuesa `#BD2B65`, violeta `#8B3AD2` (`Accent`, en `Theme.kt`). De cada uno salen, con el mismo tono, su versión para fondos oscuros (luminosidad 0,78) y los contenedores claro (0,93) y oscuro (0,30) (`paletteFrom`).
+- **Color personalizado**: cualquier tono de una barra arcoíris. Amarillos y cianes se oscurecen un poco para que tengan la misma calma que los ocho (`customPalette`).
+- El acento colorea botones, selecciones, el cristal destacado y la mancha de color del fondo.
+- **Claro u oscuro**: Sistema / Claro / Oscuro. Los iconos de la barra de estado siguen la elección, no el teléfono.
+- **Deslizador** (`GlassSlider`): pista redondeada de 12 dp (rellena con el acento hasta el botón, o pintada entera como la barra de tono) y botón de 28 dp con aro blanco y sombra suave, como Celander. Sustituye al `Slider` de Material.
+
 ## Interruptor y listas de carpetas (añadido en Cemail 1.1.0)
 - **Interruptor** (`GlassSwitch`, en `ui/glass`): pista de 40 × 24 dp redondeada; encendido se llena con `primary` y el botón (`onPrimary`) salta al otro lado con `bounceSpring`; apagado, pista de cristal tenue (`surfaceVariant` translúcido) con borde `outline` y el botón algo más pequeño. Sustituye al `Switch` de Material en toda la app (más pequeño y con nuestro movimiento). La fila entera es la zona táctil.
 - **Carpetas para sincronizar**: una sola tarjeta con una fila por carpeta (icono de carpeta, nombre, interruptor), como Samsung Email; las subetiquetas («Padre/Hijo») van sangradas 24 dp por nivel bajo su madre, y una madre que no es etiqueta sale como encabezado sin interruptor. La bandeja de entrada va primero, encendida y fija.

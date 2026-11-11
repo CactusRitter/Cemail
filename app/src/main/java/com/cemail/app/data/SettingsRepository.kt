@@ -8,6 +8,10 @@ import kotlinx.coroutines.flow.asStateFlow
 
 data class AppSettings(
     val accent: Accent = Accent.INDIGO,
+    /** A colour of the free hue bar (0–360) instead of [accent]; null = the chosen accent. */
+    val customHue: Float? = null,
+    /** Light or dark: following the phone, or always one of them. */
+    val themeMode: com.cemail.app.ui.theme.ThemeMode = com.cemail.app.ui.theme.ThemeMode.SYSTEM,
     /** 0 = solid glass, 100 = fully see-through. */
     val transparency: Int = 65,
     /** Load remote images in messages without asking (off by default: they can be tracking pixels). */
@@ -36,6 +40,10 @@ data class AppSettings(
     val accountLooks: Map<String, AccountLook> = emptyMap(),
 ) {
     fun lookOf(accountId: String): AccountLook = accountLooks[accountId] ?: AccountLook()
+
+    /** The app's colour in its four shades: the custom one, or the chosen accent. */
+    val accentPalette: com.cemail.app.ui.theme.AccentPalette
+        get() = customHue?.let { com.cemail.app.ui.theme.customPalette(it) } ?: accent.palette
     /** The interval that applies to this account: its own, or the general one. */
     fun syncMinutesFor(accountId: String): Int = accountSync[accountId] ?: syncMinutes
 }
@@ -57,6 +65,9 @@ class SettingsRepository(context: Context) {
     private fun read() = AppSettings(
         accent = prefs.getString(KEY_ACCENT, null)
             ?.let { name -> Accent.entries.firstOrNull { it.name == name } } ?: Accent.INDIGO,
+        customHue = prefs.getFloat(KEY_HUE, -1f).takeIf { it >= 0f },
+        themeMode = prefs.getString(KEY_THEME, null)
+            ?.let { n -> com.cemail.app.ui.theme.ThemeMode.entries.firstOrNull { it.name == n } } ?: com.cemail.app.ui.theme.ThemeMode.SYSTEM,
         transparency = prefs.getInt(KEY_TRANSPARENCY, 65),
         alwaysShowImages = prefs.getBoolean(KEY_IMAGES, false),
         groupByDate = prefs.getBoolean(KEY_GROUP, true),
@@ -108,6 +119,23 @@ class SettingsRepository(context: Context) {
     var askedNotificationPermission: Boolean
         get() = prefs.getBoolean(KEY_ASKED, false)
         set(value) = prefs.edit().putBoolean(KEY_ASKED, value).apply()
+
+    /** One of the eight colours (the custom one is cleared). */
+    fun setAccent(accent: Accent) {
+        prefs.edit().putString(KEY_ACCENT, accent.name).remove(KEY_HUE).apply()
+        _state.value = _state.value.copy(accent = accent, customHue = null)
+    }
+
+    /** A colour of the free hue bar (0–360). */
+    fun setCustomHue(hue: Float) {
+        prefs.edit().putFloat(KEY_HUE, hue).apply()
+        _state.value = _state.value.copy(customHue = hue)
+    }
+
+    fun setThemeMode(mode: com.cemail.app.ui.theme.ThemeMode) {
+        prefs.edit().putString(KEY_THEME, mode.name).apply()
+        _state.value = _state.value.copy(themeMode = mode)
+    }
 
     fun setTransparency(value: Int) {
         prefs.edit().putInt(KEY_TRANSPARENCY, value).apply()
@@ -211,6 +239,8 @@ class SettingsRepository(context: Context) {
     private companion object {
         const val KEY_PUSH = "push_enabled"
         const val KEY_DEFAULT_ACCOUNT = "default_account"
+        const val KEY_HUE = "accent_hue"
+        const val KEY_THEME = "theme_mode"
         const val KEY_ACCOUNT_LABEL = "account_label_"
         const val KEY_SENDER_NAME = "account_sender_"
         const val KEY_ACCOUNT_COLOR = "account_color_"

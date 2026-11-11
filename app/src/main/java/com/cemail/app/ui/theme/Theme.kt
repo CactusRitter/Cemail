@@ -17,20 +17,87 @@ import com.cemail.app.data.AppSettings
 // Diseño compartido con las apps "Ce" (Celander, Cenotes): cristal esmerilado sobre un fondo
 // suave de lavanda/índigo. Ver docs/DESIGN.md. Los valores son los mismos que en Cenotes.
 
-/** Curated accent colours, each tuned for light and dark (same idea as Celander's calendar colours). */
-enum class Accent(
-    @StringRes val label: Int,
-    val light: Color,
-    val dark: Color,
-    val lightContainer: Color,
-    val darkContainer: Color,
-) {
-    INDIGO(R.string.accent_indigo, Color(0xFF4A4FD8), Color(0xFFA9ADFF), Color(0xFFE1E2FB), Color(0xFF2C3275)),
-    VIOLET(R.string.accent_violet, Color(0xFF7B4FD6), Color(0xFFC7AEFF), Color(0xFFECE2FB), Color(0xFF45307A)),
-    BLUE(R.string.accent_blue, Color(0xFF1F6FD1), Color(0xFF9CC7FF), Color(0xFFDCEAFB), Color(0xFF1D3F6E)),
-    GREEN(R.string.accent_green, Color(0xFF2E8B57), Color(0xFF8FD9AE), Color(0xFFDDF1E5), Color(0xFF1E4D35)),
-    CORAL(R.string.accent_coral, Color(0xFFD9534F), Color(0xFFFFB0A8), Color(0xFFFBE1DE), Color(0xFF6E2A27)),
-    AMBER(R.string.accent_amber, Color(0xFFB7791F), Color(0xFFF5C77E), Color(0xFFF8EBD3), Color(0xFF5E4214)),
+/**
+ * One accent colour in its four shades: the colour itself on light surfaces, a lighter one for dark surfaces, and
+ * the soft "container" tints behind selected things (light and dark). All four come from the same hue.
+ */
+@Immutable
+data class AccentPalette(val light: Color, val dark: Color, val lightContainer: Color, val darkContainer: Color)
+
+/** The four shades of [base] (its hue, with the lightness each use needs). */
+fun paletteFrom(base: Color): AccentPalette {
+    val hsl = hslOf(base)
+    fun shade(saturation: Float, lightness: Float) = Color.hsl(hsl[0], saturation.coerceIn(0f, 1f), lightness)
+    return AccentPalette(
+        light = base,
+        dark = shade(hsl[1] * 0.9f + 0.1f, 0.78f),
+        lightContainer = shade(hsl[1] * 0.75f, 0.93f),
+        darkContainer = shade(hsl[1] * 0.5f, 0.30f),
+    )
+}
+
+/** Hue (0–360), saturation and lightness (0–1) of [color]; plain maths, so it also runs in unit tests. */
+private fun hslOf(color: Color): FloatArray {
+    val r = color.red
+    val g = color.green
+    val b = color.blue
+    val max = maxOf(r, g, b)
+    val min = minOf(r, g, b)
+    val l = (max + min) / 2f
+    if (max == min) return floatArrayOf(0f, 0f, l)
+    val d = max - min
+    val s = if (l > 0.5f) d / (2f - max - min) else d / (max + min)
+    val h = when (max) {
+        r -> (g - b) / d + (if (g < b) 6f else 0f)
+        g -> (b - r) / d + 2f
+        else -> (r - g) / d + 4f
+    } * 60f
+    return floatArrayOf(h % 360f, s, l)
+}
+
+/**
+ * A colour of the free hue bar ("custom colour"), as calm as the curated ones: yellows and cyans are naturally much
+ * brighter than blues at the same lightness, so they are darkened a little (yellow turns ochre, like Celander's).
+ */
+fun customPalette(hue: Float): AccentPalette {
+    val h = hue.coerceIn(0f, 359.9f)
+    fun bump(center: Float, width: Float) = (1f - kotlin.math.abs(h - center) / width).coerceAtLeast(0f)
+    val lightness = 0.48f - 0.14f * bump(75f, 70f) - 0.08f * bump(175f, 45f)
+    val saturation = 0.58f - 0.08f * bump(75f, 70f)
+    return paletteFrom(Color.hsl(h, saturation, lightness))
+}
+
+/**
+ * The accent colours: the same eight as Celander, in its order. They colour buttons, selections, the background and
+ * the glass, and also mark accounts (Settings → the account). The names stay the stored ones (CORAL, AMBER…).
+ */
+enum class Accent(@StringRes val label: Int, base: Color) {
+    INDIGO(R.string.accent_indigo, Color(0xFF4A54D6)),
+    BLUE(R.string.accent_blue, Color(0xFF296DB5)),
+    TEAL(R.string.accent_teal, Color(0xFF1C7B77)),
+    GREEN(R.string.accent_green, Color(0xFF1D7F46)),
+    AMBER(R.string.accent_amber, Color(0xFF8F6721)),
+    CORAL(R.string.accent_coral, Color(0xFFB54529)),
+    PINK(R.string.accent_pink, Color(0xFFBD2B65)),
+    VIOLET(R.string.accent_violet, Color(0xFF8B3AD2)),
+    ;
+
+    val palette: AccentPalette = paletteFrom(base)
+    val light: Color get() = palette.light
+    val dark: Color get() = palette.dark
+    val lightContainer: Color get() = palette.lightContainer
+    val darkContainer: Color get() = palette.darkContainer
+}
+
+/** Light or dark: following the phone, or always one of them. */
+enum class ThemeMode { SYSTEM, LIGHT, DARK }
+
+/** Whether the app is dark now, given [mode]. */
+@Composable
+fun ThemeMode.isDark(): Boolean = when (this) {
+    ThemeMode.SYSTEM -> isSystemInDarkTheme()
+    ThemeMode.LIGHT -> false
+    ThemeMode.DARK -> true
 }
 
 /** Colours for the frosted-glass surfaces; their opacity follows the transparency setting. */
@@ -52,7 +119,7 @@ data class GlassColors(
     val shadow: Color,
 )
 
-fun glassColors(dark: Boolean, transparency: Int, accent: Accent): GlassColors {
+fun glassColors(dark: Boolean, transparency: Int, accent: AccentPalette): GlassColors {
     val t = transparency.coerceIn(0, 100) / 100f
     val cardAlpha = 0.12f + 0.8f * (1f - t) // 65 % → 0.40
     val chromeAlpha = (cardAlpha + 0.3f).coerceAtMost(0.92f)
@@ -84,12 +151,12 @@ fun glassColors(dark: Boolean, transparency: Int, accent: Accent): GlassColors {
     }
 }
 
-val LocalGlass = staticCompositionLocalOf { glassColors(dark = false, transparency = 65, accent = Accent.INDIGO) }
+val LocalGlass = staticCompositionLocalOf { glassColors(dark = false, transparency = 65, accent = Accent.INDIGO.palette) }
 
 @Composable
 fun CemailTheme(settings: AppSettings = AppSettings(), content: @Composable () -> Unit) {
-    val dark = isSystemInDarkTheme()
-    val accent = settings.accent
+    val dark = settings.themeMode.isDark()
+    val accent = settings.accentPalette
     val colors = if (dark) {
         darkColorScheme(
             primary = accent.dark,

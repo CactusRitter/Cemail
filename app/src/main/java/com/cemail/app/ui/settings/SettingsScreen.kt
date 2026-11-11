@@ -69,6 +69,35 @@ import com.cemail.app.ui.icons.CemailIcons
 import com.cemail.app.ui.mail.swipeIcon
 import java.text.NumberFormat
 import kotlin.math.roundToInt
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
+import com.cemail.app.ui.glass.GlassKind
+import com.cemail.app.ui.glass.bounceSpring
+import com.cemail.app.ui.glass.glass
+import com.cemail.app.ui.glass.pressScale
+import com.cemail.app.ui.mail.shade
+import com.cemail.app.ui.theme.Accent
+import com.cemail.app.ui.theme.ThemeMode
 
 /**
  * The screens of Settings. A route is a plain string so it survives a rotation (the caller keeps it) and the system
@@ -349,8 +378,34 @@ private fun NotificationsPage(settings: AppSettings, repo: SettingsRepository) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AppearancePage(settings: AppSettings, repo: SettingsRepository) {
+    // Like Celander's "Design": light or dark, the colour (eight, or any hue), and the glass.
+    SettingsCard {
+        Text(stringResource(R.string.theme_mode_title), style = MaterialTheme.typography.titleSmall)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(
+                ThemeMode.SYSTEM to R.string.theme_system,
+                ThemeMode.LIGHT to R.string.theme_light,
+                ThemeMode.DARK to R.string.theme_dark,
+            ).forEach { (mode, label) ->
+                ChoiceChip(stringResource(label), settings.themeMode == mode) { repo.setThemeMode(mode) }
+            }
+        }
+        HorizontalDivider(Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)
+        Text(stringResource(R.string.accent_title), style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.accent_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Accent.entries.forEach { accent ->
+                AccentDot(accent.shade(), stringResource(accent.label), selected = settings.customHue == null && settings.accent == accent) {
+                    repo.setAccent(accent)
+                }
+            }
+        }
+        Text(stringResource(R.string.accent_custom), Modifier.padding(top = 4.dp), style = MaterialTheme.typography.titleSmall)
+        HueBar(settings.customHue, repo::setCustomHue)
+    }
     SettingsCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.settings_transparency_title), Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
@@ -361,12 +416,66 @@ private fun AppearancePage(settings: AppSettings, repo: SettingsRepository) {
             )
         }
         Text(stringResource(R.string.settings_transparency_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Slider(
+        com.cemail.app.ui.glass.GlassSlider(
             value = settings.transparency.toFloat(),
             onValueChange = { repo.setTransparency(it.roundToInt()) },
             valueRange = 0f..100f,
         )
+        // How the glass looks right now: coloured bars behind a floating pill.
+        Box(
+            Modifier.fillMaxWidth().height(120.dp).clip(RoundedCornerShape(20.dp)).background(MaterialTheme.colorScheme.background)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)) // tinted like the app's background
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                val c = MaterialTheme.colorScheme
+                listOf(c.primary to 0.5f, c.error to 0.8f, Accent.TEAL.shade() to 0.35f, Accent.AMBER.shade() to 0.65f).forEach { (color, part) ->
+                    Box(Modifier.fillMaxWidth(part).height(14.dp).clip(CircleShape).background(color.copy(alpha = 0.8f)))
+                }
+            }
+            Text(
+                stringResource(R.string.preview),
+                Modifier.align(Alignment.Center).glass(CircleShape, GlassKind.Chrome, elevation = 6.dp).padding(horizontal = 22.dp, vertical = 10.dp),
+                style = MaterialTheme.typography.titleSmall,
+            )
+        }
     }
+}
+
+/** One accent colour to pick: a round swatch, with a check and a ring when it is the one in use. */
+@Composable
+private fun AccentDot(color: Color, name: String, selected: Boolean, onClick: () -> Unit) {
+    val ring by animateDpAsState(if (selected) 3.dp else 0.dp, bounceSpring(), label = "ring")
+    Box(
+        Modifier
+            .pressScale(0.9f)
+            .size(44.dp)
+            .then(if (ring > 0.dp) Modifier.border(ring, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f), CircleShape) else Modifier)
+            .padding(ring + 2.dp)
+            .clip(CircleShape)
+            .background(color)
+            .clickable(role = Role.RadioButton, onClickLabel = name, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (selected) Icon(Icons.Filled.Check, name, Modifier.size(20.dp), tint = Color.White)
+    }
+}
+
+/**
+ * Any colour: a rainbow bar to tap or drag along (like Celander's "Custom colour"). The knob shows the chosen hue;
+ * without one (an accent of the list is in use) there is no knob.
+ */
+@Composable
+private fun HueBar(hue: Float?, onHue: (Float) -> Unit) {
+    // The same colours the custom accent will have, so the bar shows exactly what each point gives.
+    val stops = remember { (0..24).map { com.cemail.app.ui.theme.customPalette((it * 15f).coerceAtMost(359.9f)).light } }
+    com.cemail.app.ui.glass.GlassSlider(
+        value = hue,
+        onValueChange = onHue,
+        valueRange = 0f..359.9f,
+        track = Brush.horizontalGradient(stops),
+        knobColor = hue?.let { com.cemail.app.ui.theme.customPalette(it).light } ?: Color.Transparent,
+    )
 }
 
 /** The activity log can always be shared; the last crash shows only if there was one. */

@@ -16,6 +16,7 @@ import com.cemail.app.ui.account.AccountViewModel
 import com.cemail.app.ui.mail.MailApp
 import com.cemail.app.ui.mail.MailViewModel
 import com.cemail.app.ui.theme.CemailTheme
+import com.cemail.app.ui.theme.isDark
 
 class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
@@ -39,6 +40,17 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             val settings by app.settings.state.collectAsStateWithLifecycle()
+            // Light or dark chosen in Settings (not the phone's): the clock and icons of the system bars follow it.
+            val dark = settings.themeMode.isDark()
+            androidx.compose.runtime.LaunchedEffect(dark) {
+                val transparent = android.graphics.Color.TRANSPARENT
+                val style = if (dark) {
+                    androidx.activity.SystemBarStyle.dark(transparent)
+                } else {
+                    androidx.activity.SystemBarStyle.light(transparent, transparent)
+                }
+                enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+            }
             CemailTheme(settings) {
                 val accountVm: AccountViewModel = viewModel(factory = AccountViewModel.Factory(app.accountRepository, app.googleAuth, app.microsoftAuth))
                 val accounts by accountVm.state.collectAsStateWithLifecycle()

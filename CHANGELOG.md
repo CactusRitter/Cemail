@@ -3,6 +3,11 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 1.3.0 — 2026-11-11
+- **Apariencia como en Celander**: claro u oscuro (Sistema, Claro, Oscuro), **ocho colores de acento** (los de Celander) y un **color personalizado** con barra de tono. El color tiñe botones, selecciones, el cristal y el fondo.
+- La transparencia del cristal tiene ahora una vista previa y un deslizador con el estilo de la app (también la barra de tono).
+- Los colores de cuenta usan los mismos ocho colores.
+
 ## 1.2.0 — 2026-11-11
 - **Cemail es una app de correo para Android**: aparece al tocar una dirección de correo (enlaces `mailto:` en webs, PDF u otras apps; abre un correo nuevo con destinatario, asunto y texto puestos), en el menú **Compartir** de cualquier app (archivos e imágenes llegan como adjuntos, y el texto compartido como mensaje) y en los botones de otras apps que abren «la app de correo». En el selector se puede marcar «Siempre».
 - Seguridad: solo se adjuntan archivos que otra app comparte; nunca archivos internos de Cemail.

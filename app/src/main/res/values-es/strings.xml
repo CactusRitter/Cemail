@@ -6,8 +6,18 @@
     <string name="accent_violet">Violeta</string>
     <string name="accent_blue">Azul</string>
     <string name="accent_green">Verde</string>
-    <string name="accent_coral">Coral</string>
-    <string name="accent_amber">Ámbar</string>
+    <string name="accent_coral">Teja</string>
+    <string name="accent_amber">Ocre</string>
+    <string name="accent_teal">Verde azulado</string>
+    <string name="accent_pink">Frambuesa</string>
+    <string name="theme_mode_title">Claro u oscuro</string>
+    <string name="theme_system">Sistema</string>
+    <string name="theme_light">Claro</string>
+    <string name="theme_dark">Oscuro</string>
+    <string name="accent_title">Color</string>
+    <string name="accent_body">Para botones, selecciones y el fondo.</string>
+    <string name="accent_custom">Color personalizado</string>
+    <string name="preview">Vista previa</string>
 
     <!-- Carpetas -->
     <string name="box_inbox">Recibidos</string>
@@ -313,7 +323,7 @@
     <string name="settings_row_messages_body">Imágenes, agrupación y etiqueta del remitente</string>
     <string name="settings_notifications_page">Notificaciones y sincronización</string>
     <string name="settings_row_notifications_body">Avisos, frecuencia de comprobación y deshacer envío</string>
-    <string name="settings_row_appearance_body">Transparencia del cristal</string>
+    <string name="settings_row_appearance_body">Claro u oscuro, color y cristal</string>
     <string name="settings_row_diagnostics_body">Registro de actividad y último error</string>
     <string name="settings_gestures_title">Gestos de deslizar</string>
     <string name="settings_swipe_summary">Derecha: %1$s · Izquierda: %2$s</string>

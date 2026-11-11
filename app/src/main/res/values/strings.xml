@@ -8,8 +8,18 @@
     <string name="accent_violet">Violet</string>
     <string name="accent_blue">Blue</string>
     <string name="accent_green">Green</string>
-    <string name="accent_coral">Coral</string>
-    <string name="accent_amber">Amber</string>
+    <string name="accent_coral">Rust</string>
+    <string name="accent_amber">Ochre</string>
+    <string name="accent_teal">Teal</string>
+    <string name="accent_pink">Raspberry</string>
+    <string name="theme_mode_title">Light or dark</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="accent_title">Colour</string>
+    <string name="accent_body">For buttons, selections and the background.</string>
+    <string name="accent_custom">Custom colour</string>
+    <string name="preview">Preview</string>
 
     <!-- Folders -->
     <string name="box_inbox">Inbox</string>
@@ -315,7 +325,7 @@
     <string name="settings_row_messages_body">Images, grouping and sender label</string>
     <string name="settings_notifications_page">Notifications and sync</string>
     <string name="settings_row_notifications_body">Alerts, check interval and undo send</string>
-    <string name="settings_row_appearance_body">Glass transparency</string>
+    <string name="settings_row_appearance_body">Light or dark, colour and glass</string>
     <string name="settings_row_diagnostics_body">Activity log and last error</string>
     <string name="settings_gestures_title">Swipe gestures</string>
     <string name="settings_swipe_summary">Right: %1$s · Left: %2$s</string>
