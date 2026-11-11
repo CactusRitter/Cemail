@@ -15,6 +15,9 @@
     <string name="style_classic">Clásico</string>
     <string name="style_neutral">Neutro</string>
     <string name="style_aurora">Aurora</string>
+    <string name="style_sunset">Atardecer</string>
+    <string name="style_ocean">Océano</string>
+    <string name="style_neon">Neón</string>
     <string name="theme_mode_title">Claro u oscuro</string>
     <string name="theme_system">Sistema</string>
     <string name="theme_light">Claro</string>
