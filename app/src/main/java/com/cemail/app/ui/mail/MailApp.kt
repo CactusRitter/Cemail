@@ -118,8 +118,10 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
     var showSettings by rememberSaveable { mutableStateOf(false) }
     var settingsRoute by rememberSaveable { mutableStateOf(SettingsRoute.MAIN) }
     val acc by accountVm.state.collectAsStateWithLifecycle()
-    // New messages are written from the selected account (the first one in the unified view).
-    val me = (acc.accounts.firstOrNull { it.id == acc.selectedId } ?: acc.accounts.firstOrNull())?.email ?: DEMO_ME
+    // New messages are written from the selected account; in the unified view, from the default one of Settings.
+    val defaultFrom = acc.accounts.firstOrNull { it.id == acc.selectedId }
+        ?: acc.accounts.firstOrNull { it.id == settings.defaultAccountId }
+        ?: acc.accounts.firstOrNull()
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { accountVm.onSignInResult(it.data) }
     val startSignIn = { accountVm.startSignIn()?.let { launcher.launch(it) }; Unit }
     val microsoftLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { accountVm.onMicrosoftResult(it.data) }
@@ -139,6 +141,8 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
     }
     val state by vm.state.collectAsStateWithLifecycle()
     val draft = state.draft
+    // The address the message being written goes out from (its chosen account, or the default one).
+    val me = (acc.accounts.firstOrNull { it.id == draft?.fromAccountId } ?: defaultFrom)?.email ?: DEMO_ME
     val open = state.open
     val drawer = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -283,7 +287,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                     label = "screen",
                 ) { target ->
                     when (target) {
-                        Screen.COMPOSE -> lastDraft?.let { ComposeScreen(it, vm, me) }
+                        Screen.COMPOSE -> lastDraft?.let { ComposeScreen(it, vm, acc.accounts, defaultFrom) }
                         Screen.SETTINGS -> SettingsScreen(
                             settings, settingsRepo, acc.accounts, settingsRoute, { settingsRoute = it }, accountVm::remove,
                             onAddGoogle = startSignIn, onAddMicrosoft = startMicrosoft, onAddImap = { imapForm = true },

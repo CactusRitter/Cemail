@@ -58,6 +58,8 @@ data class Draft(
     val signed: Boolean = false,
     /** The account's HTML signature, added when the message is sent (null = none, or removed for this message). */
     val signatureHtml: String? = null,
+    /** The account (id) the message is sent from; null until the compose screen picks the default one. */
+    val fromAccountId: String? = null,
     val threadId: String? = null,
     val inReplyTo: String? = null,
     val references: String? = null,
@@ -99,8 +101,15 @@ data class MailUiState(
     val thread: List<Mail> = emptyList(),
 )
 
-class MailViewModel(private val repo: MailRepository) : ViewModel() {
+class MailViewModel(
+    private val repo: MailRepository,
+    /** The store of another account (by id), so a message can be sent from an account other than the one on screen. */
+    private val outgoing: (String) -> MailRepository? = { null },
+) : ViewModel() {
     private val ui = MutableStateFlow(Ui())
+
+    /** Where a message written from [accountId] is saved and sent: that account's own store, or this one. */
+    private fun sender(accountId: String?): MailRepository = accountId?.let(outgoing) ?: repo
     private var undoCounter = 0L
 
     /** Ids found by the full-text search for the current query (empty while there is no query or it uses operators). */
@@ -245,7 +254,7 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
         com.cemail.app.AppLog.i("undo", "restoring ${u.previous.size} message(s), folder before: ${u.previous.map { it.folder }}")
         if (u.previous.isNotEmpty()) repo.restore(u.previous)
         u.cancelSend?.let { id ->
-            repo.cancelScheduled(id)
+            sender(u.restore?.fromAccountId).cancelScheduled(id)
             u.restore?.let { draft -> ui.update { it.copy(draft = draft) } }
         }
         ui.update { it.copy(undo = null) }
@@ -299,7 +308,7 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
                 draft = Draft(
                     to = mail.senderName, subject = mail.subject, body = mail.body,
                     cc = mail.cc, bcc = mail.bcc, html = mail.bodyHtml?.takeIf { h -> h.isNotBlank() }, attachments = attachments,
-                    signed = true, threadId = mail.threadId, inReplyTo = mail.inReplyTo, references = mail.references,
+                    signed = true, fromAccountId = mail.accountId.takeIf { id -> id.isNotBlank() }, threadId = mail.threadId, inReplyTo = mail.inReplyTo, references = mail.references,
                 ),
             )
         }
@@ -310,7 +319,8 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
         val d = ui.value.draft ?: return
         ui.update { it.copy(draft = null) }
         if (d.to.isNotBlank() || d.subject.isNotBlank() || d.body.isNotBlank()) {
-            repo.add(d.toMail(repo.nextId(), me, Folder.DRAFTS))
+            val store = sender(d.fromAccountId)
+            store.add(d.toMail(store.nextId(), me, Folder.DRAFTS))
             ui.update { it.copy(undo = UndoEvent(++undoCounter, R.string.done_draft_saved, emptyList())) }
         }
     }
@@ -322,16 +332,17 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
     fun send(me: String, undoMillis: Long = 0, at: Long? = null) {
         val d = ui.value.draft ?: return
         ui.update { it.copy(draft = null) }
-        val mail = d.toMail(repo.nextId(), me, Folder.SENT)
+        val store = sender(d.fromAccountId)
+        val mail = d.toMail(store.nextId(), me, Folder.SENT)
         val sendAt = at ?: undoMillis.takeIf { it > 0 }?.let { System.currentTimeMillis() + it }
         if (sendAt == null) {
             // send() puts it in Sent at once and delivers it (a failure leaves it in Drafts).
-            repo.send(mail)
+            store.send(mail)
             ui.update { it.copy(undo = UndoEvent(++undoCounter, R.string.done_sent, emptyList())) }
             return
         }
         viewModelScope.launch {
-            val id = repo.schedule(mail, sendAt)
+            val id = store.schedule(mail, sendAt)
             ui.update {
                 it.copy(
                     undo = UndoEvent(
@@ -355,7 +366,7 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
             finalBody = body.trimEnd() + "\n\n-- \n" + SignatureHtml.toText(signature)
         }
         return Mail(
-            id = id, senderName = cleanRecipients(to).joinToString(", "), senderEmail = me, subject = subject, body = finalBody,
+            id = id, accountId = fromAccountId.orEmpty(), senderName = cleanRecipients(to).joinToString(", "), senderEmail = me, subject = subject, body = finalBody,
             timeMillis = System.currentTimeMillis(), folder = folder, read = true,
             hasAttachment = attachments.isNotEmpty(), outgoing = attachments,
             cc = cleanRecipients(cc).joinToString(", "), bcc = cleanRecipients(bcc).joinToString(", "),
@@ -400,9 +411,12 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
         com.cemail.app.data.mail.sendersOf(repo.mails.first())
     suspend fun emlFile(id: Long): java.io.File? = repo.emlFile(id)
 
-    class Factory(private val repo: MailRepository) : ViewModelProvider.Factory {
+    class Factory(
+        private val repo: MailRepository,
+        private val outgoing: (String) -> MailRepository? = { null },
+    ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = MailViewModel(repo) as T
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = MailViewModel(repo, outgoing) as T
     }
 }
 

@@ -30,6 +30,8 @@ data class AppSettings(
     val swipe: SwipeConfig = SwipeConfig(),
     /** Instant notifications through the push relay (only has an effect when the keys are set). */
     val pushEnabled: Boolean = true,
+    /** The account (by id) new messages are sent from when the screen does not say which (the unified inbox); null = the first one. */
+    val defaultAccountId: String? = null,
 ) {
     /** The interval that applies to this account: its own, or the general one. */
     fun syncMinutesFor(accountId: String): Int = accountSync[accountId] ?: syncMinutes
@@ -55,6 +57,7 @@ class SettingsRepository(context: Context) {
         undoSendSeconds = prefs.getInt(KEY_UNDO_SEND, 5),
         accountSync = prefs.all.filterKeys { it.startsWith(KEY_ACCOUNT_SYNC) }.mapNotNull { (k, v) -> (v as? Int)?.let { k.removePrefix(KEY_ACCOUNT_SYNC) to it } }.toMap(),
         pushEnabled = prefs.getBoolean(KEY_PUSH, true),
+        defaultAccountId = prefs.getString(KEY_DEFAULT_ACCOUNT, null),
         swipe = SwipeConfig(
             right = prefs.getString(KEY_SWIPE_RIGHT, null)?.let { n -> SwipeAction.entries.firstOrNull { it.name == n } } ?: SwipeAction.ARCHIVE,
             left = prefs.getString(KEY_SWIPE_LEFT, null)?.let { n -> SwipeAction.entries.firstOrNull { it.name == n } } ?: SwipeAction.TRASH,
@@ -136,6 +139,11 @@ class SettingsRepository(context: Context) {
         _state.value = _state.value.copy(pushEnabled = value)
     }
 
+    fun setDefaultAccount(accountId: String?) {
+        prefs.edit().apply { if (accountId == null) remove(KEY_DEFAULT_ACCOUNT) else putString(KEY_DEFAULT_ACCOUNT, accountId) }.apply()
+        _state.value = _state.value.copy(defaultAccountId = accountId)
+    }
+
     fun setSwipeRight(action: SwipeAction) {
         prefs.edit().putString(KEY_SWIPE_RIGHT, action.name).apply()
         _state.value = _state.value.copy(swipe = _state.value.swipe.copy(right = action))
@@ -178,6 +186,7 @@ class SettingsRepository(context: Context) {
 
     private companion object {
         const val KEY_PUSH = "push_enabled"
+        const val KEY_DEFAULT_ACCOUNT = "default_account"
         const val KEY_SWIPE_CONFIRM = "swipe_confirm"
         const val KEY_UNDO_SECONDS = "undo_seconds"
         const val KEY_SWIPE_RIGHT = "swipe_right"

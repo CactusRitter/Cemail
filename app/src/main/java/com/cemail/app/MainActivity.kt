@@ -59,7 +59,7 @@ class MainActivity : ComponentActivity() {
                         else -> app.unifiedRepository(ids)
                     }
                 }
-                val vm: MailViewModel = viewModel(key = scopeKey, factory = MailViewModel.Factory(repo))
+                val vm: MailViewModel = viewModel(key = scopeKey, factory = MailViewModel.Factory(repo) { id -> if (id in ids) app.mailRepositoryFor(id) else null })
                 MailApp(vm, accountVm, settings, app.settings)
             }
         }

@@ -64,9 +64,29 @@ import com.cemail.app.ui.mail.Avatar
 import com.cemail.app.ui.mail.HtmlBody
 import kotlinx.coroutines.launch
 
-/** The accounts, one big row each (tap for its own settings), and a single "Add" button after them. */
+/**
+ * The accounts, one big row each (tap for its own settings), and a single "Add" button after them. With several
+ * accounts, a card on top picks the one new messages are sent from in the unified inbox.
+ */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun AccountsPage(accounts: List<AccountEntity>, onRoute: (String) -> Unit) {
+internal fun AccountsPage(accounts: List<AccountEntity>, settings: AppSettings, repo: SettingsRepository, onRoute: (String) -> Unit) {
+    if (accounts.size > 1) {
+        val current = accounts.firstOrNull { it.id == settings.defaultAccountId } ?: accounts.first()
+        SettingsCard {
+            Text(stringResource(R.string.settings_default_account_title), style = MaterialTheme.typography.titleSmall)
+            Text(
+                stringResource(R.string.settings_default_account_body),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                accounts.forEach { account ->
+                    ChoiceChip(account.email, account.id == current.id) { repo.setDefaultAccount(account.id) }
+                }
+            }
+        }
+    }
     if (accounts.isEmpty()) {
         Text(
             stringResource(R.string.settings_no_accounts),

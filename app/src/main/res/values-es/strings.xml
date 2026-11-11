@@ -76,6 +76,10 @@
 
     <!-- Redactar -->
     <string name="compose_to">Para</string>
+    <string name="compose_from">De</string>
+    <string name="compose_from_pick">Elegir la cuenta desde la que enviar</string>
+    <string name="settings_default_account_title">Cuenta predeterminada</string>
+    <string name="settings_default_account_body">Los mensajes nuevos que escribas en la bandeja unificada se envían desde esta cuenta. En la bandeja de una cuenta, y al responder, el mensaje sale de esa cuenta.</string>
     <string name="compose_subject">Asunto</string>
     <string name="compose_body">Escribe tu mensaje</string>
     <string name="compose_send">Enviar</string>

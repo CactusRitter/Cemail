@@ -3,6 +3,11 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.35.0 — 2026-11-11
+- **Campo «De» al redactar**: siempre se ve desde qué cuenta sale el mensaje, y un desplegable con todas las cuentas conectadas permite cambiarla (sin escribir nada). Al cambiar de cuenta se cambia también la firma.
+- **Cuenta predeterminada** (Ajustes → Cuentas): desde ella se envían los mensajes nuevos de la bandeja unificada. En la bandeja de una cuenta se usa esa cuenta, y al responder (o darse de baja por correo) se usa la cuenta a la que llegó el mensaje.
+- Arreglado: en la bandeja unificada, las respuestas y los borradores salían siempre de la primera cuenta.
+
 ## 0.34.0 — 2026-11-11
 - **Notificaciones instantáneas también para Microsoft** (Outlook, Hotmail): la app se suscribe a los cambios de la bandeja de entrada con Microsoft Graph y el mismo relé de Cloudflare despierta el móvil por FCM. Probado con una cuenta outlook.es: unos 6 s desde que se envía el correo hasta que está sincronizado. La suscripción se renueva cada día y se borra al apagar el interruptor.
 - Documentado en `docs/PUSH.md` y en la política de privacidad.

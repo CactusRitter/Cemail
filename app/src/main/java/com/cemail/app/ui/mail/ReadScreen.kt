@@ -130,6 +130,8 @@ fun ReadScreen(
                 to = if (forward) "" else mail.senderEmail,
                 subject = subject,
                 body = "\n\n" + resources.getString(R.string.quote_header, quoteWhen, mail.senderName) + "\n" + quoted,
+                // Answered from the account the message arrived at.
+                fromAccountId = mail.accountId.takeIf { it.isNotBlank() },
             ),
             mail.id, all, forward,
         )
@@ -303,7 +305,7 @@ fun ReadScreen(
         }
 
         if (unsubscribing) unsubscribe?.let { info ->
-            UnsubscribeDialog(mail.senderName, info, vm, onDismiss = { unsubscribing = false })
+            UnsubscribeDialog(mail.senderName, mail.accountId, info, vm, onDismiss = { unsubscribing = false })
         }
         if (attachPanel) AttachmentsPopup(mail.id, attachments, vm) { attachPanel = false }
         if (labelPanel) LabelsPopup(mail, accountLabels, vm) { labelPanel = false }
@@ -611,7 +613,7 @@ private val SUBJECT_PREFIX = Regex("""^\s*(re|rv|aw|sv|fwd?|wg|tr)\s*:""", Regex
 
 /** Asks before leaving a mailing list, then does it the way the list allows: one click, its page, or a message. */
 @Composable
-private fun UnsubscribeDialog(sender: String, info: com.cemail.app.data.mail.UnsubscribeInfo, vm: MailViewModel, onDismiss: () -> Unit) {
+private fun UnsubscribeDialog(sender: String, accountId: String, info: com.cemail.app.data.mail.UnsubscribeInfo, vm: MailViewModel, onDismiss: () -> Unit) {
     val context = LocalContext.current
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val body = when {
@@ -636,7 +638,7 @@ private fun UnsubscribeDialog(sender: String, info: com.cemail.app.data.mail.Uns
                     } catch (_: Exception) {
                         Toast.makeText(context, R.string.unsub_failed, Toast.LENGTH_LONG).show()
                     }
-                    info.mailto != null -> vm.newDraft(Draft(to = info.mailto, subject = info.mailtoSubject ?: "unsubscribe"))
+                    info.mailto != null -> vm.newDraft(Draft(to = info.mailto, subject = info.mailtoSubject ?: "unsubscribe", fromAccountId = accountId.takeIf { it.isNotBlank() }))
                 }
             }) { Text(stringResource(R.string.action_unsubscribe)) }
         },

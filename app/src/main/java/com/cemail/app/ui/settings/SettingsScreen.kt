@@ -168,7 +168,7 @@ fun SettingsScreen(
                 val targetAccount = SettingsRoute.accountId(target)?.let { id -> accounts.firstOrNull { it.id == id } }
                 when {
                     target == SettingsRoute.MAIN -> MainPage(settings, accounts.size, onRoute)
-                    target == SettingsRoute.ACCOUNTS -> AccountsPage(accounts, onRoute)
+                    target == SettingsRoute.ACCOUNTS -> AccountsPage(accounts, settings, repo, onRoute)
                     target == SettingsRoute.ADD -> AddAccountPage(onAddGoogle, onAddMicrosoft, onAddImap)
                     targetAccount != null -> AccountDetailPage(targetAccount, settings, repo) {
                         onRoute(SettingsRoute.ACCOUNTS)

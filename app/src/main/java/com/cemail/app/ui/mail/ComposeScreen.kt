@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -35,6 +36,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -95,7 +97,15 @@ import kotlinx.coroutines.withContext
 
 @Composable
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
-fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
+fun ComposeScreen(
+    draft: Draft,
+    vm: MailViewModel,
+    accounts: List<com.cemail.app.data.db.AccountEntity>,
+    defaultFrom: com.cemail.app.data.db.AccountEntity?,
+) {
+    // The account the message goes out from: the one the draft names (a reply: where the message arrived), or the default.
+    val from = accounts.firstOrNull { it.id == draft.fromAccountId } ?: defaultFrom
+    val me = from?.email ?: DEMO_ME
     val colors = TextFieldDefaults.colors(
         focusedContainerColor = Color.Transparent,
         unfocusedContainerColor = Color.Transparent,
@@ -140,8 +150,15 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
     val rich = rememberRichTextState()
     val currentDraft by rememberUpdatedState(draft)
     LaunchedEffect(rich) {
-        // Addresses that arrive already filled in (a reply) show as pills from the start.
-        currentDraft.let { vm.editDraft { d -> d.copy(to = committedRecipients(d.to), cc = committedRecipients(d.cc), bcc = committedRecipients(d.bcc)) } }
+        // Addresses that arrive already filled in (a reply) show as pills from the start; the sending account is fixed now.
+        currentDraft.let {
+            vm.editDraft { d ->
+                d.copy(
+                    to = committedRecipients(d.to), cc = committedRecipients(d.cc), bcc = committedRecipients(d.bcc),
+                    fromAccountId = d.fromAccountId ?: from?.id,
+                )
+            }
+        }
         // The account's signature goes in once, below the cursor (and above the quoted text of a reply).
         var initial = currentDraft.body
         if (!currentDraft.signed) {
@@ -183,6 +200,36 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Column(Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card)) {
+                if (from != null) {
+                    FromField(from, accounts) { picked ->
+                        if (picked.id == from.id) return@FromField
+                        // The signature follows the account: the old one is swapped for the new one's.
+                        val settings = (context.applicationContext as com.cemail.app.CemailApplication).settings
+                        val oldPlain = settings.signature(from.email).trim()
+                        val newPlain = settings.signature(picked.email).trim()
+                        val oldHtml = settings.signatureHtml(from.email)
+                        val newHtml = settings.signatureHtml(picked.email)
+                        val text = rich.toPlainText()
+                        val oldBlock = "-- \n$oldPlain"
+                        val newText = when {
+                            newHtml != null -> if (oldPlain.isNotEmpty()) text.replace("\n\n$oldBlock", "") else text
+                            oldPlain.isNotEmpty() && text.contains(oldBlock) ->
+                                if (newPlain.isEmpty()) text.replace("\n\n$oldBlock", "") else text.replace(oldBlock, "-- \n$newPlain")
+                            oldPlain.isEmpty() && oldHtml == null && newPlain.isNotEmpty() -> "\n\n-- \n$newPlain$text"
+                            else -> text
+                        }
+                        if (newText != text) {
+                            rich.setText(newText)
+                            rich.selection = androidx.compose.ui.text.TextRange(0)
+                        }
+                        vm.editDraft { d ->
+                            // An HTML signature the user removed from this message stays removed.
+                            val keepHtml = d.signatureHtml != null || oldHtml == null
+                            d.copy(fromAccountId = picked.id, signatureHtml = if (keepHtml) newHtml else null)
+                        }
+                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                }
                 RecipientField(
                     label = stringResource(R.string.compose_to),
                     value = draft.to,
@@ -332,6 +379,80 @@ fun ComposeScreen(draft: Draft, vm: MailViewModel, me: String) {
         // Formatting toolbar, floating over the keyboard.
         Box(Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.safeDrawing).padding(12.dp)) {
             FormatBar(rich)
+        }
+    }
+}
+
+/**
+ * "From": the account the message is sent from. A tap opens the list of every connected account; nothing is typed,
+ * since only those accounts can send.
+ */
+@Composable
+private fun FromField(
+    from: com.cemail.app.data.db.AccountEntity,
+    accounts: List<com.cemail.app.data.db.AccountEntity>,
+    onPick: (com.cemail.app.data.db.AccountEntity) -> Unit,
+) {
+    var open by remember { mutableStateOf(false) }
+    val several = accounts.size > 1
+    Box {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .then(if (several) Modifier.clickable(role = Role.DropdownList) { open = true } else Modifier)
+                .padding(start = 16.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            // Same sizes as the "To" row below (its label and its address pills).
+            Text(
+                stringResource(R.string.compose_from),
+                Modifier.widthIn(min = 40.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                from.email,
+                Modifier.weight(1f),
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                if (several) Icon(Icons.Filled.KeyboardArrowDown, stringResource(R.string.compose_from_pick))
+            }
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            accounts.forEach { account ->
+                DropdownMenuItem(
+                    leadingIcon = { Avatar(account.displayName ?: account.email, size = 32) },
+                    text = {
+                        Column {
+                            Text(
+                                account.displayName ?: account.email,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = if (account.id == from.id) FontWeight.Bold else FontWeight.Normal,
+                            )
+                            if (account.displayName != null) {
+                                Text(
+                                    account.email,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    },
+                    trailingIcon = if (account.id == from.id) {
+                        { Icon(Icons.Filled.Check, null, tint = MaterialTheme.colorScheme.primary) }
+                    } else {
+                        null
+                    },
+                    onClick = {
+                        open = false
+                        onPick(account)
+                    },
+                )
+            }
         }
     }
 }

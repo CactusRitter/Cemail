@@ -78,6 +78,10 @@
 
     <!-- Compose -->
     <string name="compose_to">To</string>
+    <string name="compose_from">From</string>
+    <string name="compose_from_pick">Choose the account to send from</string>
+    <string name="settings_default_account_title">Default account</string>
+    <string name="settings_default_account_body">New messages written in the unified inbox are sent from this account. In an account\'s own inbox, and in replies, the message goes out from that account.</string>
     <string name="compose_subject">Subject</string>
     <string name="compose_body">Write your message</string>
     <string name="compose_send">Send</string>
