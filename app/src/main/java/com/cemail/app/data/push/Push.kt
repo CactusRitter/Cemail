@@ -88,7 +88,7 @@ object Push {
         withContext(Dispatchers.IO) {
             if (!available) return@withContext true
             initFirebase(app)
-            val accounts = app.accountRepository.accounts.first().filter { it.provider == "GMAIL" }
+            val accounts = app.accountRepository.accounts.first().filter { it.provider == "GMAIL" || it.provider == "MICROSOFT" }
             val prefs = app.getSharedPreferences("push", Context.MODE_PRIVATE)
             val previous = prefs.getStringSet("emails", emptySet()).orEmpty()
             val emails = if (enabled) accounts.map { it.email.lowercase() } else emptyList()
@@ -98,13 +98,30 @@ object Push {
             for (account in accounts) {
                 try {
                     app.mailRepositoryFor(account.id).setPush(if (enabled) BuildConfig.PUBSUB_TOPIC else null)
-                    AppLog.i("push", "...${account.id.takeLast(4)} Gmail ${if (enabled) "watching" else "stopped"}")
+                    AppLog.i("push", "...${account.id.takeLast(4)} ${account.provider} ${if (enabled) "watching" else "stopped"}")
                 } catch (e: Exception) {
                     ok = false
-                    AppLog.e("push", "...${account.id.takeLast(4)} Gmail watch failed", e)
+                    AppLog.e("push", "...${account.id.takeLast(4)} ${account.provider} watch failed", e)
                 }
             }
             ok
+        }
+    }
+
+    /** The address Microsoft Graph calls with change notifications (the relay's /graph). */
+    fun graphUrl(): String = BuildConfig.PUSH_URL.trimEnd('/') + "/graph"
+
+    /** Tells the relay which address a Graph subscription belongs to, and the secret Microsoft will send with it. */
+    fun registerSubscription(subscriptionId: String, email: String, clientState: String) {
+        val body = JSONObject()
+            .put("subscriptionId", subscriptionId).put("email", email).put("clientState", clientState)
+            .toString().toRequestBody(json)
+        val request = Request.Builder()
+            .url(BuildConfig.PUSH_URL.trimEnd('/') + "/register-ms")
+            .header("X-Cemail-Key", BuildConfig.PUSH_APP_KEY)
+            .post(body).build()
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) throw java.io.IOException("relay answered ${response.code}")
         }
     }
 
@@ -136,7 +153,7 @@ class PushService : FirebaseMessagingService() {
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
-        if (message.data["type"] != "gmail") return
+        if (message.data["type"] != "gmail" && message.data["type"] != "microsoft") return
         val email = message.data["email"].orEmpty()
         val app = application as CemailApplication
         AppLog.i("push", "wake-up received")

@@ -54,6 +54,7 @@ class CemailApplication : Application() {
                     java.io.File(cacheDir, "attachments/${accountId.filter { it.isLetterOrDigit() }}"),
                     selfEmail = { accountRepository.accounts.first().firstOrNull { it.id == accountId }?.email },
                     onNewMail = ::notifyNewMail,
+                    pushPrefs = getSharedPreferences("push-ms-${accountId.filter { it.isLetterOrDigit() }}", MODE_PRIVATE),
                 )
             }
             if (provider == "IMAP") {
@@ -177,7 +178,7 @@ class CemailApplication : Application() {
             appScope.launch {
                 kotlinx.coroutines.flow.combine(
                     settings.state.map { it.pushEnabled }.distinctUntilChanged(),
-                    accountRepository.accounts.map { list -> list.filter { it.provider == "GMAIL" }.map { it.email }.toSet() }.distinctUntilChanged(),
+                    accountRepository.accounts.map { list -> list.filter { it.provider == "GMAIL" || it.provider == "MICROSOFT" }.map { it.email }.toSet() }.distinctUntilChanged(),
                 ) { on, _ -> on }.collect { on ->
                     com.cemail.app.data.push.PushRenewWorker.schedule(this@CemailApplication, on)
                     com.cemail.app.data.push.Push.sync(this@CemailApplication, on)

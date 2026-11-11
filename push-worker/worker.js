@@ -1,18 +1,20 @@
 // Cemail push relay (Cloudflare Worker, free plan).
 //
-// Gmail publishes "something changed" to a Google Pub/Sub topic; Pub/Sub calls POST /pubsub/<PUBSUB_SECRET> here; this
-// worker looks up which phones follow that address and wakes each one with a Firebase Cloud Messaging data message.
-// The phone then syncs by itself. No mail content ever passes through here: only the address, a history number and
+// Gmail publishes "something changed" to a Google Pub/Sub topic; Pub/Sub calls POST /pubsub/<PUBSUB_SECRET> here.
+// Microsoft Graph calls POST /graph when a message arrives in a subscribed Inbox. In both cases this worker looks up
+// which phones follow that address and wakes each one with a Firebase Cloud Messaging data message; the phone then
+// syncs by itself. No mail content ever passes through here: only the address, a history number or message id, and
 // the phone's FCM token.
 //
 // Settings (Worker → Settings → Variables and Secrets / Bindings):
-//   KV namespace binding  KV            address → list of FCM tokens
+//   KV namespace binding  KV            address → list of FCM tokens, and Graph subscription → address
 //   Secret                APP_KEY       shared with the app (registration)
 //   Secret                PUBSUB_SECRET random text that is part of the address Pub/Sub calls
 //   Secret                FCM_SA        the Firebase service account JSON (whole file)
 
 const FCM_SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
 const MAX_TOKENS_PER_ADDRESS = 10;
+const SUBSCRIPTION_TTL_SECONDS = 4 * 24 * 3600; // Graph subscriptions last under 3 days; the app registers again daily
 
 export default {
   async fetch(request, env, ctx) {
@@ -20,7 +22,9 @@ export default {
     try {
       if (request.method === "POST" && url.pathname === "/register") return await register(request, env, true);
       if (request.method === "POST" && url.pathname === "/unregister") return await register(request, env, false);
+      if (request.method === "POST" && url.pathname === "/register-ms") return await registerSubscription(request, env);
       if (request.method === "POST" && url.pathname === `/pubsub/${env.PUBSUB_SECRET}`) return await fromPubSub(request, env);
+      if (request.method === "POST" && url.pathname === "/graph") return await fromGraph(request, env, ctx, url);
       if (request.method === "GET" && url.pathname === "/") return new Response("Cemail push relay", { status: 200 });
     } catch (e) {
       console.log("error", String(e && e.stack || e));
@@ -59,6 +63,18 @@ async function register(request, env, on) {
   return new Response("ok");
 }
 
+/** A Microsoft account's Graph subscription: which address it belongs to, and the secret Microsoft sends back with it. */
+async function registerSubscription(request, env) {
+  if (request.headers.get("X-Cemail-Key") !== env.APP_KEY) return new Response("forbidden", { status: 403 });
+  const body = await request.json();
+  const id = String(body.subscriptionId || "");
+  const email = String(body.email || "");
+  const state = String(body.clientState || "");
+  if (id.length < 8 || id.length > 200 || !email || state.length < 8) return new Response("bad request", { status: 400 });
+  await env.KV.put(`ms:${id}`, JSON.stringify({ email: email.toLowerCase(), state }), { expirationTtl: SUBSCRIPTION_TTL_SECONDS });
+  return new Response("ok");
+}
+
 /** Pub/Sub push: {"message":{"data":"base64({emailAddress,historyId})"},...}. */
 async function fromPubSub(request, env) {
   const envelope = await request.json();
@@ -67,8 +83,38 @@ async function fromPubSub(request, env) {
   const note = JSON.parse(atob(data));
   const address = String(note.emailAddress || "");
   if (!address) return new Response("ok");
+  await wake(env, address, { type: "gmail", email: address, historyId: String(note.historyId || "") });
+  return new Response("ok");
+}
+
+/**
+ * Microsoft Graph change notifications. When a subscription is created Microsoft first calls with ?validationToken=...
+ * and wants it echoed back as plain text within seconds; after that every notification is a POST with
+ * {"value":[{subscriptionId, clientState, resource, ...}]} that must be answered 202 quickly (the work goes on after).
+ */
+async function fromGraph(request, env, ctx, url) {
+  const token = url.searchParams.get("validationToken");
+  if (token) return new Response(token, { status: 200, headers: { "Content-Type": "text/plain" } });
+  const body = await request.json();
+  const notes = Array.isArray(body.value) ? body.value : [];
+  ctx.waitUntil((async () => {
+    const done = new Set();
+    for (const n of notes) {
+      const raw = await env.KV.get(`ms:${n.subscriptionId}`);
+      if (!raw) continue; // unknown or expired subscription
+      const sub = JSON.parse(raw);
+      if (sub.state !== n.clientState || done.has(sub.email)) continue; // not ours, or already announced in this call
+      done.add(sub.email);
+      await wake(env, sub.email, { type: "microsoft", email: sub.email });
+    }
+  })());
+  return new Response(null, { status: 202 });
+}
+
+/** Sends [data] as a high-priority FCM message to every phone that follows [address]. */
+async function wake(env, address, data) {
   const tokens = await readTokens(env, address);
-  if (tokens.length === 0) return new Response("ok");
+  if (tokens.length === 0) return;
   const access = await accessToken(env);
   const sa = JSON.parse(env.FCM_SA);
   const dead = [];
@@ -76,19 +122,12 @@ async function fromPubSub(request, env) {
     const res = await fetch(`https://fcm.googleapis.com/v1/projects/${sa.project_id}/messages:send`, {
       method: "POST",
       headers: { Authorization: `Bearer ${access}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: {
-          token,
-          data: { type: "gmail", email: address, historyId: String(note.historyId || "") },
-          android: { priority: "HIGH" },
-        },
-      }),
+      body: JSON.stringify({ message: { token, data, android: { priority: "HIGH" } } }),
     });
     if (res.status === 404 || res.status === 400) dead.push(token); // phone gone or token expired
     else if (!res.ok) console.log("fcm", res.status, await res.text());
   }));
   if (dead.length) await writeTokens(env, address, tokens.filter((t) => !dead.includes(t)));
-  return new Response("ok");
 }
 
 // --- Google OAuth for FCM: a signed JWT exchanged for an access token (kept for ~50 minutes) ---

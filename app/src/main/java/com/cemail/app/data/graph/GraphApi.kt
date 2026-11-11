@@ -148,6 +148,43 @@ class GraphApi(
         }
     }
 
+    /**
+     * Asks Microsoft to call [notificationUrl] whenever a message arrives in the Inbox (change notifications, used for
+     * push). Microsoft first validates the address by calling it; [clientState] comes back with every notification.
+     * Returns the subscription id. Subscriptions for mail last at most about 3 days, so they are renewed daily.
+     */
+    suspend fun subscribe(notificationUrl: String, clientState: String, expires: java.time.Instant): String {
+        val body = buildJsonObject {
+            put("changeType", "created")
+            put("notificationUrl", notificationUrl)
+            put("resource", "me/mailFolders('inbox')/messages")
+            put("expirationDateTime", expires.toString())
+            put("clientState", clientState)
+        }
+        val reply = execute(Request.Builder().url(SUBSCRIPTIONS).post(body.toString().toRequestBody(jsonType))) { it.body.string() }
+        return (json.parseToJsonElement(reply) as JsonObject)["id"]?.let { (it as JsonPrimitive).content }
+            ?: throw GmailHttpException(500, "Microsoft Graph subscription without id")
+    }
+
+    /** Extends a subscription; false when Microsoft no longer knows it (it expired), so a new one is needed. */
+    suspend fun renewSubscription(id: String, expires: java.time.Instant): Boolean {
+        val body = buildJsonObject { put("expirationDateTime", expires.toString()) }
+        return try {
+            send(Request.Builder().url("$SUBSCRIPTIONS/$id").patch(body.toString().toRequestBody(jsonType)))
+            true
+        } catch (e: GmailHttpException) {
+            if (e.code == 404) false else throw e
+        }
+    }
+
+    suspend fun unsubscribe(id: String) {
+        try {
+            send(Request.Builder().url("$SUBSCRIPTIONS/$id").delete())
+        } catch (e: GmailHttpException) {
+            if (e.code != 404) throw e
+        }
+    }
+
     suspend fun attachmentBytes(messageId: String, attachmentId: String): ByteArray =
         bytes("$BASE/messages/$messageId/attachments/$attachmentId/\$value")
 
@@ -167,7 +204,11 @@ class GraphApi(
             while (true) {
                 try {
                     return@withContext client.newCall(request).execute().use { response ->
-                        if (!response.isSuccessful) throw GmailHttpException(response.code, "Microsoft Graph ${response.code}")
+                        if (!response.isSuccessful) {
+                            // Only Microsoft's error code (never the body): enough to tell what went wrong in the log.
+                            val code = Regex("\"code\"\\s*:\\s*\"(\\w+)\"").find(runCatching { response.body.string() }.getOrDefault(""))?.groupValues?.get(1)
+                            throw GmailHttpException(response.code, "Microsoft Graph ${response.code}${code?.let { " $it" }.orEmpty()}")
+                        }
                         read(response)
                     }
                 } catch (e: java.net.ConnectException) {
@@ -181,6 +222,7 @@ class GraphApi(
 
     private companion object {
         const val BASE = "https://graph.microsoft.com/v1.0/me"
+        const val SUBSCRIPTIONS = "https://graph.microsoft.com/v1.0/subscriptions"
         const val SELECT = "id,subject,from,toRecipients,receivedDateTime,isRead,flag,hasAttachments,body,conversationId"
         val PAGE: KSerializer<GraphPage<GraphMessage>> = GraphPage.serializer(GraphMessage.serializer())
         val ATTACHMENTS: KSerializer<GraphPage<GraphAttachment>> = GraphPage.serializer(GraphAttachment.serializer())

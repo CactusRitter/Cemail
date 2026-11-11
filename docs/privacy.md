@@ -31,11 +31,12 @@ The app uses this access only to provide the features you see in the app, at you
 - Nothing is sent to me or to any third party, except what the optional instant-notification relay receives (see below). The only network connections the app makes are to Google's services (for example `accounts.google.com`, `oauth2.googleapis.com` and `gmail.googleapis.com`) and, only if you choose to show remote images in a message, to the servers hosting those images. Remote images are blocked by default.
 
 ## Instant notifications (optional)
-If you leave "Instant notifications" on (Settings → Notifications and sync), Gmail tells your phone when mail arrives instead of the app checking every few minutes. For that to work:
+If you leave "Instant notifications" on (Settings → Notifications and sync), Gmail (and Microsoft) tell your phone when mail arrives instead of the app checking every few minutes. For that to work:
 - The app asks Gmail to publish a "something changed" note to a Google Cloud Pub/Sub topic of this project. The note holds only your address and a history number, no message content.
+- For Microsoft accounts the app asks Microsoft Graph to send a change notification to the same relay when mail arrives in your Inbox. It holds only a subscription id and the id of the new message, no message content.
 - A small relay that I run on Cloudflare Workers (free plan) receives that note and wakes your phone through Firebase Cloud Messaging (Google).
-- The relay stores, for as long as the feature is on, your **email address** and your phone's **Firebase Cloud Messaging token** (an anonymous identifier of the app on your phone). It never receives or stores message subjects, bodies, attachments, contacts or Google sign-in tokens.
-- Firebase Analytics is not used. You can turn the feature off at any time: the app stops Gmail's notifications and removes your address and token from the relay.
+- The relay stores, for as long as the feature is on, your **email address**, a random secret that identifies your Microsoft subscription (Microsoft accounts only) and your phone's **Firebase Cloud Messaging token** (an anonymous identifier of the app on your phone). It never receives or stores message subjects, bodies, attachments, contacts or Google sign-in tokens.
+- Firebase Analytics is not used. You can turn the feature off at any time: the app stops Gmail's and Microsoft's notifications and removes your address and token from the relay.
 
 ## Sharing
 I do not sell, rent, share or transfer your data to anyone. Google receives the requests the app makes to its services, as described in [Google's Privacy Policy](https://policies.google.com/privacy).
@@ -86,11 +87,12 @@ La app usa este acceso solo para ofrecer las funciones que ves en ella, a petici
 - No se envía nada a mí ni a terceros, salvo lo que recibe el servicio opcional de notificaciones instantáneas (ver más abajo). Las únicas conexiones de red de la app son con los servicios de Google (por ejemplo `accounts.google.com`, `oauth2.googleapis.com` y `gmail.googleapis.com`) y, solo si decides mostrar las imágenes remotas de un mensaje, con los servidores que las alojan. Las imágenes remotas están bloqueadas por defecto.
 
 ## Notificaciones instantáneas (opcional)
-Si dejas activadas las «Notificaciones instantáneas» (Ajustes → Notificaciones y sincronización), Gmail avisa a tu teléfono cuando llega correo en lugar de que la app lo compruebe cada pocos minutos. Para que funcione:
+Si dejas activadas las «Notificaciones instantáneas» (Ajustes → Notificaciones y sincronización), Gmail (y Microsoft) avisan a tu teléfono cuando llega correo en lugar de que la app lo compruebe cada pocos minutos. Para que funcione:
 - La app pide a Gmail que publique una nota de «algo ha cambiado» en un tema de Google Cloud Pub/Sub de este proyecto. La nota solo contiene tu dirección y un número de historial, nada del contenido de los mensajes.
+- En las cuentas de Microsoft la app pide a Microsoft Graph que envíe al mismo servicio una notificación de cambio cuando llega correo a tu bandeja de entrada. Solo contiene el identificador de la suscripción y el del mensaje nuevo, nada del contenido.
 - Un pequeño servicio que gestiono en Cloudflare Workers (plan gratuito) recibe esa nota y despierta tu teléfono a través de Firebase Cloud Messaging (Google).
-- Ese servicio guarda, mientras la función esté activada, tu **dirección de correo** y el **token de Firebase Cloud Messaging** de tu teléfono (un identificador anónimo de la app en tu teléfono). Nunca recibe ni guarda asuntos, cuerpos, adjuntos, contactos ni tokens de inicio de sesión de Google.
-- No se usa Firebase Analytics. Puedes desactivar la función cuando quieras: la app detiene los avisos de Gmail y borra tu dirección y tu token del servicio.
+- Ese servicio guarda, mientras la función esté activada, tu **dirección de correo**, un secreto aleatorio que identifica tu suscripción de Microsoft (solo cuentas de Microsoft) y el **token de Firebase Cloud Messaging** de tu teléfono (un identificador anónimo de la app en tu teléfono). Nunca recibe ni guarda asuntos, cuerpos, adjuntos, contactos ni tokens de inicio de sesión de Google.
+- No se usa Firebase Analytics. Puedes desactivar la función cuando quieras: la app detiene los avisos de Gmail y de Microsoft y borra tu dirección y tu token del servicio.
 
 ## Compartir datos
 No vendo, alquilo, comparto ni transfiero tus datos a nadie. Google recibe las peticiones que la app hace a sus servicios, según su [Política de Privacidad](https://policies.google.com/privacy).

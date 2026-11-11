@@ -3,6 +3,10 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.34.0 — 2026-11-11
+- **Notificaciones instantáneas también para Microsoft** (Outlook, Hotmail): la app se suscribe a los cambios de la bandeja de entrada con Microsoft Graph y el mismo relé de Cloudflare despierta el móvil por FCM. Probado con una cuenta outlook.es: unos 6 s desde que se envía el correo hasta que está sincronizado. La suscripción se renueva cada día y se borra al apagar el interruptor.
+- Documentado en `docs/PUSH.md` y en la política de privacidad.
+
 ## 0.33.3 — 2026-11-11
 - Arreglado: al cambiar de carpeta (por ejemplo de la papelera a Recibidos) podían quedarse tarjetas de la carpeta anterior **superpuestas, a medio desvanecer**, encima de la nueva. Cada carpeta, etiqueta y cuenta es ahora una lista propia, sin fundido cruzado con la anterior; mover o borrar dentro de una lista sigue animándose.
 - La cabecera de las listas ya no tiene botón de actualizar (se actualiza tirando de la lista hacia abajo): quedan dos botones redondos iguales, menú y búsqueda, con el título exactamente en el centro.

@@ -56,6 +56,8 @@ class MicrosoftMailRepository(
     private val attachmentsDir: File,
     private val selfEmail: suspend () -> String? = { null },
     private val onNewMail: (accountId: String, mails: List<Mail>) -> Unit = { _, _ -> },
+    /** Where this account's Graph subscription (id and secret) is kept between runs; null disables push. */
+    private val pushPrefs: android.content.SharedPreferences? = null,
 ) : MailRepository {
     override val mails: StateFlow<List<Mail>> = dao.observe(accountId)
         .map { list -> list.map { it.toMail() } }
@@ -194,6 +196,30 @@ class MicrosoftMailRepository(
 
     override fun remove(id: Long) {
         scope.launch(Dispatchers.IO) { dao.delete(id) }
+    }
+
+    /**
+     * Instant notifications: keeps a Graph subscription alive (renewing it, or creating it again if it expired) and tells
+     * the relay which address it belongs to. [topic] is only a switch here: null turns the subscription off.
+     */
+    override suspend fun setPush(topic: String?) {
+        val prefs = pushPrefs ?: return
+        val id = prefs.getString("subId", null)
+        if (topic == null) {
+            if (id != null) api.unsubscribe(id)
+            prefs.edit().remove("subId").remove("subState").apply()
+            return
+        }
+        val expires = Instant.now().plusSeconds(4200L * 60)
+        var state = prefs.getString("subState", null)
+        var current = id
+        if (current == null || state == null || !api.renewSubscription(current, expires)) {
+            state = java.util.UUID.randomUUID().toString()
+            current = api.subscribe(com.cemail.app.data.push.Push.graphUrl(), state, expires)
+            prefs.edit().putString("subId", current).putString("subState", state).apply()
+        }
+        val email = selfEmail() ?: return
+        com.cemail.app.data.push.Push.registerSubscription(current, email.lowercase(), state)
     }
 
     override suspend fun refresh(quick: Boolean): Boolean {
