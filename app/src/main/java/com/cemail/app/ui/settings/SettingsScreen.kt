@@ -113,6 +113,7 @@ fun SettingsScreen(
     onAddGoogle: () -> Unit,
     onAddMicrosoft: () -> Unit,
     onAddImap: () -> Unit,
+    onAddYahoo: () -> Unit,
     onClose: () -> Unit,
 ) {
     val goBack = { SettingsRoute.parent(route)?.let(onRoute) ?: onClose() }
@@ -169,7 +170,7 @@ fun SettingsScreen(
                 when {
                     target == SettingsRoute.MAIN -> MainPage(settings, accounts.size, onRoute)
                     target == SettingsRoute.ACCOUNTS -> AccountsPage(accounts, settings, repo, onRoute)
-                    target == SettingsRoute.ADD -> AddAccountPage(onAddGoogle, onAddMicrosoft, onAddImap)
+                    target == SettingsRoute.ADD -> AddAccountPage(onAddGoogle, onAddMicrosoft, onAddYahoo, onAddImap)
                     targetAccount != null -> AccountDetailPage(targetAccount, accounts, settings, repo) {
                         onRoute(SettingsRoute.ACCOUNTS)
                         onRemoveAccount(targetAccount.id)

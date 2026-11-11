@@ -213,10 +213,22 @@ fun ReadScreen(
                     .clip(RoundedCornerShape(24.dp)),
             ) {
                 val page = cleanPage
-                if (page != null && settled) {
-                    HtmlBody(page, showImages, Modifier.fillMaxSize()) { }
-                } else {
-                    Box(
+                when {
+                    // Still reading it from the phone (a moment): an empty card, never a flash of the wrong content.
+                    loaded == null -> Box(Modifier.fillMaxSize().glass(RoundedCornerShape(24.dp), GlassKind.Card))
+                    // A message with HTML is not shown as plain text first: the card stays empty until the page is
+                    // drawn, then the page fades in over it.
+                    html.isNotBlank() -> {
+                        var shown by remember(mail.id) { mutableStateOf(false) }
+                        val alpha by androidx.compose.animation.core.animateFloatAsState(
+                            if (shown) 1f else 0f, com.cemail.app.ui.glass.glassSpring(), label = "page",
+                        )
+                        Box(Modifier.fillMaxSize().glass(RoundedCornerShape(24.dp), GlassKind.Card))
+                        if (page != null && settled) {
+                            HtmlBody(page, showImages, Modifier.fillMaxSize().graphicsLayer { this.alpha = alpha }, onShown = { shown = true }) { }
+                        }
+                    }
+                    else -> Box(
                         Modifier.fillMaxSize().glass(RoundedCornerShape(24.dp), GlassKind.Card)
                             .verticalScroll(rememberScrollState()).padding(16.dp),
                     ) {
@@ -561,8 +573,9 @@ private fun AttachmentsPopup(messageId: Long, attachments: List<com.cemail.app.d
  */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier, onScroll: (Int) -> Unit) {
+fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier, onShown: () -> Unit = {}, onScroll: (Int) -> Unit) {
     val currentOnScroll by rememberUpdatedState(onScroll)
+    val currentOnShown by rememberUpdatedState(onShown)
     AndroidView(
         modifier = modifier,
         factory = { ctx ->
@@ -579,6 +592,10 @@ fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier, onScroll: (I
                 setBackgroundColor(android.graphics.Color.WHITE)
                 setOnScrollChangeListener { _, _, y, _, _ -> currentOnScroll(y) }
                 webViewClient = object : WebViewClient() {
+                    // The page is about to be on screen (drawn, with its embedded pictures): time to show it.
+                    override fun onPageCommitVisible(view: WebView, url: String?) = currentOnShown()
+                    override fun onPageFinished(view: WebView, url: String?) = currentOnShown() // in case the above never comes
+
                     override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                         val uri: Uri = request.url
                         if (uri.scheme in setOf("http", "https", "mailto", "tel")) {

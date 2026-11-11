@@ -265,9 +265,9 @@ class MicrosoftMailRepository(
                             try { api.update(m.id, true, null); api.move(m.id, "archive") } catch (_: Exception) { /* next sync */ }
                             entity = entity.copy(folder = Folder.ARCHIVE.name, read = true)
                         }
-                        dao.insert(entity)
+                        val localId = dao.insert(entity) // the notification points at this row
                         if (!entity.read && folder == Folder.INBOX && entity.timeMillis > System.currentTimeMillis() - RECENT_MILLIS) {
-                            arrived += entity
+                            arrived += entity.copy(localId = localId)
                         }
                     } else if (old.read != read || old.starred != starred || old.folder != folder.name) {
                         dao.updateState(old.localId, folder.name, read, starred, old.labelIds)

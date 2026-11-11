@@ -40,6 +40,9 @@ interface MailRepository {
     /** Brings the local copy up to date with the server. Returns false if it failed. */
     suspend fun refresh(quick: Boolean = false): Boolean
 
+    /** Fetches the newest messages of one label now, also if it does not sync on its own (Gmail). false if it failed. */
+    suspend fun refreshLabel(labelId: String): Boolean = true
+
     /**
      * The whole message (text and HTML). The list holds only the start of each text, so what is opened is
      * read from here. null if it is gone.

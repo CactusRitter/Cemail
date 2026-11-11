@@ -101,6 +101,9 @@ import kotlinx.coroutines.launch
 /** Placeholder identity until Google sign-in (phase 1): messages "sent" in demo mode use this. */
 const val DEMO_ME = "me@cemail.example"
 
+private const val IMAP_PLAIN = "imap"
+private const val IMAP_YAHOO = "yahoo"
+
 private fun MailBox.icon(): ImageVector = when (this) {
     MailBox.INBOX -> CemailIcons.Inbox
     MailBox.STARRED -> Icons.Filled.Star
@@ -126,9 +129,10 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
     val startSignIn = { accountVm.startSignIn()?.let { launcher.launch(it) }; Unit }
     val microsoftLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { accountVm.onMicrosoftResult(it.data) }
     val startMicrosoft = { accountVm.startMicrosoftSignIn()?.let { microsoftLauncher.launch(it) }; Unit }
-    var imapForm by rememberSaveable { mutableStateOf(false) }
-    if (imapForm) {
-        com.cemail.app.ui.account.ImapSetupScreen(accountVm) { imapForm = false }
+    // The form for an IMAP account: plain, or with Yahoo's steps (null = not shown).
+    var imapForm by rememberSaveable { mutableStateOf<String?>(null) }
+    imapForm?.let { kind ->
+        com.cemail.app.ui.account.ImapSetupScreen(accountVm, yahoo = kind == IMAP_YAHOO) { imapForm = null }
         return
     }
     if (!acc.loaded) {
@@ -136,7 +140,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
         return
     }
     if (acc.accounts.isEmpty() && !acc.demo) {
-        SignInScreen(acc, startSignIn, accountVm::useDemo, onMicrosoft = startMicrosoft, onImap = { imapForm = true })
+        SignInScreen(acc, startSignIn, accountVm::useDemo, onMicrosoft = startMicrosoft, onImap = { imapForm = IMAP_PLAIN })
         return
     }
     val state by vm.state.collectAsStateWithLifecycle()
@@ -154,7 +158,8 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
         val wanted = when (r) {
             is LaunchRequest.Compose -> r.accountId
             is LaunchRequest.OpenBox -> r.accountId
-            is LaunchRequest.OpenMail -> r.accountId
+            // The unified inbox already shows every account's mail: it stays; another single account switches over.
+            is LaunchRequest.OpenMail -> r.accountId.takeIf { acc.selectedId != null }
             LaunchRequest.Search -> null
         }
         val several = acc.accounts.size > 1
@@ -288,7 +293,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                         Screen.COMPOSE -> lastDraft?.let { ComposeScreen(it, vm, acc.accounts, defaultFrom) }
                         Screen.SETTINGS -> SettingsScreen(
                             settings, settingsRepo, acc.accounts, settingsRoute, { settingsRoute = it }, accountVm::remove,
-                            onAddGoogle = startSignIn, onAddMicrosoft = startMicrosoft, onAddImap = { imapForm = true },
+                            onAddGoogle = startSignIn, onAddMicrosoft = startMicrosoft, onAddImap = { imapForm = IMAP_PLAIN }, onAddYahoo = { imapForm = IMAP_YAHOO },
                         ) { showSettings = false }
                         Screen.READ -> lastOpen?.let {
                             // Taken once per opening: the card that was tapped is where the mail grows from.

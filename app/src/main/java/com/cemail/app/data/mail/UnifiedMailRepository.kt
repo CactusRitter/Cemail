@@ -42,6 +42,10 @@ class UnifiedMailRepository(private val accounts: List<MailRepository>, scope: C
         accounts.map { async { it.refresh(quick) } }.awaitAll().all { it }
     }
 
+    override suspend fun refreshLabel(labelId: String): Boolean = coroutineScope {
+        accounts.map { async { it.refreshLabel(labelId) } }.awaitAll().all { it }
+    }
+
     override suspend fun attachments(id: Long): List<com.cemail.app.data.gmail.AttachmentInfo> {
         for (account in accounts) account.attachments(id).takeIf { it.isNotEmpty() }?.let { return it }
         return emptyList()

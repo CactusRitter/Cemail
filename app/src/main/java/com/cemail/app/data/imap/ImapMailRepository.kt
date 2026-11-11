@@ -256,9 +256,9 @@ class ImapMailRepository(
                                     pinned = false, snoozedUntil = null, hasAttachment = parsed.hasAttachment,
                                     labelIds = "", bodyHtml = parsed.html, threadId = null,
                                 ).capped()
-                                db { dao.insert(entity) }
+                                val localId = db { dao.insert(entity) } // the notification points at this row
                                 if (!entity.read && f.role == Role.INBOX && entity.timeMillis > System.currentTimeMillis() - RECENT_MILLIS) {
-                                    arrived += entity
+                                    arrived += entity.copy(localId = localId)
                                 }
                             } else if (old.read != m.seen || old.starred != m.flagged) {
                                 db { dao.updateState(old.localId, old.folder, m.seen, m.flagged, old.labelIds) }

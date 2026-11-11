@@ -36,6 +36,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -59,7 +61,7 @@ import kotlinx.coroutines.launch
  * guessed (known providers) and checked; "Server settings" lets the user write them by hand.
  */
 @Composable
-fun ImapSetupScreen(accountVm: AccountViewModel, onClose: () -> Unit) {
+fun ImapSetupScreen(accountVm: AccountViewModel, yahoo: Boolean = false, onClose: () -> Unit) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var name by rememberSaveable { mutableStateOf("") }
@@ -133,24 +135,28 @@ fun ImapSetupScreen(accountVm: AccountViewModel, onClose: () -> Unit) {
                     .padding(start = 12.dp, end = 12.dp, top = 80.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text(
-                    stringResource(R.string.imap_body),
-                    Modifier.padding(horizontal = 8.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                if (yahoo) {
+                    YahooSteps()
+                } else {
+                    Text(
+                        stringResource(R.string.imap_body),
+                        Modifier.padding(horizontal = 8.dp),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 Column(Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card)) {
                     TextField(
                         value = email, onValueChange = { email = it }, singleLine = true, colors = colors,
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text(stringResource(R.string.imap_email)) },
+                        label = { Text(stringResource(if (yahoo) R.string.yahoo_email else R.string.imap_email)) },
                         keyboardOptions = KeyboardOptions(autoCorrectEnabled = false, keyboardType = KeyboardType.Email),
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     TextField(
                         value = password, onValueChange = { password = it }, singleLine = true, colors = colors,
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text(stringResource(R.string.imap_password)) },
+                        label = { Text(stringResource(if (yahoo) R.string.yahoo_password else R.string.imap_password)) },
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(autoCorrectEnabled = false, keyboardType = KeyboardType.Password),
                     )
@@ -210,7 +216,7 @@ fun ImapSetupScreen(accountVm: AccountViewModel, onClose: () -> Unit) {
                 GlassPill(Modifier.fillMaxWidth(), height = 64.dp) {
                     PillIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), onClose)
                     Text(
-                        stringResource(R.string.imap_title),
+                        stringResource(if (yahoo) R.string.account_add_yahoo else R.string.imap_title),
                         Modifier.weight(1f).padding(horizontal = 8.dp),
                         style = MaterialTheme.typography.titleMedium,
                     )
@@ -219,6 +225,62 @@ fun ImapSetupScreen(accountVm: AccountViewModel, onClose: () -> Unit) {
         }
     }
 }
+
+/**
+ * Yahoo does not take the normal password in other apps: it needs an app password, and only lets an account create
+ * one once two-step verification is on and the account has been used in the same browser for a few days. The steps,
+ * and a button to Yahoo's security page.
+ */
+@Composable
+private fun YahooSteps() {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    Column(
+        Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card).padding(horizontal = 18.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            com.cemail.app.ui.icons.YahooLogo(36.dp)
+            Text(stringResource(R.string.yahoo_steps_title), style = MaterialTheme.typography.titleSmall)
+        }
+        listOf(R.string.yahoo_step_1, R.string.yahoo_step_2, R.string.yahoo_step_3, R.string.yahoo_step_4).forEachIndexed { i, step ->
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    stringResource(R.string.step_number, i + 1),
+                    Modifier.widthIn(min = 20.dp), // the texts of all the steps start at the same place
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Text(stringResource(step), style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+        Text(
+            stringResource(R.string.yahoo_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            stringResource(R.string.yahoo_open_security),
+            Modifier
+                .clip(CircleShape)
+                .clickable(role = Role.Button) {
+                    try {
+                        context.startActivity(
+                            android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(YAHOO_SECURITY))
+                                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+                        )
+                    } catch (_: Exception) {
+                        // no browser
+                    }
+                }
+                .padding(horizontal = 4.dp, vertical = 8.dp),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+        )
+    }
+}
+
+/** Yahoo's account security page, where two-step verification and app passwords are. */
+private const val YAHOO_SECURITY = "https://login.yahoo.com/myaccount/security/"
 
 @Composable
 private fun ServerBlock(

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
@@ -138,7 +139,7 @@ private fun providerName(account: AccountEntity): String = stringResource(
 
 /** The kinds of account that can be added: three big buttons with the logo of each service. */
 @Composable
-internal fun AddAccountPage(onGoogle: () -> Unit, onMicrosoft: () -> Unit, onImap: () -> Unit) {
+internal fun AddAccountPage(onGoogle: () -> Unit, onMicrosoft: () -> Unit, onYahoo: () -> Unit, onImap: () -> Unit) {
     val surface = MaterialTheme.colorScheme.surface
     BigRow(stringResource(R.string.account_add_google), stringResource(R.string.add_google_body), 0, onGoogle, verticalPadding = 22.dp) {
         IconBubble(60.dp, surface) { GoogleLogo(32.dp) }
@@ -146,7 +147,10 @@ internal fun AddAccountPage(onGoogle: () -> Unit, onMicrosoft: () -> Unit, onIma
     BigRow(stringResource(R.string.account_add_microsoft), stringResource(R.string.add_microsoft_body), 1, onMicrosoft, verticalPadding = 22.dp) {
         IconBubble(60.dp, surface) { MicrosoftLogo(30.dp) }
     }
-    BigRow(stringResource(R.string.account_add_other), stringResource(R.string.add_imap_body), 2, onImap, verticalPadding = 22.dp) {
+    BigRow(stringResource(R.string.account_add_yahoo), stringResource(R.string.add_yahoo_body), 2, onYahoo, verticalPadding = 22.dp) {
+        IconBubble(60.dp, surface) { com.cemail.app.ui.icons.YahooLogo(34.dp) }
+    }
+    BigRow(stringResource(R.string.account_add_other), stringResource(R.string.add_imap_body), 3, onImap, verticalPadding = 22.dp) {
         IconBubble(60.dp) { Icon(CemailIcons.Mail, null, Modifier.padding(2.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer) }
     }
 }
@@ -210,34 +214,33 @@ internal fun AccountDetailPage(
                 if (changed) app.appScope.launch { app.mailRepositoryFor(account.id).refresh(quick = false) }
             }
         }
+        Text(
+            stringResource(R.string.account_labels_body),
+            Modifier.padding(horizontal = 8.dp),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        // One card, one row per folder with its switch; sub-labels ("Parent/Child") sit indented under their parent.
         SettingsCard {
-            Text(stringResource(R.string.account_labels_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            FolderSyncRow(CemailIcons.Inbox, stringResource(R.string.box_inbox), depth = 0, checked = true, enabled = false) { }
             if (labels.isEmpty()) {
                 Text(stringResource(R.string.account_labels_none), style = MaterialTheme.typography.bodyMedium)
-            } else {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    labels.sortedBy { it.name.lowercase() }.forEach { label ->
-                        val on = label.id !in hidden
-                        Row(
-                            Modifier
-                                .pressScale(0.94f)
-                                .glass(CircleShape, if (on) GlassKind.Pinned else GlassKind.Card)
-                                .clickable(role = Role.Checkbox) {
-                                    repo.setHiddenLabels(account.id, if (on) hidden + label.id else hidden - label.id)
-                                    changed = true
-                                }
-                                .padding(horizontal = 12.dp, vertical = 7.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            if (on) Icon(Icons.Filled.Check, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
-                            Text(
-                                label.name,
-                                style = MaterialTheme.typography.labelLarge,
-                                color = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
+            }
+            // A parent that is not a label itself ("[Imap]" of "[Imap]/All Mail") shows as a plain heading.
+            val names = labels.map { it.name }.toSet()
+            val shownParents = mutableSetOf<String>()
+            labels.sortedBy { it.name.lowercase() }.forEach { label ->
+                val parts = label.name.split('/')
+                for (level in 1 until parts.size) {
+                    val parent = parts.take(level).joinToString("/")
+                    if (parent !in names && shownParents.add(parent)) {
+                        FolderSyncRow(CemailIcons.Folder, parts[level - 1], depth = level - 1, checked = null) { }
                     }
+                }
+                val on = label.id !in hidden
+                FolderSyncRow(CemailIcons.Folder, parts.last(), depth = parts.size - 1, checked = on) {
+                    repo.setHiddenLabels(account.id, if (on) hidden + label.id else hidden - label.id)
+                    changed = true
                 }
             }
         }
@@ -266,6 +269,45 @@ internal fun AccountDetailPage(
                 }
             }
         }
+    }
+}
+
+/**
+ * One folder or label that can sync on its own: its icon (indented by [depth]), its name and a switch. [enabled]
+ * false shows it on and fixed (the Inbox); [checked] null is a heading without a switch (a parent that is no label).
+ */
+@Composable
+private fun FolderSyncRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    name: String,
+    depth: Int,
+    checked: Boolean?,
+    enabled: Boolean = true,
+    onToggle: () -> Unit,
+) {
+    val toggles = checked != null && enabled
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(enabled = toggles, role = Role.Switch, onClick = onToggle)
+            .padding(start = (depth * 24).dp, top = 2.dp, bottom = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Icon(icon, null, Modifier.size(22.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            name,
+            Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (checked == null) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        // Same switch as the rest of Settings (SwitchRow); the row itself is the touch target. A fixed one (the Inbox)
+        // still looks on: it is simply not touchable.
+        if (checked != null) com.cemail.app.ui.glass.GlassSwitch(checked = checked, onCheckedChange = null)
     }
 }
 

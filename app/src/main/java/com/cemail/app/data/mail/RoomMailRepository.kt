@@ -56,7 +56,10 @@ class RoomMailRepository(
     /** Called with the unread Inbox messages that a sync found for the first time (never on the first sync). */
     private val onNewMail: (accountId: String, mails: List<Mail>) -> Unit = { _, _ -> },
     /** Where the sync keeps its place in the mailbox's history. */
-    /** User labels the user switched off in Settings: archived messages that carry only those are not kept. */
+    /**
+     * User labels the user switched off in Settings: they stay in the menu, but their archived messages are not
+     * fetched on their own (push, periodic checks); pulling down inside the label brings them ([refreshLabel]).
+     */
     private val hidden: StateFlow<Set<String>> = kotlinx.coroutines.flow.MutableStateFlow(emptySet()),
     private val marks: SyncMarks = SyncMarks.InMemory(),
     /** The name the user chose to send with (Settings); null lets Gmail use the account's own. */
@@ -69,9 +72,8 @@ class RoomMailRepository(
     override suspend fun userLabels(accountId: String): List<Label> =
         if (accountId == this.accountId) labels.first() else emptyList()
 
-    override val labels: Flow<List<Label>> = kotlinx.coroutines.flow.combine(labelDao.observe(accountId), hidden) { list, off ->
-        list.filter { it.id !in off }.map { Label(it.id, it.name) }
-    }
+    /** Every label, also the ones that do not sync on their own: a label never disappears from the menu. */
+    override val labels: Flow<List<Label>> = labelDao.observe(accountId).map { list -> list.map { Label(it.id, it.name) } }
 
     override suspend fun setPush(topic: String?) {
         if (topic == null) api.stopWatching() else api.watch(topic)
@@ -80,7 +82,10 @@ class RoomMailRepository(
     override suspend fun allLabels(accountId: String): List<Label> =
         if (accountId == this.accountId) labelDao.observe(accountId).first().map { Label(it.id, it.name) } else emptyList()
 
-    /** True for an archived message whose only user labels are switched off: it lives nowhere the user looks. */
+    /**
+     * True for an archived message whose only user labels do not sync on their own: the automatic sync leaves it
+     * out (it is fetched when the user pulls down inside one of those labels).
+     */
     private fun MessageEntity.hiddenByLabels(): Boolean {
         val off = hidden.value
         if (off.isEmpty() || folder != Folder.ARCHIVE.name) return false
@@ -88,8 +93,45 @@ class RoomMailRepository(
         return own.isNotEmpty() && own.all { it in off }
     }
 
-    private suspend fun purgeHidden() {
-        dao.remoteOnes(accountId).filter { it.hiddenByLabels() }.map { it.localId }.chunked(500).forEach { dao.deleteAll(accountId, it) }
+    /**
+     * Carries a user label: kept even when it falls out of the automatic window, so what a pull-to-refresh inside a
+     * label brought stays there (Gmail's history still removes it when it is deleted on the server).
+     */
+    private fun MessageEntity.inManualLabel(): Boolean = labelIds.split(" ").any { it.startsWith("Label_") }
+
+    /**
+     * Pull-to-refresh inside a label: its newest messages are fetched now, also when the label does not sync on its
+     * own. They stay on the phone afterwards (never announced as new mail).
+     */
+    override suspend fun refreshLabel(labelId: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val ids = api.listLabelMessageIds(labelId, LABEL_LIMIT)
+            val cached = dao.remoteOnes(accountId).associateBy { it.remoteId!! }
+            val gate = Semaphore(6)
+            val ignored = java.util.concurrent.ConcurrentLinkedQueue<MessageEntity>()
+            coroutineScope {
+                ids.map { id ->
+                    async(Dispatchers.IO) {
+                        gate.withPermit {
+                            val old = cached[id]
+                            try {
+                                if (old == null || old.bodyHtml == null) ingest(id, old, ignored, force = true)
+                                else applyLabels(old, api.getLabels(id).toSet())
+                            } catch (e: GmailHttpException) {
+                                if (e.code != 404) throw e
+                            }
+                        }
+                    }
+                }.awaitAll()
+            }
+            AppLog.i("sync", "...${accountId.takeLast(4)} label refreshed: ${ids.size} listed, ${ids.count { it !in cached }} new")
+            true
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppLog.e("sync", "...${accountId.takeLast(4)} label refresh failed", e)
+            false
+        }
     }
 
     private val _syncing = MutableStateFlow(false)
@@ -451,7 +493,6 @@ class RoomMailRepository(
         }
         val gone = changes.deleted.mapNotNull { cached[it]?.localId }
         gone.chunked(500).forEach { dao.deleteAll(accountId, it) }
-        purgeHidden()
         marks.save(changes.historyId, fullToo = false)
         AppLog.i("sync", "...${accountId.takeLast(4)} ${if (quick) "quick" else "full"} delta ok: ${changes.added.size} added, ${changes.relabelled.size} relabelled, ${gone.size} removed, ${arrived.size} new unread")
         if (arrived.isNotEmpty()) {
@@ -459,26 +500,27 @@ class RoomMailRepository(
         }
     }
 
-    /** Downloads a message whole and stores it (replacing [old]); spam and chats are not kept. */
-    private suspend fun ingest(id: String, old: MessageEntity?, arrived: java.util.Queue<MessageEntity>) {
+    /**
+     * Downloads a message whole and stores it (replacing [old]); chats are not kept. [force] keeps it even when it
+     * only carries labels that do not sync on their own (the user asked for that label).
+     */
+    private suspend fun ingest(id: String, old: MessageEntity?, arrived: java.util.Queue<MessageEntity>, force: Boolean = false) {
         val message = api.getMessage(id)
         if (message.labelIds.any { it == "CHAT" }) {
             if (old != null) dao.delete(old.localId)
             return
         }
         val entity = applyMute(GmailParser.parse(message).toEntity(accountId, id).capped())
-        if (entity.hiddenByLabels()) {
-            if (old != null) dao.delete(old.localId)
-            return
-        }
+        if (!force && entity.hiddenByLabels()) return // not fetched on its own (a copy fetched by hand stays)
         // Embedded pictures first, so they are already there when the message shows up.
         if (entity.bodyHtml?.contains("cid:", ignoreCase = true) == true) {
             try { saveInlineImages(id, message) } catch (_: Exception) { /* retried when the message is opened */ }
         }
         if (old == null) {
-            dao.insert(entity)
+            // The new row's id is what the notification (and its buttons) points at.
+            val localId = dao.insert(entity)
             if (!entity.read && entity.folder == Folder.INBOX.name && entity.timeMillis > System.currentTimeMillis() - RECENT_MILLIS) {
-                arrived.add(entity) // not an old message that only now fell inside the synced window
+                arrived.add(entity.copy(localId = localId)) // not an old message that only now fell inside the synced window
             }
         } else {
             dao.update(entity.copy(localId = old.localId, pinned = old.pinned, snoozedUntil = old.snoozedUntil))
@@ -513,18 +555,15 @@ class RoomMailRepository(
                             // New message, or one saved before HTML was kept: download it whole.
                             val message = api.getMessage(id)
                             val entity = applyMute(GmailParser.parse(message).toEntity(accountId, id).capped())
-                            if (entity.hiddenByLabels()) {
-                                if (old != null) dao.delete(old.localId)
-                                return@withPermit
-                            }
+                            if (entity.hiddenByLabels()) return@withPermit // not fetched on its own (a copy fetched by hand stays)
                             // Embedded pictures first, so they are already there when the message shows up.
                             if (entity.bodyHtml?.contains("cid:", ignoreCase = true) == true) {
                                 try { saveInlineImages(id, message) } catch (_: Exception) { /* retried when the message is opened */ }
                             }
                             if (old == null) {
-                                dao.insert(entity)
+                                val localId = dao.insert(entity)
                                 if (!entity.read && entity.folder == Folder.INBOX.name && entity.timeMillis > System.currentTimeMillis() - RECENT_MILLIS) {
-                                    arrived.add(entity) // not an old message that only now fell inside the synced window
+                                    arrived.add(entity.copy(localId = localId)) // not an old message that only now fell inside the synced window
                                 }
                             } else {
                                 dao.update(entity.copy(localId = old.localId, pinned = old.pinned, snoozedUntil = old.snoozedUntil))
@@ -543,9 +582,10 @@ class RoomMailRepository(
                 }
             }.awaitAll()
         }
-        val gone = cached.filterKeys { it !in remoteIds }.values.map { it.localId }
+        // Messages of labels fetched by hand stay although they are older than the window (Gmail's history still
+        // removes them if they are deleted).
+        val gone = cached.filterKeys { it !in remoteIds }.values.filterNot { it.inManualLabel() }.map { it.localId }
         gone.chunked(500).forEach { dao.deleteAll(accountId, it) }
-        purgeHidden()
         if (historyAtStart != null) marks.save(historyAtStart, fullToo = true)
         AppLog.i("sync", "...${accountId.takeLast(4)} ${if (quick) "quick" else "full"} ok:${remoteIds.size} listed, ${cached.size} cached, ${arrived.size} new unread, ${gone.size} removed")
         // The first sync of an account brings in its whole history: that is not "new mail".
@@ -571,6 +611,8 @@ class RoomMailRepository(
         const val QUERY = "in:anywhere -in:spam -in:chats"
         const val LIMIT = 120
         const val SPAM_LIMIT = 30
+        /** How many of a label's newest messages a pull-to-refresh inside it brings. */
+        const val LABEL_LIMIT = 50
         /** How long after a local change the server's labels are not trusted over the phone's. */
         const val TOUCH_GRACE_MILLIS = 8_000L
         const val MAX_INLINE_BYTES = 4 * 1024 * 1024

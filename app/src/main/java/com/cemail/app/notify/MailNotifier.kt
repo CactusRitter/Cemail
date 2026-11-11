@@ -39,8 +39,14 @@ class MailNotifier(private val context: Context) {
     @SuppressLint("MissingPermission") // checked by allowed()
     fun show(accountId: String, accountLabel: String?, mails: List<Mail>) {
         if (mails.isEmpty() || !allowed()) return
+        // One message: tapping opens it. Several: the Inbox of that account.
+        val request = if (mails.size == 1) {
+            com.cemail.app.LaunchRequest.OpenMail(accountId, mails.first().id)
+        } else {
+            com.cemail.app.LaunchRequest.OpenBox(com.cemail.app.data.mail.MailBox.INBOX, accountId)
+        }
         val open = PendingIntent.getActivity(
-            context, 0, Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            context, accountId.hashCode(), com.cemail.app.Launches.intent(context, request),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val builder = NotificationCompat.Builder(context, CHANNEL)
@@ -73,12 +79,14 @@ class MailNotifier(private val context: Context) {
     @SuppressLint("MissingPermission") // checked by allowed()
     fun showSnoozed(accountLabel: String?, mails: List<Mail>) {
         if (mails.isEmpty() || !allowed()) return
-        val open = PendingIntent.getActivity(
-            context, 0, Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-        )
         for (mail in mails.take(MAX_LINES)) {
             val subject = mail.subject.ifBlank { context.getString(R.string.no_subject) }
+            // Tapping opens the message that came back.
+            val open = PendingIntent.getActivity(
+                context, ("snoozed" + mail.id).hashCode(),
+                com.cemail.app.Launches.intent(context, com.cemail.app.LaunchRequest.OpenMail(mail.accountId, mail.id)),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            )
             val builder = NotificationCompat.Builder(context, CHANNEL)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setContentIntent(open)

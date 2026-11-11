@@ -16,7 +16,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -82,7 +81,7 @@ internal fun SwitchRow(title: Int, body: Int, checked: Boolean, onChange: (Boole
             Text(stringResource(title), style = MaterialTheme.typography.titleSmall)
             Text(stringResource(body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Switch(checked = checked, onCheckedChange = onChange)
+        com.cemail.app.ui.glass.GlassSwitch(checked = checked, onCheckedChange = null) // the row is the touch target
     }
 }
 

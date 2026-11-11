@@ -23,6 +23,9 @@ fun interface AccessTokenProvider {
 /** What the sync and the actions need from Gmail. Tests use a fake of this interface. */
 interface GmailApi {
     suspend fun listMessageIds(query: String, max: Int): List<String>
+
+    /** The newest [max] messages that carry one label (by its id), wherever they are. */
+    suspend fun listLabelMessageIds(labelId: String, max: Int): List<String> = emptyList()
     suspend fun getMessage(id: String): GmailMessage
     suspend fun getLabels(id: String): List<String>
     suspend fun listUserLabels(): List<GmailLabel>
@@ -66,13 +69,17 @@ class HttpGmailApi(
     private val json = Json { ignoreUnknownKeys = true }
     private val jsonType = "application/json; charset=utf-8".toMediaType()
 
-    override suspend fun listMessageIds(query: String, max: Int): List<String> {
+    override suspend fun listMessageIds(query: String, max: Int): List<String> = list(max) { addQueryParameter("q", query) }
+
+    override suspend fun listLabelMessageIds(labelId: String, max: Int): List<String> = list(max) { addQueryParameter("labelIds", labelId) }
+
+    private suspend fun list(max: Int, filter: okhttp3.HttpUrl.Builder.() -> Unit): List<String> {
         val ids = mutableListOf<String>()
         var page: String? = null
         do {
             val url = BASE.newBuilder()
                 .addPathSegment("messages")
-                .addQueryParameter("q", query)
+                .apply(filter)
                 .addQueryParameter("maxResults", minOf(100, max - ids.size).toString())
                 .apply { page?.let { addQueryParameter("pageToken", it) } }
                 .build()

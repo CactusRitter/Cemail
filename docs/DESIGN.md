@@ -81,3 +81,9 @@ Reglas: las ventanas y menús salen de su botón (`origin`); lo que está en el 
 - **Foto de cuenta** (`AccountAvatar`): la del proveedor (Google o Microsoft) o una de la galería, recortada en círculo; sin foto, la inicial sobre el contenedor del color de la cuenta. En listas de cuentas lleva un **aro de 2 dp** en el color de la cuenta.
 - **Campo «De»** al redactar: misma tipografía que «Para» (etiqueta `bodyMedium`, dirección `labelLarge`); el desplegable lista las cuentas con su foto.
 - **Barra de formato** al redactar: solo aparece mientras se escribe el texto del mensaje (entra con muelle `bounceSpring`), para no tapar las sugerencias de destinatarios.
+
+## Interruptor y listas de carpetas (añadido en Cemail 1.1.0)
+- **Interruptor** (`GlassSwitch`, en `ui/glass`): pista de 40 × 24 dp redondeada; encendido se llena con `primary` y el botón (`onPrimary`) salta al otro lado con `bounceSpring`; apagado, pista de cristal tenue (`surfaceVariant` translúcido) con borde `outline` y el botón algo más pequeño. Sustituye al `Switch` de Material en toda la app (más pequeño y con nuestro movimiento). La fila entera es la zona táctil.
+- **Carpetas para sincronizar**: una sola tarjeta con una fila por carpeta (icono de carpeta, nombre, interruptor), como Samsung Email; las subetiquetas («Padre/Hijo») van sangradas 24 dp por nivel bajo su madre, y una madre que no es etiqueta sale como encabezado sin interruptor. La bandeja de entrada va primero, encendida y fija.
+- **Abrir un correo con HTML**: nunca se enseña su texto plano antes; la tarjeta queda vacía hasta que la página está pintada y entonces aparece con un fundido (`glassSpring`).
+- **Logotipo de Yahoo**: «Y!» blanco sobre su morado, en un cuadrado redondeado (`BrandIcons.kt`, solo en la pantalla de añadir cuenta).

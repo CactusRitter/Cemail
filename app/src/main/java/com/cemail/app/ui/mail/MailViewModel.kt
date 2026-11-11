@@ -77,6 +77,8 @@ private data class Ui(
     val labelId: String? = null,
     val expanded: Set<String> = emptySet(),
     val collapsedSections: Set<DateSection> = emptySet(),
+    /** A label's messages are being fetched by hand (pull-to-refresh inside it). */
+    val labelSyncing: Boolean = false,
 )
 
 data class MailUiState(
@@ -129,7 +131,7 @@ class MailViewModel(
         }.orEmpty()
         MailUiState(
             thread = conversation,
-            box = u.box, query = u.query, searching = u.searching, selection = u.selection, syncing = syncing,
+            box = u.box, query = u.query, searching = u.searching, selection = u.selection, syncing = syncing || u.labelSyncing,
             labels = labels, labelId = u.labelId, expanded = u.expanded, collapsedSections = u.collapsedSections,
             unreadByLabel = labels.associate { l -> l.id to mails.count { !it.read && l.id in it.labelIds && !it.discarded } },
             open = open,
@@ -168,10 +170,23 @@ class MailViewModel(
         followSearch()
     }
 
-    /** Syncs with the server; a failure is told with the same bar that offers Undo. */
+    /**
+     * Syncs with the server; a failure is told with the same bar that offers Undo. Inside a label, that label's
+     * newest messages are fetched too (also when it does not sync on its own).
+     */
     fun refresh() {
         viewModelScope.launch {
-            if (!repo.refresh()) ui.update { it.copy(undo = UndoEvent(++undoCounter, R.string.sync_failed, emptyList())) }
+            var ok = repo.refresh()
+            val label = ui.value.labelId
+            if (label != null) {
+                ui.update { it.copy(labelSyncing = true) }
+                try {
+                    ok = repo.refreshLabel(label) && ok
+                } finally {
+                    ui.update { it.copy(labelSyncing = false) }
+                }
+            }
+            if (!ok) ui.update { it.copy(undo = UndoEvent(++undoCounter, R.string.sync_failed, emptyList())) }
         }
     }
 

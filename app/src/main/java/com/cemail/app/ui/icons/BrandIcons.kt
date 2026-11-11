@@ -1,6 +1,7 @@
 package com.cemail.app.ui.icons
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -15,6 +16,24 @@ import androidx.compose.ui.unit.dp
 // The only fixed colours in the app: the logos of the services an account can belong to must look like the real ones,
 // so they cannot follow the theme. They are drawn here as simple shapes (no image files) and used only in the
 // "Add account" screen. See docs/DESIGN.md.
+private val YahooPurple = Color(0xFF6001D2)
+
+/** Yahoo's mark: "Y!" in white on its purple, in a rounded square. ("Y!" is the logo, not text to translate.) */
+@Composable
+fun YahooLogo(size: Dp = 32.dp) {
+    androidx.compose.foundation.layout.Box(
+        Modifier.size(size).background(YahooPurple, androidx.compose.foundation.shape.RoundedCornerShape(size * 0.28f)),
+        contentAlignment = androidx.compose.ui.Alignment.Center,
+    ) {
+        androidx.compose.material3.Text(
+            "Y!",
+            color = Color.White,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
+            fontSize = androidx.compose.ui.unit.TextUnit(size.value * 0.46f, androidx.compose.ui.unit.TextUnitType.Sp),
+        )
+    }
+}
+
 private val GoogleBlue = Color(0xFF4285F4)
 private val GoogleRed = Color(0xFFEA4335)
 private val GoogleYellow = Color(0xFFFBBC05)

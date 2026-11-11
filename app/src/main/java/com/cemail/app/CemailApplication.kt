@@ -135,7 +135,10 @@ class CemailApplication : Application() {
         AppLog.i("notif", "announcing ${mails.size} new message(s)")
         appScope.launch {
             val accounts = accountRepository.accounts.first()
-            val label = accounts.firstOrNull { it.id == accountId }?.email?.takeIf { accounts.size > 1 }
+            // With several accounts the notification says which one: the name the user gave it, or its address.
+            val label = accounts.firstOrNull { it.id == accountId }
+                ?.let { settings.state.value.lookOf(it.id).label ?: it.email }
+                ?.takeIf { accounts.size > 1 }
             notifier.show(accountId, label, mails)
         }
     }

@@ -3,6 +3,13 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 1.1.0 — 2026-11-11
+- **Yahoo** en «Añadir cuenta», con su logotipo y los pasos para crear la contraseña de aplicación (verificación en dos pasos, por qué el botón de Yahoo puede salir gris) y un enlace a la seguridad de Yahoo. Cemail pone solo los servidores.
+- **Notificaciones**: tocar la notificación de un correo abre ese correo (antes solo abría la lista); con varios correos abre la bandeja de esa cuenta, y en la notificación aparece el nombre que diste a la cuenta. Arreglado también que los botones «Leído» y «Borrar» de la notificación no encontraban el correo.
+- **Abrir correos con HTML**: ya no se ve el texto plano antes; la tarjeta queda vacía un instante y el correo aparece entero con un fundido.
+- **Carpetas para sincronizar** (Ajustes → la cuenta de Gmail), como en Samsung Email: una lista con interruptores, organizada por carpetas y subcarpetas. Las etiquetas **nunca desaparecen** del menú: las apagadas solo dejan de sincronizarse solas (push y comprobaciones); dentro de una, al tirar hacia abajo se traen sus correos (también los antiguos), y se quedan.
+- **Interruptores** nuevos en toda la app, más pequeños y con el estilo de cristal y resortes.
+
 ## 1.0.1 — 2026-11-11
 - Las cuentas de Microsoft (Outlook) ya no ofrecen «Nombre para enviar»: Microsoft siempre pone el nombre de la cuenta de Microsoft (comprobado con un envío real), así que en su lugar se explica dónde cambiarlo. En Gmail e IMAP sigue funcionando.
 - Probado el envío desde Outlook a Gmail: llega bien (la primera vez Gmail lo puso en Spam; al moverlo a Recibidos aprende).
