@@ -12,6 +12,8 @@ data class AppSettings(
     val customHue: Float? = null,
     /** Light or dark: following the phone, or always one of them. */
     val themeMode: com.cemail.app.ui.theme.ThemeMode = com.cemail.app.ui.theme.ThemeMode.SYSTEM,
+    /** Background and glass look (Classic, Neutral, Aurora). */
+    val themeStyle: com.cemail.app.ui.theme.ThemeStyle = com.cemail.app.ui.theme.ThemeStyle.CLASSIC,
     /** 0 = solid glass, 100 = fully see-through. */
     val transparency: Int = 65,
     /** Load remote images in messages without asking (off by default: they can be tracking pixels). */
@@ -66,6 +68,8 @@ class SettingsRepository(context: Context) {
         accent = prefs.getString(KEY_ACCENT, null)
             ?.let { name -> Accent.entries.firstOrNull { it.name == name } } ?: Accent.INDIGO,
         customHue = prefs.getFloat(KEY_HUE, -1f).takeIf { it >= 0f },
+        themeStyle = prefs.getString(KEY_STYLE, null)
+            ?.let { n -> com.cemail.app.ui.theme.ThemeStyle.entries.firstOrNull { it.name == n } } ?: com.cemail.app.ui.theme.ThemeStyle.CLASSIC,
         themeMode = prefs.getString(KEY_THEME, null)
             ?.let { n -> com.cemail.app.ui.theme.ThemeMode.entries.firstOrNull { it.name == n } } ?: com.cemail.app.ui.theme.ThemeMode.SYSTEM,
         transparency = prefs.getInt(KEY_TRANSPARENCY, 65),
@@ -130,6 +134,11 @@ class SettingsRepository(context: Context) {
     fun setCustomHue(hue: Float) {
         prefs.edit().putFloat(KEY_HUE, hue).apply()
         _state.value = _state.value.copy(customHue = hue)
+    }
+
+    fun setThemeStyle(style: com.cemail.app.ui.theme.ThemeStyle) {
+        prefs.edit().putString(KEY_STYLE, style.name).apply()
+        _state.value = _state.value.copy(themeStyle = style)
     }
 
     fun setThemeMode(mode: com.cemail.app.ui.theme.ThemeMode) {
@@ -241,6 +250,7 @@ class SettingsRepository(context: Context) {
         const val KEY_DEFAULT_ACCOUNT = "default_account"
         const val KEY_HUE = "accent_hue"
         const val KEY_THEME = "theme_mode"
+        const val KEY_STYLE = "theme_style"
         const val KEY_ACCOUNT_LABEL = "account_label_"
         const val KEY_SENDER_NAME = "account_sender_"
         const val KEY_ACCOUNT_COLOR = "account_color_"

@@ -94,3 +94,7 @@ Reglas: las ventanas y menús salen de su botón (`origin`); lo que está en el 
 - **Carpetas para sincronizar**: una sola tarjeta con una fila por carpeta (icono de carpeta, nombre, interruptor), como Samsung Email; las subetiquetas («Padre/Hijo») van sangradas 24 dp por nivel bajo su madre, y una madre que no es etiqueta sale como encabezado sin interruptor. La bandeja de entrada va primero, encendida y fija.
 - **Abrir un correo con HTML**: nunca se enseña su texto plano antes; la tarjeta queda vacía hasta que la página está pintada y entonces aparece con un fundido (`glassSpring`).
 - **Logotipo de Yahoo**: «Y!» blanco sobre su morado, en un cuadrado redondeado (`BrandIcons.kt`, solo en la pantalla de añadir cuenta).
+
+## Estilos de fondo (prueba en la rama `temas`)
+- **Estilo** (`ThemeStyle`, Ajustes → Apariencia): cambia el fondo y el tinte del cristal, aparte de claro/oscuro y del acento. Cada estilo tiene versión clara y oscura; el fondo (degradado + manchas de luz `Blob`) y los colores de página/superficie viven en `GlassColors` y los dibuja `GlassBackground`.
+- **Clásico**: el lavanda de siempre. **Neutro**: gris niebla (claro) o grafito (oscuro), casi sin color; el acento solo aparece en botones y selecciones. **Aurora**: cielo profundo con luces grandes (acento, verde, violeta; en claro, acento, rosa, menta) detrás del cristal.

@@ -100,6 +100,21 @@ fun ThemeMode.isDark(): Boolean = when (this) {
     ThemeMode.DARK -> true
 }
 
+/**
+ * The look of the background and of the glass tint, apart from light/dark and the accent. [CLASSIC] is the soft
+ * lavender one; [NEUTRAL] is mist grey (light) or graphite (dark) with almost no colour; [AURORA] is a deep sky with
+ * big vivid lights behind the glass. Each has a light and a dark version.
+ */
+enum class ThemeStyle(@StringRes val label: Int) {
+    CLASSIC(R.string.style_classic),
+    NEUTRAL(R.string.style_neutral),
+    AURORA(R.string.style_aurora),
+}
+
+/** A soft round light of the background: [x], [y] are fractions of the screen, [radius] of its longest side. */
+@Immutable
+data class Blob(val color: Color, val x: Float, val y: Float, val radius: Float)
+
 /** Colours for the frosted-glass surfaces; their opacity follows the transparency setting. */
 @Immutable
 data class GlassColors(
@@ -117,36 +132,136 @@ data class GlassColors(
     val borderTop: Color,
     val borderBottom: Color,
     val shadow: Color,
+    /** The vertical gradient of the background, top to bottom, and the soft lights drawn over it. */
+    val gradient: List<Color>,
+    val blobs: List<Blob>,
+    /** Page and surface colours of the Material scheme for this style. */
+    val background: Color,
+    val surface: Color,
 )
 
-fun glassColors(dark: Boolean, transparency: Int, accent: AccentPalette): GlassColors {
+fun glassColors(
+    dark: Boolean,
+    transparency: Int,
+    accent: AccentPalette,
+    style: ThemeStyle = ThemeStyle.CLASSIC,
+): GlassColors {
     val t = transparency.coerceIn(0, 100) / 100f
     val cardAlpha = 0.12f + 0.8f * (1f - t) // 65 % → 0.40
     val chromeAlpha = (cardAlpha + 0.3f).coerceAtMost(0.92f)
     val pinnedAlpha = (cardAlpha + 0.25f).coerceAtMost(1f)
+    val tint = if (dark) accent.dark else accent.light
     return if (dark) {
+        val card = when (style) {
+            ThemeStyle.CLASSIC -> Color(0xFF262C45)
+            ThemeStyle.NEUTRAL -> Color(0xFF2C2E33)
+            ThemeStyle.AURORA -> Color(0xFF1F2440)
+        }
+        val menu = when (style) {
+            ThemeStyle.CLASSIC -> Color(0xFF262B40)
+            ThemeStyle.NEUTRAL -> Color(0xFF26282C)
+            ThemeStyle.AURORA -> Color(0xFF1B2038)
+        }
         GlassColors(
             dark = true,
-            card = Color(0xFF262C45).copy(alpha = cardAlpha),
-            chrome = Color(0xFF262C45).copy(alpha = chromeAlpha),
+            card = card.copy(alpha = cardAlpha),
+            chrome = card.copy(alpha = chromeAlpha),
             pinned = accent.darkContainer.copy(alpha = pinnedAlpha),
-            menu = Color(0xFF262B40).copy(alpha = 0.97f),
-            base = Color(0xFF171B2E),
+            menu = menu.copy(alpha = 0.97f),
+            base = when (style) {
+                ThemeStyle.CLASSIC -> Color(0xFF171B2E)
+                ThemeStyle.NEUTRAL -> Color(0xFF17181B)
+                ThemeStyle.AURORA -> Color(0xFF0E1122)
+            },
             borderTop = Color.White.copy(alpha = 0.16f),
             borderBottom = Color.White.copy(alpha = 0.04f),
             shadow = Color.Black.copy(alpha = 0.5f),
+            gradient = when (style) {
+                ThemeStyle.CLASSIC -> listOf(Color(0xFF141B33), Color(0xFF171A2B), Color(0xFF1D1825))
+                ThemeStyle.NEUTRAL -> listOf(Color(0xFF1A1B1E), Color(0xFF151618), Color(0xFF111214))
+                ThemeStyle.AURORA -> listOf(Color(0xFF0B0E1D), Color(0xFF0D1022), Color(0xFF0A0C18))
+            },
+            blobs = when (style) {
+                ThemeStyle.CLASSIC -> listOf(
+                    Blob(Color(0xFF1C4250).copy(alpha = 0.55f), 0.1f, 0.45f, 0.5f),
+                    Blob(tint.copy(alpha = 0.16f), 0.9f, 0.08f, 0.45f),
+                    Blob(Color(0xFF3A2440).copy(alpha = 0.5f), 0.85f, 0.95f, 0.5f),
+                )
+                ThemeStyle.NEUTRAL -> listOf(
+                    Blob(tint.copy(alpha = 0.12f), 0.9f, 0.05f, 0.5f),
+                    Blob(Color.White.copy(alpha = 0.04f), 0.1f, 0.7f, 0.5f),
+                )
+                ThemeStyle.AURORA -> listOf(
+                    Blob(tint.copy(alpha = 0.6f), 0.05f, 0.1f, 0.7f),
+                    Blob(Color(0xFF1FC28A).copy(alpha = 0.4f), 1f, 0.45f, 0.6f),
+                    Blob(Color(0xFF8B3AD2).copy(alpha = 0.55f), 0.1f, 0.95f, 0.65f),
+                )
+            },
+            background = when (style) {
+                ThemeStyle.CLASSIC -> Color(0xFF141B33)
+                ThemeStyle.NEUTRAL -> Color(0xFF151618)
+                ThemeStyle.AURORA -> Color(0xFF0C0F1E)
+            },
+            surface = when (style) {
+                ThemeStyle.CLASSIC -> Color(0xFF1C2033)
+                ThemeStyle.NEUTRAL -> Color(0xFF1E1F23)
+                ThemeStyle.AURORA -> Color(0xFF14172B)
+            },
         )
     } else {
+        val menu = when (style) {
+            ThemeStyle.CLASSIC -> Color(0xFFF9F7FC)
+            ThemeStyle.NEUTRAL -> Color(0xFFF9FAFA)
+            ThemeStyle.AURORA -> Color(0xFFF8F8FD)
+        }
         GlassColors(
             dark = false,
             card = Color.White.copy(alpha = cardAlpha),
             chrome = Color.White.copy(alpha = chromeAlpha),
             pinned = accent.lightContainer.copy(alpha = pinnedAlpha),
-            menu = Color(0xFFF9F7FC).copy(alpha = 0.97f),
-            base = Color(0xFFF1ECF4),
+            menu = menu.copy(alpha = 0.97f),
+            base = when (style) {
+                ThemeStyle.CLASSIC -> Color(0xFFF1ECF4)
+                ThemeStyle.NEUTRAL -> Color(0xFFEFF0F2)
+                ThemeStyle.AURORA -> Color(0xFFEEF0FA)
+            },
             borderTop = Color.White.copy(alpha = 0.85f),
             borderBottom = Color.White.copy(alpha = 0.25f),
-            shadow = Color(0xFF3A3060).copy(alpha = 0.25f),
+            shadow = when (style) {
+                ThemeStyle.NEUTRAL -> Color(0xFF30343C).copy(alpha = 0.22f)
+                else -> Color(0xFF3A3060).copy(alpha = 0.25f)
+            },
+            gradient = when (style) {
+                ThemeStyle.CLASSIC -> listOf(Color(0xFFECE6F6), Color(0xFFF4EDF0), Color(0xFFEEF1EB))
+                ThemeStyle.NEUTRAL -> listOf(Color(0xFFF4F5F7), Color(0xFFEFF0F2), Color(0xFFE9EBEE))
+                ThemeStyle.AURORA -> listOf(Color(0xFFE9ECFA), Color(0xFFF3EBF7), Color(0xFFE6F3F2))
+            },
+            blobs = when (style) {
+                ThemeStyle.CLASSIC -> listOf(
+                    Blob(tint.copy(alpha = 0.12f), 0.15f, 0.05f, 0.5f),
+                    Blob(Color(0xFFF7D9CF).copy(alpha = 0.7f), 0.95f, 0.55f, 0.45f),
+                    Blob(Color(0xFFDCEFE3).copy(alpha = 0.8f), 0.05f, 0.95f, 0.5f),
+                )
+                ThemeStyle.NEUTRAL -> listOf(
+                    Blob(tint.copy(alpha = 0.08f), 0.15f, 0.05f, 0.5f),
+                    Blob(Color.White.copy(alpha = 0.9f), 0.9f, 0.5f, 0.5f),
+                )
+                ThemeStyle.AURORA -> listOf(
+                    Blob(tint.copy(alpha = 0.4f), 0.05f, 0.08f, 0.7f),
+                    Blob(Color(0xFFF2A3C6).copy(alpha = 0.55f), 1f, 0.45f, 0.6f),
+                    Blob(Color(0xFF86DCCB).copy(alpha = 0.6f), 0.1f, 0.95f, 0.65f),
+                )
+            },
+            background = when (style) {
+                ThemeStyle.CLASSIC -> Color(0xFFECE6F6)
+                ThemeStyle.NEUTRAL -> Color(0xFFEFF0F2)
+                ThemeStyle.AURORA -> Color(0xFFE9ECFA)
+            },
+            surface = when (style) {
+                ThemeStyle.CLASSIC -> Color(0xFFF7F5FA)
+                ThemeStyle.NEUTRAL -> Color(0xFFF6F7F8)
+                ThemeStyle.AURORA -> Color(0xFFF5F6FC)
+            },
         )
     }
 }
@@ -157,16 +272,17 @@ val LocalGlass = staticCompositionLocalOf { glassColors(dark = false, transparen
 fun CemailTheme(settings: AppSettings = AppSettings(), content: @Composable () -> Unit) {
     val dark = settings.themeMode.isDark()
     val accent = settings.accentPalette
+    val glass = glassColors(dark, settings.transparency, accent, settings.themeStyle)
     val colors = if (dark) {
         darkColorScheme(
             primary = accent.dark,
             onPrimary = Color(0xFF11132B),
             primaryContainer = accent.darkContainer,
             onPrimaryContainer = Color(0xFFE6E5F7),
-            surface = Color(0xFF1C2033),
+            surface = glass.surface,
             onSurface = Color(0xFFF2F1F7),
             onSurfaceVariant = Color(0xFFB5B3C2),
-            background = Color(0xFF141B33),
+            background = glass.background,
             error = Color(0xFFFF8A80),
         )
     } else {
@@ -175,14 +291,13 @@ fun CemailTheme(settings: AppSettings = AppSettings(), content: @Composable () -
             onPrimary = Color.White,
             primaryContainer = accent.lightContainer,
             onPrimaryContainer = accent.light,
-            surface = Color(0xFFF7F5FA),
+            surface = glass.surface,
             onSurface = Color(0xFF1B1B21),
             onSurfaceVariant = Color(0xFF5D5B66),
-            background = Color(0xFFECE6F6),
+            background = glass.background,
             error = Color(0xFFC62828),
         )
     }
-    val glass = glassColors(dark, settings.transparency, accent)
     MaterialTheme(colorScheme = colors) {
         CompositionLocalProvider(
             LocalGlass provides glass,
