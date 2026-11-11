@@ -25,17 +25,31 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
         val app = applicationContext as CemailApplication
         val accounts = app.accountRepository.accounts.first()
         AppLog.i("worker", "background check, ${accounts.size} account(s)")
-        val ok = accounts.map { app.mailRepositoryFor(it.id).refresh(quick = true) }.all { it }
+        // Each account has its own pace (Settings → Accounts): it is checked only when its own interval has passed.
+        val now = System.currentTimeMillis()
+        val due = accounts.filter { account ->
+            val minutes = app.settings.state.value.syncMinutesFor(account.id)
+            minutes > 0 && now - app.settings.lastBackgroundCheck(account.id) >= minutes * 60_000L - SLACK_MILLIS
+        }
+        val ok = due.map { account ->
+            app.mailRepositoryFor(account.id).refresh(quick = true).also { done -> if (done) app.settings.setLastBackgroundCheck(account.id, now) }
+        }.all { it }
         AppLog.i("worker", "background check ${if (ok) "ok" else "failed, will retry"}")
         return if (ok) Result.success() else Result.retry()
     }
 
     companion object {
         private const val NAME = "background-sync"
+        /** The worker wakes a little early or late: an account due within this margin is checked now. */
+        private const val SLACK_MILLIS = 2 * 60_000L
 
         /** The choices offered in Settings, in minutes; [MANUAL] means "never check on its own". */
         const val MANUAL = 0
         val INTERVALS = listOf(15, 30, 60, 120, MANUAL)
+
+        /** The wake-up period that serves every account: the shortest of their intervals; 0 when all are manual. */
+        fun periodFor(settings: com.cemail.app.data.AppSettings, accountIds: List<String>): Int =
+            (if (accountIds.isEmpty()) listOf(settings.syncMinutes) else accountIds.map { settings.syncMinutesFor(it) }).filter { it > 0 }.minOrNull() ?: MANUAL
 
         /** Applies the chosen interval: replaces the scheduled check, or cancels it for [MANUAL]. */
         fun schedule(context: Context, minutes: Int) {

@@ -16,6 +16,9 @@ interface MailRepository {
     /** The labels the user created in the account that owns a message (empty if that account is not this store's). */
     suspend fun userLabels(accountId: String): List<Label>
 
+    /** Every user label of the account, including the ones switched off in Settings (which [userLabels] leaves out). */
+    suspend fun allLabels(accountId: String): List<Label> = userLabels(accountId)
+
     /** true while a sync with the server is running. */
     val syncing: StateFlow<Boolean>
 

@@ -22,7 +22,16 @@ data class AppSettings(
     val notifications: Boolean = true,
     /** Seconds a sent message waits so it can still be undone; 0 = sent at once. */
     val undoSendSeconds: Int = 5,
-)
+    /** Per account (by id): minutes between automatic checks; missing = the general interval above. */
+    val accountSync: Map<String, Int> = emptyMap(),
+    /** Per account (by id): the user labels that are not synchronised (nor shown in the menu). */
+    val hiddenLabels: Map<String, Set<String>> = emptyMap(),
+    /** Swiping a message from left to right, from right to left, and how far it has to go. */
+    val swipe: SwipeConfig = SwipeConfig(),
+) {
+    /** The interval that applies to this account: its own, or the general one. */
+    fun syncMinutesFor(accountId: String): Int = accountSync[accountId] ?: syncMinutes
+}
 
 /** Small app preferences, kept in SharedPreferences and exposed as a StateFlow (same approach as Cenotes). */
 class SettingsRepository(context: Context) {
@@ -42,6 +51,13 @@ class SettingsRepository(context: Context) {
         showSenderCircle = prefs.getBoolean(KEY_CIRCLE, true),
         notifications = prefs.getBoolean(KEY_NOTIFICATIONS, true),
         undoSendSeconds = prefs.getInt(KEY_UNDO_SEND, 5),
+        accountSync = prefs.all.filterKeys { it.startsWith(KEY_ACCOUNT_SYNC) }.mapNotNull { (k, v) -> (v as? Int)?.let { k.removePrefix(KEY_ACCOUNT_SYNC) to it } }.toMap(),
+        swipe = SwipeConfig(
+            right = prefs.getString(KEY_SWIPE_RIGHT, null)?.let { n -> SwipeAction.entries.firstOrNull { it.name == n } } ?: SwipeAction.ARCHIVE,
+            left = prefs.getString(KEY_SWIPE_LEFT, null)?.let { n -> SwipeAction.entries.firstOrNull { it.name == n } } ?: SwipeAction.TRASH,
+            distance = prefs.getString(KEY_SWIPE_DISTANCE, null)?.let { n -> SwipeDistance.entries.firstOrNull { it.name == n } } ?: SwipeDistance.NORMAL,
+        ),
+        hiddenLabels = prefs.all.filterKeys { it.startsWith(KEY_HIDDEN_LABELS) }.mapNotNull { (k, v) -> (v as? Set<*>)?.let { k.removePrefix(KEY_HIDDEN_LABELS) to it.filterIsInstance<String>().toSet() } }.toMap(),
     )
 
 
@@ -93,6 +109,38 @@ class SettingsRepository(context: Context) {
         _state.value = _state.value.copy(groupByDate = value)
     }
 
+    /** [minutes] null = follow the general interval. */
+    fun setAccountSync(accountId: String, minutes: Int?) {
+        prefs.edit().apply { if (minutes == null) remove(KEY_ACCOUNT_SYNC + accountId) else putInt(KEY_ACCOUNT_SYNC + accountId, minutes) }.apply()
+        val map = _state.value.accountSync.toMutableMap().apply { if (minutes == null) remove(accountId) else put(accountId, minutes) }
+        _state.value = _state.value.copy(accountSync = map)
+    }
+
+    fun setHiddenLabels(accountId: String, ids: Set<String>) {
+        prefs.edit().apply { if (ids.isEmpty()) remove(KEY_HIDDEN_LABELS + accountId) else putStringSet(KEY_HIDDEN_LABELS + accountId, ids) }.apply()
+        val map = _state.value.hiddenLabels.toMutableMap().apply { if (ids.isEmpty()) remove(accountId) else put(accountId, ids) }
+        _state.value = _state.value.copy(hiddenLabels = map)
+    }
+
+    /** When the background worker last checked this account (so each account keeps its own pace). */
+    fun lastBackgroundCheck(accountId: String): Long = prefs.getLong(KEY_LAST_BG + accountId, 0L)
+    fun setLastBackgroundCheck(accountId: String, millis: Long) = prefs.edit().putLong(KEY_LAST_BG + accountId, millis).apply()
+
+    fun setSwipeRight(action: SwipeAction) {
+        prefs.edit().putString(KEY_SWIPE_RIGHT, action.name).apply()
+        _state.value = _state.value.copy(swipe = _state.value.swipe.copy(right = action))
+    }
+
+    fun setSwipeLeft(action: SwipeAction) {
+        prefs.edit().putString(KEY_SWIPE_LEFT, action.name).apply()
+        _state.value = _state.value.copy(swipe = _state.value.swipe.copy(left = action))
+    }
+
+    fun setSwipeDistance(distance: SwipeDistance) {
+        prefs.edit().putString(KEY_SWIPE_DISTANCE, distance.name).apply()
+        _state.value = _state.value.copy(swipe = _state.value.swipe.copy(distance = distance))
+    }
+
     fun setSyncMinutes(value: Int) {
         prefs.edit().putInt(KEY_SYNC, value).apply()
         _state.value = _state.value.copy(syncMinutes = value)
@@ -109,6 +157,12 @@ class SettingsRepository(context: Context) {
     }
 
     private companion object {
+        const val KEY_SWIPE_RIGHT = "swipe_right"
+        const val KEY_SWIPE_LEFT = "swipe_left"
+        const val KEY_SWIPE_DISTANCE = "swipe_distance"
+        const val KEY_ACCOUNT_SYNC = "account_sync_"
+        const val KEY_HIDDEN_LABELS = "hidden_labels_"
+        const val KEY_LAST_BG = "last_bg_check_"
         const val KEY_CIRCLE = "show_sender_circle"
         const val KEY_UNDO_SEND = "undo_send_seconds"
         const val KEY_NOTIFICATIONS = "notifications"

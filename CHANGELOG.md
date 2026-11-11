@@ -3,6 +3,14 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.32.0 — 2026-11-11
+Ajustes reorganizados, pantalla para añadir cuentas, ajustes por cuenta y gestos configurables.
+- Ajustes ahora es una pantalla corta con una fila grande por sección: Cuentas, Mensajes, Gestos de deslizar, Notificaciones y sincronización, Apariencia y Diagnóstico.
+- Cuentas: lista de cuentas con un único botón «Añadir», que abre una pantalla con botones grandes de Google, Microsoft e IMAP (con sus logotipos).
+- Cada cuenta tiene sus propios ajustes: firma (texto, HTML pegado del portapapeles o importado de .eml/.html), frecuencia de comprobación propia (o la general) y, en Gmail, qué etiquetas se sincronizan.
+- Gestos de deslizar configurables: acción para cada lado (archivar, papelera, leído/no leído, spam, destacar, posponer o nada; puede ser la misma en los dos) y cuánto hay que deslizar (corto, normal, largo; por defecto hay que deslizar algo más que antes para evitar accidentes).
+- El trabajo en segundo plano se despierta con el intervalo más corto de las cuentas y cada cuenta respeta el suyo.
+
 ## 0.31.3 — 2026-11-11
 Tirar para actualizar más natural.
 - Al tirar hacia abajo, los mensajes bajan con el dedo (hasta un poco más allá del umbral) y el indicador queda en el hueco; al soltar pasado el umbral se actualiza y la lista vuelve a su sitio con un muelle.

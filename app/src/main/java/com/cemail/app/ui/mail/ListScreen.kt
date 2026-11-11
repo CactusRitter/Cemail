@@ -114,6 +114,7 @@ fun ListScreen(
     grouped: Boolean,
     stripeOf: (Mail) -> Color?,
     showSenderCircle: Boolean,
+    swipe: com.cemail.app.data.SwipeConfig,
     onOpenDrawer: () -> Unit,
 ) {
     val haze = rememberHazeState()
@@ -202,7 +203,7 @@ fun ListScreen(
             }
             if (state.pinned.isNotEmpty()) {
                 item(key = "h-pinned") { SectionHeader(stringResource(R.string.section_pinned)) }
-                items(state.pinned, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, stripeOf(mail), showSenderCircle, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
+                items(state.pinned, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
                 if (state.others.isNotEmpty() && !grouped) item(key = "h-mail") { SectionHeader(stringResource(R.string.section_mail)) }
             }
             if (grouped) {
@@ -212,10 +213,10 @@ fun ListScreen(
                     val list = groups[section] ?: return@forEach
                     val collapsed = section in state.collapsedSections
                     item(key = "d-$section") { DateHeader(section, list.size, collapsed) { vm.toggleSection(section) } }
-                    if (!collapsed) items(list, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, stripeOf(mail), showSenderCircle, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
+                    if (!collapsed) items(list, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
                 }
             } else {
-                items(state.others, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, stripeOf(mail), showSenderCircle, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
+                items(state.others, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
             }
         }
             // Under the top bar, where the pulled list comes down to.
@@ -295,7 +296,7 @@ fun ListScreen(
 }
 
 @Composable
-private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsArchive: Boolean, stripe: Color?, showCircle: Boolean, modifier: Modifier = Modifier) {
+private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsArchive: Boolean, swipe: com.cemail.app.data.SwipeConfig, stripe: Color?, showCircle: Boolean, modifier: Modifier = Modifier) {
     val one = setOf(mail.id)
     MailRow(
         mail = mail,
@@ -304,8 +305,18 @@ private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsA
         onClick = { if (state.selection.isNotEmpty()) vm.toggleSelect(mail.id) else if (mail.folder == Folder.DRAFTS || mail.folder == Folder.OUTBOX) vm.editDraft(mail) else vm.open(mail.id) },
         onLongClick = { vm.toggleSelect(mail.id) },
         onToggleStar = { vm.toggleStar(one) },
-        onSwipeStart = { if (startIsArchive) vm.archive(one) else vm.moveToInbox(one) },
-        onSwipeEnd = { vm.trash(one) },
+        swipe = swipe,
+        onSwipe = { action ->
+            when (action) {
+                com.cemail.app.data.SwipeAction.ARCHIVE -> if (startIsArchive) vm.archive(one) else vm.moveToInbox(one)
+                com.cemail.app.data.SwipeAction.TRASH -> vm.trash(one)
+                com.cemail.app.data.SwipeAction.TOGGLE_READ -> vm.markRead(one, !mail.read)
+                com.cemail.app.data.SwipeAction.SPAM -> vm.spam(one)
+                com.cemail.app.data.SwipeAction.STAR -> vm.toggleStar(one)
+                com.cemail.app.data.SwipeAction.SNOOZE -> vm.askSnooze(one)
+                com.cemail.app.data.SwipeAction.NONE -> Unit
+            }
+        },
         startIsArchive = startIsArchive,
         stripe = stripe,
         showCircle = showCircle,

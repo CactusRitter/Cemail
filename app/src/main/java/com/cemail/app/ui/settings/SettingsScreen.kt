@@ -1,14 +1,20 @@
 package com.cemail.app.ui.settings
 
 import android.Manifest
-import android.os.Build
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.app.NotificationManagerCompat
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import androidx.compose.foundation.clickable
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -21,17 +27,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -40,53 +46,88 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
+import androidx.core.app.NotificationManagerCompat
 import com.cemail.app.AppLog
 import com.cemail.app.CrashLog
-import android.widget.Toast
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.Box
-import androidx.compose.ui.draw.clip
-import com.cemail.app.data.gmail.HtmlSanitizer
-import com.cemail.app.ui.mail.HtmlBody
 import com.cemail.app.R
 import com.cemail.app.data.AppSettings
 import com.cemail.app.data.SettingsRepository
+import com.cemail.app.data.SwipeAction
+import com.cemail.app.data.SwipeDistance
 import com.cemail.app.data.db.AccountEntity
-import com.cemail.app.sync.SyncWorker
-import com.cemail.app.ui.glass.GlassKind
 import com.cemail.app.ui.glass.GlassPill
 import com.cemail.app.ui.glass.PillIcon
-import com.cemail.app.ui.glass.glass
-import com.cemail.app.ui.glass.pressScale
-import com.cemail.app.ui.mail.Avatar
+import com.cemail.app.ui.glass.glassSpring
+import com.cemail.app.ui.glass.softBounceSpring
+import com.cemail.app.ui.icons.CemailIcons
+import com.cemail.app.ui.mail.swipeIcon
 import java.text.NumberFormat
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalLayoutApi::class)
+/**
+ * The screens of Settings. A route is a plain string so it survives a rotation (the caller keeps it) and the system
+ * Back button can walk up the tree: details → list → main → closed.
+ */
+object SettingsRoute {
+    const val MAIN = "main"
+    const val ACCOUNTS = "accounts"
+    const val ADD = "add"
+    const val MESSAGES = "messages"
+    const val GESTURES = "gestures"
+    const val NOTIFICATIONS = "notifications"
+    const val APPEARANCE = "appearance"
+    const val DIAGNOSTICS = "diagnostics"
+    private const val ACCOUNT = "account:"
+
+    fun account(id: String) = ACCOUNT + id
+    fun accountId(route: String): String? = route.removePrefix(ACCOUNT).takeIf { route.startsWith(ACCOUNT) }
+
+    /** Where Back goes from [route]; null from the main screen (it closes Settings). */
+    fun parent(route: String): String? = when {
+        route == MAIN -> null
+        route == ADD || route.startsWith(ACCOUNT) -> ACCOUNTS
+        else -> MAIN
+    }
+
+    internal fun depth(route: String): Int = when {
+        route == MAIN -> 0
+        route == ADD || route.startsWith(ACCOUNT) -> 2
+        else -> 1
+    }
+}
+
 @Composable
 fun SettingsScreen(
     settings: AppSettings,
     repo: SettingsRepository,
     accounts: List<AccountEntity>,
+    route: String,
+    onRoute: (String) -> Unit,
     onRemoveAccount: (String) -> Unit,
     onAddGoogle: () -> Unit,
     onAddMicrosoft: () -> Unit,
     onAddImap: () -> Unit,
-    onBack: () -> Unit,
+    onClose: () -> Unit,
 ) {
-    val context = LocalContext.current
-    val resources = androidx.compose.ui.platform.LocalResources.current
-    var removing by remember { mutableStateOf<AccountEntity?>(null) }
-    var crash by remember { mutableStateOf(CrashLog.read(context)) }
+    val goBack = { SettingsRoute.parent(route)?.let(onRoute) ?: onClose() }
+    val account = SettingsRoute.accountId(route)?.let { id -> accounts.firstOrNull { it.id == id } }
+    val title = when {
+        account != null -> account.displayName ?: account.email
+        route == SettingsRoute.ACCOUNTS -> stringResource(R.string.settings_section_accounts)
+        route == SettingsRoute.ADD -> stringResource(R.string.add_account_title)
+        route == SettingsRoute.MESSAGES -> stringResource(R.string.settings_section_messages)
+        route == SettingsRoute.GESTURES -> stringResource(R.string.settings_gestures_title)
+        route == SettingsRoute.NOTIFICATIONS -> stringResource(R.string.settings_notifications_page)
+        route == SettingsRoute.APPEARANCE -> stringResource(R.string.settings_section_appearance)
+        route == SettingsRoute.DIAGNOSTICS -> stringResource(R.string.settings_section_diagnostics)
+        else -> stringResource(R.string.settings_title)
+    }
 
     Column(
         Modifier
@@ -96,401 +137,268 @@ fun SettingsScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         GlassPill(Modifier.fillMaxWidth()) {
-            PillIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), onBack)
+            PillIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), goBack)
             Text(
-                stringResource(R.string.settings_title),
+                title,
                 Modifier.weight(1f).padding(horizontal = 8.dp),
                 style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
-        Column(
-            Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            // --- Accounts ---
-            SectionTitle(R.string.settings_section_accounts)
-            if (accounts.isEmpty()) {
-                Text(
-                    stringResource(R.string.settings_no_accounts),
-                    Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card).padding(18.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            accounts.forEach { account ->
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .glass(CircleShape, GlassKind.Card)
-                        .padding(start = 8.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Avatar(account.displayName ?: account.email, size = 40)
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            account.displayName ?: account.email,
-                            style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            account.email,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+        // Going deeper grows the new screen in from a little smaller; going back does the opposite (like the app's screens).
+        AnimatedContent(
+            targetState = route,
+            modifier = Modifier.weight(1f),
+            transitionSpec = {
+                if (SettingsRoute.depth(targetState) >= SettingsRoute.depth(initialState)) {
+                    (fadeIn(glassSpring()) + scaleIn(softBounceSpring(), initialScale = 0.94f)) togetherWith
+                        (fadeOut(tween(120)) + scaleOut(glassSpring(), targetScale = 1.03f))
+                } else {
+                    (fadeIn(glassSpring()) + scaleIn(softBounceSpring(), initialScale = 1.04f)) togetherWith
+                        (fadeOut(tween(120)) + scaleOut(glassSpring(), targetScale = 0.94f))
+                }.using(SizeTransform(clip = false))
+            },
+            label = "settingsPage",
+        ) { target ->
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                val targetAccount = SettingsRoute.accountId(target)?.let { id -> accounts.firstOrNull { it.id == id } }
+                when {
+                    target == SettingsRoute.MAIN -> MainPage(settings, accounts.size, onRoute)
+                    target == SettingsRoute.ACCOUNTS -> AccountsPage(accounts, onRoute)
+                    target == SettingsRoute.ADD -> AddAccountPage(onAddGoogle, onAddMicrosoft, onAddImap)
+                    targetAccount != null -> AccountDetailPage(targetAccount, settings, repo) {
+                        onRoute(SettingsRoute.ACCOUNTS)
+                        onRemoveAccount(targetAccount.id)
                     }
-                    TextAction(R.string.settings_remove_account, MaterialTheme.colorScheme.error) { removing = account }
+                    target == SettingsRoute.MESSAGES -> MessagesPage(settings, repo)
+                    target == SettingsRoute.GESTURES -> GesturesPage(settings, repo)
+                    target == SettingsRoute.NOTIFICATIONS -> NotificationsPage(settings, repo)
+                    target == SettingsRoute.APPEARANCE -> AppearancePage(settings, repo)
+                    target == SettingsRoute.DIAGNOSTICS -> DiagnosticsPage()
+                    else -> Unit // an account that was just removed: the screen is on its way out
                 }
             }
-            // Adding an account lives here (not in the menu): one pill per kind of account.
+        }
+    }
+}
+
+// --- The main screen: one big row per section ---
+
+@Composable
+private fun MainPage(settings: AppSettings, accountCount: Int, onRoute: (String) -> Unit) {
+    val summary = stringResource(
+        R.string.settings_swipe_summary,
+        stringResource(swipeChoiceLabel(settings.swipe.right)),
+        stringResource(swipeChoiceLabel(settings.swipe.left)),
+    )
+    val rows: List<Triple<String, String, Pair<String, ImageVector>>> = listOf(
+        Triple(stringResource(R.string.settings_section_accounts), pluralStringResource(R.plurals.accounts_count, accountCount, accountCount), SettingsRoute.ACCOUNTS to Icons.Filled.Person),
+        Triple(stringResource(R.string.settings_section_messages), stringResource(R.string.settings_row_messages_body), SettingsRoute.MESSAGES to Icons.Filled.Email),
+        Triple(stringResource(R.string.settings_gestures_title), summary, SettingsRoute.GESTURES to Icons.AutoMirrored.Filled.ArrowForward),
+        Triple(stringResource(R.string.settings_notifications_page), stringResource(R.string.settings_row_notifications_body), SettingsRoute.NOTIFICATIONS to Icons.Filled.Notifications),
+        Triple(stringResource(R.string.settings_section_appearance), stringResource(R.string.settings_row_appearance_body), SettingsRoute.APPEARANCE to CemailIcons.Palette),
+        Triple(stringResource(R.string.settings_section_diagnostics), stringResource(R.string.settings_row_diagnostics_body), SettingsRoute.DIAGNOSTICS to Icons.Filled.Info),
+    )
+    rows.forEachIndexed { index, (title, body, target) ->
+        BigRow(title, body, index, onClick = { onRoute(target.first) }) {
+            IconBubble { Icon(target.second, null, tint = MaterialTheme.colorScheme.onPrimaryContainer) }
+        }
+    }
+}
+
+// --- Common settings pages ---
+
+@Composable
+private fun MessagesPage(settings: AppSettings, repo: SettingsRepository) {
+    SwitchRow(R.string.settings_images_title, R.string.settings_images_body, settings.alwaysShowImages, repo::setAlwaysShowImages)
+    SwitchRow(R.string.settings_group_title, R.string.settings_group_body, settings.groupByDate, repo::setGroupByDate)
+    SwitchRow(R.string.settings_circle_title, R.string.settings_circle_body, settings.showSenderCircle, repo::setShowSenderCircle)
+}
+
+/** Which actions the two swipe directions do, and how far a message has to be dragged. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun GesturesPage(settings: AppSettings, repo: SettingsRepository) {
+    @Composable
+    fun directionCard(title: Int, body: Int, current: SwipeAction, onPick: (SwipeAction) -> Unit) {
+        SettingsCard {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                IconBubble(36.dp) { Icon(swipeIcon(current), null, tint = MaterialTheme.colorScheme.onPrimaryContainer) }
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(title), style = MaterialTheme.typography.titleSmall)
+                    Text(stringResource(body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf(
-                    R.string.account_add_google to onAddGoogle,
-                    R.string.account_add_microsoft to onAddMicrosoft,
-                    R.string.account_add_other to onAddImap,
-                ).forEach { (label, action) ->
-                    Row(
-                        Modifier.pressScale(0.94f).glass(CircleShape, GlassKind.Card).clickable(role = Role.Button, onClick = action).padding(horizontal = 16.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Icon(Icons.Filled.Add, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
-                        Text(stringResource(label), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                    }
-                }
-            }
-
-            // --- Signatures: one per account, added when a message is written from it. It can be plain text or HTML
-            // imported from a message (.eml) or an .html file, which then shows exactly as it was designed. ---
-            if (accounts.isNotEmpty()) {
-                SectionTitle(R.string.settings_section_signature)
-                var importFor by remember { mutableStateOf<String?>(null) }
-                var version by remember { mutableIntStateOf(0) }
-                val importer = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-                    val email = importFor
-                    importFor = null
-                    if (uri == null || email == null) return@rememberLauncherForActivityResult
-                    val html = readSignatureFile(context, uri)
-                    if (html == null) {
-                        Toast.makeText(context, R.string.settings_signature_import_failed, Toast.LENGTH_LONG).show()
-                    } else {
-                        repo.setSignatureHtml(email, html)
-                        version++
-                    }
-                }
-                accounts.forEach { account ->
-                    var text by remember(account.email) { mutableStateOf(repo.signature(account.email)) }
-                    val html = remember(account.email, version) { repo.signatureHtml(account.email) }
-                    Column(
-                        Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card).padding(horizontal = 18.dp, vertical = 12.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Text(account.email, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        if (html != null) {
-                            Box(Modifier.fillMaxWidth().height(170.dp).clip(RoundedCornerShape(16.dp))) {
-                                HtmlBody(HtmlSanitizer.page(html, 0, ""), true, Modifier.fillMaxSize()) { }
-                            }
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                TextAction(R.string.settings_signature_replace, MaterialTheme.colorScheme.primary) {
-                                    importFor = account.email
-                                    importer.launch("*/*")
-                                }
-                                TextAction(R.string.settings_signature_remove, MaterialTheme.colorScheme.error) {
-                                    repo.setSignatureHtml(account.email, null)
-                                    version++
-                                }
-                            }
-                        } else {
-                            androidx.compose.material3.TextField(
-                                value = text,
-                                onValueChange = { text = it; repo.setSignature(account.email, it) },
-                                placeholder = { Text(stringResource(R.string.settings_signature_hint)) },
-                                modifier = Modifier.fillMaxWidth(),
-                                minLines = 2,
-                                colors = androidx.compose.material3.TextFieldDefaults.colors(
-                                    focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                                    unfocusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                                    focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                                    unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                                ),
-                            )
-                            TextAction(R.string.settings_signature_import, MaterialTheme.colorScheme.primary) {
-                                importFor = account.email
-                                importer.launch("*/*")
-                            }
-                        }
-                    }
-                }
-            }
-
-            // --- Messages ---
-            SectionTitle(R.string.settings_section_messages)
-            SwitchRow(
-                title = R.string.settings_images_title,
-                body = R.string.settings_images_body,
-                checked = settings.alwaysShowImages,
-                onChange = repo::setAlwaysShowImages,
-            )
-            SwitchRow(
-                title = R.string.settings_group_title,
-                body = R.string.settings_group_body,
-                checked = settings.groupByDate,
-                onChange = repo::setGroupByDate,
-            )
-            SwitchRow(
-                title = R.string.settings_circle_title,
-                body = R.string.settings_circle_body,
-                checked = settings.showSenderCircle,
-                onChange = repo::setShowSenderCircle,
-            )
-
-            // --- New mail (and, later, notifications) ---
-            SectionTitle(R.string.settings_section_sync)
-            val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
-            SwitchRow(
-                title = R.string.settings_notifications_title,
-                body = R.string.settings_notifications_body,
-                checked = settings.notifications,
-                onChange = { on ->
-                    repo.setNotifications(on)
-                    if (on && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        askPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-                    }
-                },
-            )
-            if (settings.notifications) {
-                TextAction(R.string.settings_notifications_test, MaterialTheme.colorScheme.primary) {
-                    (context.applicationContext as com.cemail.app.CemailApplication).notifier.show(
-                        "test", null,
-                        listOf(com.cemail.app.data.mail.Mail(
-                            0, resources.getString(R.string.notif_test_sender), "", resources.getString(R.string.notif_test_subject),
-                            resources.getString(R.string.notif_test_body), System.currentTimeMillis(),
-                        )),
-                    )
-                }
-            }
-            if (settings.notifications && !NotificationManagerCompat.from(context).areNotificationsEnabled()) {
-                Text(
-                    stringResource(R.string.settings_notifications_blocked),
-                    Modifier.padding(horizontal = 18.dp),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
-            Column(
-                Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card).padding(horizontal = 18.dp, vertical = 14.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Text(stringResource(R.string.settings_sync_title), style = MaterialTheme.typography.titleSmall)
-                Text(
-                    stringResource(R.string.settings_sync_body),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SyncWorker.INTERVALS.forEach { minutes ->
-                        val selected = settings.syncMinutes == minutes
-                        val label = when {
-                            minutes == SyncWorker.MANUAL -> stringResource(R.string.sync_manual)
-                            minutes % 60 == 0 -> pluralStringResource(R.plurals.sync_hours, minutes / 60, minutes / 60)
-                            else -> pluralStringResource(R.plurals.sync_minutes, minutes, minutes)
-                        }
-                        Text(
-                            label,
-                            Modifier
-                                .pressScale(0.94f)
-                                .glass(CircleShape, if (selected) GlassKind.Pinned else GlassKind.Card)
-                                .clickable(role = Role.RadioButton) {
-                                    repo.setSyncMinutes(minutes)
-                                    SyncWorker.schedule(context, minutes)
-                                }
-                                .padding(horizontal = 16.dp, vertical = 10.dp),
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                        )
-                    }
-                }
-            }
-
-            Column(
-                Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card).padding(horizontal = 18.dp, vertical = 14.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Text(stringResource(R.string.settings_undo_send_title), style = MaterialTheme.typography.titleSmall)
-                Text(
-                    stringResource(R.string.settings_undo_send_body),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(0, 5, 10, 20, 30).forEach { seconds ->
-                        val selected = settings.undoSendSeconds == seconds
-                        Text(
-                            if (seconds == 0) stringResource(R.string.undo_send_off) else stringResource(R.string.undo_send_seconds, seconds),
-                            Modifier
-                                .pressScale(0.94f)
-                                .glass(CircleShape, if (selected) GlassKind.Pinned else GlassKind.Card)
-                                .clickable(role = Role.RadioButton) { repo.setUndoSendSeconds(seconds) }
-                                .padding(horizontal = 16.dp, vertical = 10.dp),
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                        )
-                    }
-                }
-            }
-
-            // --- Appearance ---
-            SectionTitle(R.string.settings_section_appearance)
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .glass(RoundedCornerShape(24.dp), GlassKind.Card)
-                    .padding(horizontal = 18.dp, vertical = 14.dp),
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.settings_transparency_title), Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
-                    Text(
-                        NumberFormat.getPercentInstance().format(settings.transparency / 100.0),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
-                Text(
-                    stringResource(R.string.settings_transparency_body),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Slider(
-                    value = settings.transparency.toFloat(),
-                    onValueChange = { repo.setTransparency(it.roundToInt()) },
-                    valueRange = 0f..100f,
-                )
-            }
-
-            // --- Diagnostics: the activity log can always be shared; the last crash shows only if there was one ---
-            SectionTitle(R.string.settings_section_diagnostics)
-            Column(
-                Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card).padding(horizontal = 18.dp, vertical = 14.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Text(stringResource(R.string.settings_log_title), style = MaterialTheme.typography.titleSmall)
-                Text(
-                    stringResource(R.string.settings_log_body),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    val shareTitle = stringResource(R.string.settings_log_share_title)
-                    TextAction(R.string.settings_log_share, MaterialTheme.colorScheme.primary) { AppLog.share(context, shareTitle) }
-                    val copiedLabel = stringResource(R.string.copied)
-                    TextAction(R.string.copy, MaterialTheme.colorScheme.primary) {
-                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        clipboard.setPrimaryClip(ClipData.newPlainText(copiedLabel, AppLog.text(context)))
-                    }
-                    TextAction(R.string.clear, MaterialTheme.colorScheme.onSurfaceVariant) {
-                        AppLog.clear(context)
-                        crash = null
-                    }
-                }
-            }
-            crash?.let { text ->
-                Column(
-                    Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card).padding(horizontal = 18.dp, vertical = 14.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Text(stringResource(R.string.settings_crash_title), style = MaterialTheme.typography.titleSmall)
-                    Text(
-                        stringResource(R.string.settings_crash_body),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        text,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 6,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        val copiedLabel = stringResource(R.string.copied)
-                        TextAction(R.string.copy, MaterialTheme.colorScheme.primary) {
-                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            clipboard.setPrimaryClip(ClipData.newPlainText(copiedLabel, text))
-                        }
-                        TextAction(R.string.clear, MaterialTheme.colorScheme.onSurfaceVariant) {
-                            CrashLog.clear(context)
-                            crash = null
-                        }
-                    }
+                SwipeAction.entries.forEach { action ->
+                    ChoiceChip(stringResource(swipeChoiceLabel(action)), current == action) { onPick(action) }
                 }
             }
         }
     }
-
-    removing?.let { account ->
-        Dialog(onDismissRequest = { removing = null }) {
-            Column(
-                Modifier.fillMaxWidth().glass(RoundedCornerShape(28.dp), GlassKind.Menu, elevation = 12.dp).padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(stringResource(R.string.settings_remove_title), style = MaterialTheme.typography.titleMedium)
-                Text(
-                    stringResource(R.string.settings_remove_body, account.email),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    TextAction(R.string.cancel, MaterialTheme.colorScheme.onSurface) { removing = null }
-                    TextAction(R.string.settings_remove_account, MaterialTheme.colorScheme.error) {
-                        removing = null
-                        onRemoveAccount(account.id)
-                    }
+    directionCard(R.string.settings_swipe_right_title, R.string.settings_swipe_right_body, settings.swipe.right, repo::setSwipeRight)
+    directionCard(R.string.settings_swipe_left_title, R.string.settings_swipe_left_body, settings.swipe.left, repo::setSwipeLeft)
+    SettingsCard {
+        Text(stringResource(R.string.settings_swipe_distance_title), style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.settings_swipe_distance_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            SwipeDistance.entries.forEach { distance ->
+                val label = when (distance) {
+                    SwipeDistance.SHORT -> R.string.swipe_distance_short
+                    SwipeDistance.NORMAL -> R.string.swipe_distance_normal
+                    SwipeDistance.LONG -> R.string.swipe_distance_long
                 }
+                ChoiceChip(stringResource(label), settings.swipe.distance == distance) { repo.setSwipeDistance(distance) }
+            }
+        }
+    }
+    Text(
+        stringResource(R.string.settings_swipe_note),
+        Modifier.padding(horizontal = 12.dp),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+/** The name of an action in Settings (in the list it adapts to the message: "Mark as unread"...). */
+internal fun swipeChoiceLabel(action: SwipeAction): Int = when (action) {
+    SwipeAction.ARCHIVE -> R.string.action_archive
+    SwipeAction.TRASH -> R.string.action_trash
+    SwipeAction.TOGGLE_READ -> R.string.swipe_toggle_read
+    SwipeAction.SPAM -> R.string.action_spam
+    SwipeAction.STAR -> R.string.action_star
+    SwipeAction.SNOOZE -> R.string.action_snooze
+    SwipeAction.NONE -> R.string.swipe_none
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun NotificationsPage(settings: AppSettings, repo: SettingsRepository) {
+    val context = LocalContext.current
+    val resources = androidx.compose.ui.platform.LocalResources.current
+    val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    SwitchRow(
+        title = R.string.settings_notifications_title,
+        body = R.string.settings_notifications_body,
+        checked = settings.notifications,
+        onChange = { on ->
+            repo.setNotifications(on)
+            if (on && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                askPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        },
+    )
+    if (settings.notifications) {
+        TextAction(R.string.settings_notifications_test, MaterialTheme.colorScheme.primary) {
+            (context.applicationContext as com.cemail.app.CemailApplication).notifier.show(
+                "test", null,
+                listOf(com.cemail.app.data.mail.Mail(
+                    0, resources.getString(R.string.notif_test_sender), "", resources.getString(R.string.notif_test_subject),
+                    resources.getString(R.string.notif_test_body), System.currentTimeMillis(),
+                )),
+            )
+        }
+    }
+    if (settings.notifications && !NotificationManagerCompat.from(context).areNotificationsEnabled()) {
+        Text(
+            stringResource(R.string.settings_notifications_blocked),
+            Modifier.padding(horizontal = 18.dp),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+        )
+    }
+    SettingsCard {
+        Text(stringResource(R.string.settings_sync_title), style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.settings_sync_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            com.cemail.app.sync.SyncWorker.INTERVALS.forEach { minutes ->
+                // The background check is rescheduled by the app itself whenever this (or an account's own interval) changes.
+                ChoiceChip(syncIntervalLabel(minutes), settings.syncMinutes == minutes) { repo.setSyncMinutes(minutes) }
+            }
+        }
+    }
+    SettingsCard {
+        Text(stringResource(R.string.settings_undo_send_title), style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.settings_undo_send_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(0, 5, 10, 20, 30).forEach { seconds ->
+                ChoiceChip(
+                    if (seconds == 0) stringResource(R.string.undo_send_off) else stringResource(R.string.undo_send_seconds, seconds),
+                    settings.undoSendSeconds == seconds,
+                ) { repo.setUndoSendSeconds(seconds) }
             }
         }
     }
 }
 
 @Composable
-private fun SectionTitle(text: Int) {
-    Text(
-        stringResource(text),
-        Modifier.padding(start = 8.dp, top = 8.dp),
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.primary,
-    )
-}
-
-@Composable
-private fun TextAction(label: Int, color: androidx.compose.ui.graphics.Color, onClick: () -> Unit) {
-    Text(
-        stringResource(label),
-        Modifier.clickable(role = Role.Button, onClick = onClick).padding(horizontal = 12.dp, vertical = 10.dp),
-        style = MaterialTheme.typography.labelLarge,
-        color = color,
-    )
-}
-
-@Composable
-private fun SwitchRow(title: Int, body: Int, checked: Boolean, onChange: (Boolean) -> Unit) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .glass(RoundedCornerShape(24.dp), GlassKind.Card)
-            .clickable(role = Role.Switch) { onChange(!checked) }
-            .padding(horizontal = 18.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(stringResource(title), style = MaterialTheme.typography.titleSmall)
-            Text(stringResource(body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun AppearancePage(settings: AppSettings, repo: SettingsRepository) {
+    SettingsCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.settings_transparency_title), Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+            Text(
+                NumberFormat.getPercentInstance().format(settings.transparency / 100.0),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
         }
-        Switch(checked = checked, onCheckedChange = onChange)
+        Text(stringResource(R.string.settings_transparency_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Slider(
+            value = settings.transparency.toFloat(),
+            onValueChange = { repo.setTransparency(it.roundToInt()) },
+            valueRange = 0f..100f,
+        )
+    }
+}
+
+/** The activity log can always be shared; the last crash shows only if there was one. */
+@Composable
+private fun DiagnosticsPage() {
+    val context = LocalContext.current
+    var crash by remember { mutableStateOf(CrashLog.read(context)) }
+    SettingsCard {
+        Text(stringResource(R.string.settings_log_title), style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.settings_log_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            val shareTitle = stringResource(R.string.settings_log_share_title)
+            TextAction(R.string.settings_log_share, MaterialTheme.colorScheme.primary) { AppLog.share(context, shareTitle) }
+            val copiedLabel = stringResource(R.string.copied)
+            TextAction(R.string.copy, MaterialTheme.colorScheme.primary) {
+                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(ClipData.newPlainText(copiedLabel, AppLog.text(context)))
+            }
+            TextAction(R.string.clear, MaterialTheme.colorScheme.onSurfaceVariant) {
+                AppLog.clear(context)
+                crash = null
+            }
+        }
+    }
+    crash?.let { text ->
+        SettingsCard {
+            Text(stringResource(R.string.settings_crash_title), style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.settings_crash_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                text,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 6,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                val copiedLabel = stringResource(R.string.copied)
+                TextAction(R.string.copy, MaterialTheme.colorScheme.primary) {
+                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    clipboard.setPrimaryClip(ClipData.newPlainText(copiedLabel, text))
+                }
+                TextAction(R.string.clear, MaterialTheme.colorScheme.onSurfaceVariant) {
+                    CrashLog.clear(context)
+                    crash = null
+                }
+            }
+        }
     }
 }

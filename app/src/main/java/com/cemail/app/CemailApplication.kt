@@ -19,6 +19,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import com.cemail.app.widget.updateWidgets
@@ -73,6 +75,8 @@ class CemailApplication : Application() {
                 selfEmail = { accountRepository.accounts.first().firstOrNull { it.id == accountId }?.email },
                 onNewMail = ::notifyNewMail,
                 marks = com.cemail.app.data.mail.SyncMarks.Prefs(this, accountId),
+                hidden = settings.state.map { it.hiddenLabels[accountId].orEmpty() }.distinctUntilChanged()
+                    .stateIn(appScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, settings.state.value.hiddenLabels[accountId].orEmpty()),
             )
         }
     }
@@ -155,7 +159,11 @@ class CemailApplication : Application() {
             override fun onActivitySaveInstanceState(activity: android.app.Activity, outState: android.os.Bundle) = Unit
             override fun onActivityDestroyed(activity: android.app.Activity) = Unit
         })
-        SyncWorker.schedule(this, settings.state.value.syncMinutes)
+        // The background check follows the shortest interval of any account (each account keeps its own pace inside the worker).
+        appScope.launch {
+            kotlinx.coroutines.flow.combine(settings.state, accountRepository.accounts) { s, accounts -> SyncWorker.periodFor(s, accounts.map { it.id }) }
+                .distinctUntilChanged().collect { SyncWorker.schedule(this@CemailApplication, it) }
+        }
         // The Outbox: the delivery always follows the earliest message waiting to be sent.
         appScope.launch {
             database.messages().nextSend().distinctUntilChanged().collect { com.cemail.app.sync.OutboxWorker.schedule(this@CemailApplication, it) }

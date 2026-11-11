@@ -21,6 +21,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Close
+import com.cemail.app.data.SwipeAction
+import com.cemail.app.data.SwipeConfig
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import com.cemail.app.ui.glass.bumpOn
@@ -100,8 +104,9 @@ fun MailRow(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onToggleStar: () -> Unit,
-    onSwipeStart: () -> Unit,
-    onSwipeEnd: () -> Unit,
+    swipe: SwipeConfig,
+    onSwipe: (SwipeAction) -> Unit,
+    /** The message is in Archive, Trash or Spam: "archive" then means "back to the Inbox". */
     startIsArchive: Boolean,
     /** Colour of the account the message belongs to (unified inbox only). */
     stripe: Color? = null,
@@ -109,40 +114,41 @@ fun MailRow(
     showCircle: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
-    val state = rememberSwipeToDismissBoxState(confirmValueChange = { value ->
-        when (value) {
-            SwipeToDismissBoxValue.StartToEnd -> onSwipeStart()
-            SwipeToDismissBoxValue.EndToStart -> onSwipeEnd()
-            SwipeToDismissBoxValue.Settled -> Unit
-        }
-        false // the row springs back; if the message left the list it simply disappears
-    })
+    val state = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            when (value) {
+                SwipeToDismissBoxValue.StartToEnd -> onSwipe(swipe.right)
+                SwipeToDismissBoxValue.EndToStart -> onSwipe(swipe.left)
+                SwipeToDismissBoxValue.Settled -> Unit
+            }
+            false // the row springs back; if the message left the list it simply disappears
+        },
+        positionalThreshold = { total -> total * swipe.distance.fraction },
+    )
     val shape = RoundedCornerShape(20.dp)
     SwipeToDismissBox(
         state = state,
         modifier = modifier,
-        enableDismissFromStartToEnd = !selectionMode,
-        enableDismissFromEndToStart = !selectionMode,
+        enableDismissFromStartToEnd = !selectionMode && swipe.right != SwipeAction.NONE,
+        enableDismissFromEndToStart = !selectionMode && swipe.left != SwipeAction.NONE,
         backgroundContent = {
             if (state.dismissDirection == SwipeToDismissBoxValue.Settled) return@SwipeToDismissBox
             val toEnd = state.dismissDirection == SwipeToDismissBoxValue.StartToEnd
             val colors = MaterialTheme.colorScheme
+            val action = if (toEnd) swipe.right else swipe.left
+            val danger = action == SwipeAction.TRASH || action == SwipeAction.SPAM
             Box(
                 Modifier
                     .fillMaxSize()
-                    .background(if (toEnd) colors.primaryContainer else colors.errorContainer, shape)
+                    .background(if (danger) colors.errorContainer else colors.primaryContainer, shape)
                     .padding(horizontal = 24.dp),
                 contentAlignment = if (toEnd) Alignment.CenterStart else Alignment.CenterEnd,
             ) {
-                if (toEnd) {
-                    Icon(
-                        if (startIsArchive) CemailIcons.Archive else CemailIcons.Inbox,
-                        stringResource(if (startIsArchive) R.string.action_archive else R.string.action_move_inbox),
-                        tint = colors.onPrimaryContainer,
-                    )
-                } else {
-                    Icon(Icons.Filled.Delete, stringResource(R.string.action_trash), tint = colors.onErrorContainer)
-                }
+                Icon(
+                    swipeIcon(action, startIsArchive),
+                    stringResource(swipeLabel(action, startIsArchive, mail.read, mail.starred)),
+                    tint = if (danger) colors.onErrorContainer else colors.onPrimaryContainer,
+                )
             }
         },
     ) {
@@ -268,3 +274,25 @@ private fun Modifier.accountCorner(color: Color, shape: RoundedCornerShape): Mod
 @Composable
 fun Modifier.menuGlass(): Modifier = this.glass(RoundedCornerShape(24.dp), GlassKind.Menu, elevation = 12.dp)
 
+
+/** The icon shown behind a message while it is dragged (and in Settings). */
+fun swipeIcon(action: SwipeAction, startIsArchive: Boolean = true) = when (action) {
+    SwipeAction.ARCHIVE -> if (startIsArchive) CemailIcons.Archive else CemailIcons.Inbox
+    SwipeAction.TRASH -> Icons.Filled.Delete
+    SwipeAction.TOGGLE_READ -> CemailIcons.Mail
+    SwipeAction.SPAM -> Icons.Filled.Warning
+    SwipeAction.STAR -> Icons.Filled.Star
+    SwipeAction.SNOOZE -> CemailIcons.Snooze
+    SwipeAction.NONE -> Icons.Filled.Close
+}
+
+/** The name of an action; with the message at hand it says exactly what will happen ("Mark as unread"...). */
+fun swipeLabel(action: SwipeAction, startIsArchive: Boolean = true, read: Boolean? = null, starred: Boolean? = null): Int = when (action) {
+    SwipeAction.ARCHIVE -> if (startIsArchive) R.string.action_archive else R.string.action_move_inbox
+    SwipeAction.TRASH -> R.string.action_trash
+    SwipeAction.TOGGLE_READ -> if (read == true) R.string.action_mark_unread else R.string.action_mark_read
+    SwipeAction.SPAM -> R.string.action_spam
+    SwipeAction.STAR -> if (starred == true) R.string.action_unstar else R.string.action_star
+    SwipeAction.SNOOZE -> R.string.action_snooze
+    SwipeAction.NONE -> R.string.swipe_none
+}

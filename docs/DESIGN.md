@@ -67,3 +67,9 @@ Efectos reutilizables (siempre los mismos, no se inventan otros):
 - Avisos (barra de deshacer): suben desde abajo con rebote y bajan con `glassSpring`.
 
 Reglas: las ventanas y menús salen de su botón (`origin`); lo que está en el centro, del centro. Si Android tiene las animaciones desactivadas, Compose las salta solo.
+
+## Ajustes y filas grandes (añadido en Cemail 0.32.0)
+- **Fila grande** (`BigRow`): tarjeta de cristal `Card` con esquina de 28 dp, icono en un círculo (`primaryContainer`), título, una línea de explicación y flecha. Entra con `popIn` escalonado y se pulsa con `pressScale(0.97)`. Se usa para las secciones de Ajustes, las cuentas y los tipos de cuenta que se pueden añadir (ahí con más altura).
+- **Ajustes** es un árbol corto de pantallas (principal → sección → detalle) con transición de profundidad; el botón atrás sube un nivel. Cada pantalla agrupa controles en `SettingsCard`; las opciones de varias posibilidades son `ChoiceChip` (píldora de cristal, la elegida `Pinned` y en negrita).
+- **Logotipos de marca**: Google y Microsoft se dibujan en `BrandIcons.kt` con sus colores reales. Son los **únicos colores fijos** de la app y solo se usan en la pantalla de añadir cuenta.
+- **Gestos de deslizar**: el fondo que aparece al arrastrar usa `primaryContainer`, o `errorContainer` para las acciones destructivas (papelera, spam). El umbral es una fracción del ancho (30 / 45 / 60 %).

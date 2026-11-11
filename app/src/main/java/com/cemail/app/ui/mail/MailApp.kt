@@ -78,6 +78,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import com.cemail.app.data.AppSettings
 import com.cemail.app.data.SettingsRepository
+import com.cemail.app.ui.settings.SettingsRoute
 import com.cemail.app.ui.settings.SettingsScreen
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.mutableStateOf
@@ -110,6 +111,7 @@ private fun MailBox.icon(): ImageVector = when (this) {
 @Composable
 fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSettings, settingsRepo: SettingsRepository) {
     var showSettings by rememberSaveable { mutableStateOf(false) }
+    var settingsRoute by rememberSaveable { mutableStateOf(SettingsRoute.MAIN) }
     val acc by accountVm.state.collectAsStateWithLifecycle()
     // New messages are written from the selected account (the first one in the unified view).
     val me = (acc.accounts.firstOrNull { it.id == acc.selectedId } ?: acc.accounts.firstOrNull())?.email ?: DEMO_ME
@@ -165,6 +167,10 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
         Launches.pending.value = null
     }
 
+    // A new account shows up in the list: leave the "add" screen for the accounts.
+    val accountCount = acc.accounts.size
+    LaunchedEffect(accountCount) { if (settingsRoute == SettingsRoute.ADD) settingsRoute = SettingsRoute.ACCOUNTS }
+
     // In the unified inbox every message carries a thin line in the colour of its account.
     val palette = accountPalette()
     val unifiedView = acc.accounts.size > 1 && acc.selectedId == null
@@ -174,7 +180,8 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
 
     // While the app is on screen, look for new mail every minute (in the background SyncWorker does it).
     val lifecycleOwner = LocalLifecycleOwner.current
-    val autoCheck = settings.syncMinutes > 0 // "Manual" turns every automatic check off
+    // "Manual" turns every automatic check off (an account with its own interval counts on its own).
+    val autoCheck = if (acc.accounts.isEmpty()) settings.syncMinutes > 0 else acc.accounts.any { settings.syncMinutesFor(it.id) > 0 }
     LaunchedEffect(vm, lifecycleOwner, autoCheck) {
         if (!autoCheck) return@LaunchedEffect
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
@@ -186,7 +193,10 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
     }
 
     BackHandler(enabled = drawer.isOpen) { scope.launch { drawer.close() } }
-    BackHandler(enabled = showSettings && !drawer.isOpen) { showSettings = false }
+    BackHandler(enabled = showSettings && !drawer.isOpen) {
+        // Back walks up Settings (account → accounts → main) and closes it from the main screen.
+        SettingsRoute.parent(settingsRoute)?.let { settingsRoute = it } ?: run { showSettings = false }
+    }
     BackHandler(enabled = state.draft != null) { vm.closeCompose(me) }
     BackHandler(enabled = state.draft == null && state.open != null) { vm.closeMail() }
     BackHandler(enabled = state.draft == null && state.open == null && state.selection.isNotEmpty()) { vm.clearSelection() }
@@ -209,6 +219,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                     windowInsets = WindowInsets(0),
                 ) {
                     DrawerContent(state, acc, unified = unifiedView, revealed = drawer.targetValue == DrawerValue.Open, onOpenSettings = {
+                        settingsRoute = SettingsRoute.MAIN
                         showSettings = true
                         scope.launch { drawer.close() }
                     }, onSelectAccount = { id ->
@@ -255,11 +266,11 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                     when (target) {
                         Screen.COMPOSE -> lastDraft?.let { ComposeScreen(it, vm, me) }
                         Screen.SETTINGS -> SettingsScreen(
-                            settings, settingsRepo, acc.accounts, accountVm::remove,
-                            onAddGoogle = startSignIn, onAddMicrosoft = startMicrosoft, onAddImap = { showSettings = false; imapForm = true },
+                            settings, settingsRepo, acc.accounts, settingsRoute, { settingsRoute = it }, accountVm::remove,
+                            onAddGoogle = startSignIn, onAddMicrosoft = startMicrosoft, onAddImap = { imapForm = true },
                         ) { showSettings = false }
                         Screen.READ -> lastOpen?.let { ReadScreen(it, vm, settings.alwaysShowImages, state.labels, state.thread) }
-                        Screen.LIST -> ListScreen(state, vm, grouped = settings.groupByDate && state.query.isBlank(), stripeOf = stripeOf, showSenderCircle = settings.showSenderCircle, onOpenDrawer = { scope.launch { drawer.open() } })
+                        Screen.LIST -> ListScreen(state, vm, grouped = settings.groupByDate && state.query.isBlank(), stripeOf = stripeOf, showSenderCircle = settings.showSenderCircle, swipe = settings.swipe, onOpenDrawer = { scope.launch { drawer.open() } })
                     }
                 }
                 UndoBar(state.undo, vm, Modifier.align(Alignment.BottomCenter))

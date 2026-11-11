@@ -55,6 +55,8 @@ class RoomMailRepository(
     /** Called with the unread Inbox messages that a sync found for the first time (never on the first sync). */
     private val onNewMail: (accountId: String, mails: List<Mail>) -> Unit = { _, _ -> },
     /** Where the sync keeps its place in the mailbox's history. */
+    /** User labels the user switched off in Settings: archived messages that carry only those are not kept. */
+    private val hidden: StateFlow<Set<String>> = kotlinx.coroutines.flow.MutableStateFlow(emptySet()),
     private val marks: SyncMarks = SyncMarks.InMemory(),
 ) : MailRepository {
     override val mails: StateFlow<List<Mail>> = dao.observe(accountId)
@@ -64,8 +66,24 @@ class RoomMailRepository(
     override suspend fun userLabels(accountId: String): List<Label> =
         if (accountId == this.accountId) labels.first() else emptyList()
 
-    override val labels: Flow<List<Label>> = labelDao.observe(accountId)
-        .map { list -> list.map { Label(it.id, it.name) } }
+    override val labels: Flow<List<Label>> = kotlinx.coroutines.flow.combine(labelDao.observe(accountId), hidden) { list, off ->
+        list.filter { it.id !in off }.map { Label(it.id, it.name) }
+    }
+
+    override suspend fun allLabels(accountId: String): List<Label> =
+        if (accountId == this.accountId) labelDao.observe(accountId).first().map { Label(it.id, it.name) } else emptyList()
+
+    /** True for an archived message whose only user labels are switched off: it lives nowhere the user looks. */
+    private fun MessageEntity.hiddenByLabels(): Boolean {
+        val off = hidden.value
+        if (off.isEmpty() || folder != Folder.ARCHIVE.name) return false
+        val own = labelIds.split(" ").filter { it.startsWith("Label_") }
+        return own.isNotEmpty() && own.all { it in off }
+    }
+
+    private suspend fun purgeHidden() {
+        dao.remoteOnes(accountId).filter { it.hiddenByLabels() }.map { it.localId }.chunked(500).forEach { dao.deleteAll(accountId, it) }
+    }
 
     private val _syncing = MutableStateFlow(false)
     override val syncing: StateFlow<Boolean> = _syncing
@@ -402,6 +420,7 @@ class RoomMailRepository(
         }
         val gone = changes.deleted.mapNotNull { cached[it]?.localId }
         gone.chunked(500).forEach { dao.deleteAll(accountId, it) }
+        purgeHidden()
         marks.save(changes.historyId, fullToo = false)
         AppLog.i("sync", "...${accountId.takeLast(4)} ${if (quick) "quick" else "full"} delta ok: ${changes.added.size} added, ${changes.relabelled.size} relabelled, ${gone.size} removed, ${arrived.size} new unread")
         if (arrived.isNotEmpty()) {
@@ -417,6 +436,10 @@ class RoomMailRepository(
             return
         }
         val entity = applyMute(GmailParser.parse(message).toEntity(accountId, id).capped())
+        if (entity.hiddenByLabels()) {
+            if (old != null) dao.delete(old.localId)
+            return
+        }
         // Embedded pictures first, so they are already there when the message shows up.
         if (entity.bodyHtml?.contains("cid:", ignoreCase = true) == true) {
             try { saveInlineImages(id, message) } catch (_: Exception) { /* retried when the message is opened */ }
@@ -458,6 +481,10 @@ class RoomMailRepository(
                             // New message, or one saved before HTML was kept: download it whole.
                             val message = api.getMessage(id)
                             val entity = applyMute(GmailParser.parse(message).toEntity(accountId, id).capped())
+                            if (entity.hiddenByLabels()) {
+                                if (old != null) dao.delete(old.localId)
+                                return@withPermit
+                            }
                             // Embedded pictures first, so they are already there when the message shows up.
                             if (entity.bodyHtml?.contains("cid:", ignoreCase = true) == true) {
                                 try { saveInlineImages(id, message) } catch (_: Exception) { /* retried when the message is opened */ }
@@ -486,6 +513,7 @@ class RoomMailRepository(
         }
         val gone = cached.filterKeys { it !in remoteIds }.values.map { it.localId }
         gone.chunked(500).forEach { dao.deleteAll(accountId, it) }
+        purgeHidden()
         if (historyAtStart != null) marks.save(historyAtStart, fullToo = true)
         AppLog.i("sync", "...${accountId.takeLast(4)} ${if (quick) "quick" else "full"} ok:${remoteIds.size} listed, ${cached.size} cached, ${arrived.size} new unread, ${gone.size} removed")
         // The first sync of an account brings in its whole history: that is not "new mail".
