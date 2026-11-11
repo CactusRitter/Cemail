@@ -3,6 +3,10 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.33.1 — 2026-11-11
+- Al abrir un correo, este **crece desde la tarjeta que tocas** hasta ocupar la pantalla, con un muelle suave, mientras la lista se desvanece detrás (antes aparecía de golpe). Al cerrarlo ocurre lo opuesto: **se pliega de vuelta hasta su tarjeta** mientras la lista aparece detrás.
+- El título de la bandeja («Recibidos», «Inbox», etiquetas…) está ahora **centrado de verdad en la pantalla**, aunque el botón de la izquierda y el de la derecha midan distinto.
+
 ## 0.33.0 — 2026-11-11
 Notificaciones instantáneas (push) para Gmail, y mejoras de los gestos.
 - Arreglado **Deshacer**: el gesto de deslizar podía disparar la acción dos veces y la segunda borraba el punto de deshacer; además, la sincronización que provoca el push podía devolver el estado antiguo justo después de pulsar Deshacer. Ahora una acción que no cambia nada no toca el deshacer, los cambios hacia Gmail se envían en orden y la sincronización ignora los mensajes tocados hace unos segundos.

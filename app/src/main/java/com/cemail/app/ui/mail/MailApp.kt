@@ -34,6 +34,11 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterExitState
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.core.tween
+import com.cemail.app.ui.glass.ReadTransition
+import com.cemail.app.ui.glass.expandFrom
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.fadeIn
@@ -256,7 +261,14 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                 AnimatedContent(
                     targetState = screen,
                     transitionSpec = {
-                        if (targetState.depth >= initialState.depth) {
+                        if (initialState == Screen.READ && targetState == Screen.LIST && ReadTransition.fromCard) {
+                            // Closing is the opposite: the mail folds back into its card (see expandFrom) and the list shows
+                            // up behind it. The mail has to stay until it has folded, hence the long (almost invisible) exit.
+                            (fadeIn(tween(300)) togetherWith fadeOut(tween(480), targetAlpha = 0.98f)).apply { targetContentZIndex = -1f }
+                        } else if (initialState == Screen.LIST && targetState == Screen.READ && ReadTransition.origin != null) {
+                            // The mail unfolds out of the card that was tapped (see expandFrom); the list just fades behind it.
+                            EnterTransition.None togetherWith fadeOut(tween(380, delayMillis = 60))
+                        } else if (targetState.depth >= initialState.depth) {
                             (fadeIn(glassSpring()) + scaleIn(softBounceSpring(), initialScale = 0.9f)) togetherWith
                                 (fadeOut(glassSpring()) + scaleOut(glassSpring(), targetScale = 1.04f))
                         } else {
@@ -272,7 +284,15 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                             settings, settingsRepo, acc.accounts, settingsRoute, { settingsRoute = it }, accountVm::remove,
                             onAddGoogle = startSignIn, onAddMicrosoft = startMicrosoft, onAddImap = { imapForm = true },
                         ) { showSettings = false }
-                        Screen.READ -> lastOpen?.let { ReadScreen(it, vm, settings.alwaysShowImages, state.labels, state.thread) }
+                        Screen.READ -> lastOpen?.let {
+                            // Taken once per opening: the card that was tapped is where the mail grows from.
+                            val origin = remember { ReadTransition.consume() }
+                            // Leaving towards the list: the mail folds back into its card.
+                            val closing = transition.targetState == EnterExitState.PostExit && screen == Screen.LIST
+                            Box(Modifier.fillMaxSize().expandFrom(origin, it.id, closing)) {
+                                ReadScreen(it, vm, settings.alwaysShowImages, state.labels, state.thread)
+                            }
+                        }
                         Screen.LIST -> ListScreen(state, vm, grouped = settings.groupByDate && state.query.isBlank(), stripeOf = stripeOf, showSenderCircle = settings.showSenderCircle, swipe = settings.swipe, onOpenDrawer = { scope.launch { drawer.open() } })
                     }
                 }

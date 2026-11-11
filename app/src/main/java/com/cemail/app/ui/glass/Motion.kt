@@ -16,6 +16,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.lerp
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
@@ -100,5 +111,68 @@ fun Modifier.bumpOn(trigger: Any?): Modifier {
     return this.graphicsLayer {
         scaleX = scale.value
         scaleY = scale.value
+    }
+}
+
+/**
+ * Where messages sit on screen, so the reader can unfold out of the card that was tapped and fold back into it.
+ * The list reports every card it draws ([positions]) and sets [origin] when one is tapped; the reader takes it
+ * ([consume]) once per opening.
+ */
+object ReadTransition {
+    @Volatile var origin: Rect? = null
+
+    /** True while the open reader came out of a card, so closing it folds back instead of using the plain transition. */
+    @Volatile var fromCard: Boolean = false
+
+    /** The cards on screen now, by message id (each card removes itself when it leaves the list). */
+    val positions = java.util.concurrent.ConcurrentHashMap<Long, Rect>()
+
+    fun consume(): Rect? = origin.also {
+        origin = null
+        fromCard = it != null
+    }
+}
+
+/**
+ * The screen opens slowly out of [origin] (the tapped card) to fill the window: a rounded window that grows with a soft
+ * spring while the content fades in and settles from a slightly smaller size. When [closing] it does the opposite and
+ * folds back into the card of message [mailId] (where that card is now, or where it was). Without an origin (a
+ * notification, say) nothing is changed.
+ */
+@Composable
+fun Modifier.expandFrom(origin: Rect?, mailId: Long, closing: Boolean): Modifier {
+    if (origin == null) return this
+    val progress = remember { Animatable(0f) }
+    LaunchedEffect(closing) {
+        if (closing) {
+            progress.animateTo(0f, spring(dampingRatio = 0.9f, stiffness = 260f)) // a little quicker than opening
+        } else {
+            progress.animateTo(1f, spring(dampingRatio = 0.9f, stiffness = 170f))
+        }
+    }
+    val corner = with(LocalDensity.current) { 22.dp.toPx() }
+    return this.graphicsLayer {
+        val p = progress.value
+        val open = p.coerceIn(0f, 1f) // the spring may overshoot a little: the window never goes beyond the screen
+        val card = ReadTransition.positions[mailId] ?: origin // read each frame: the list may have moved meanwhile
+        clip = true
+        shape = object : Shape {
+            override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline =
+                Outline.Rounded(
+                    RoundRect(
+                        left = lerp(card.left, 0f, open),
+                        top = lerp(card.top, 0f, open),
+                        right = lerp(card.right, size.width, open),
+                        bottom = lerp(card.bottom, size.height, open),
+                        cornerRadius = CornerRadius(lerp(corner, 0f, open)),
+                    ),
+                )
+        }
+        alpha = (open * 3f).coerceIn(0f, 1f)
+        val scale = 0.94f + 0.06f * p.coerceIn(0f, 1.2f)
+        scaleX = scale
+        scaleY = scale
+        transformOrigin = TransformOrigin(0.5f, if (size.height > 0f) card.center.y / size.height else 0.5f)
     }
 }

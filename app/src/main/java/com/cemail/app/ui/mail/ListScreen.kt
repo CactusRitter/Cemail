@@ -1,6 +1,8 @@
 package com.cemail.app.ui.mail
 
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -247,10 +249,11 @@ fun ListScreen(
                 1 -> SearchBar(state, vm, haze)
                 // Same header as Celander and Cenotes: round button on the left, the title in big bold
                 // letters in the middle, and a pill with the actions on the right.
-                else -> Row(Modifier.fillMaxWidth().height(56.dp), verticalAlignment = Alignment.CenterVertically) {
-                    GlassIconButton(Icons.Filled.Menu, stringResource(R.string.menu_open), onOpenDrawer, hazeState = haze)
-                    // The title is centred in the room between the two ends, so it never touches them.
-                    Box(Modifier.weight(1f).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
+                // The title sits in the middle of the whole screen (not in the room left between two ends of different
+                // widths) and gets the room that is left once the wider end has been taken from both sides.
+                else -> CenteredHeader(
+                    start = { GlassIconButton(Icons.Filled.Menu, stringResource(R.string.menu_open), onOpenDrawer, hazeState = haze) },
+                    title = {
                         Text(
                             state.labelId?.let { id -> state.labels.firstOrNull { it.id == id }?.name?.substringAfterLast("/") }
                                 ?: stringResource(state.box.labelRes()),
@@ -259,18 +262,20 @@ fun ListScreen(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
-                    }
-                    GlassPill(hazeState = haze) {
-                        if (state.syncing) {
-                            Box(Modifier.size(width = 44.dp, height = 48.dp), contentAlignment = Alignment.Center) {
-                                CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
+                    },
+                    end = {
+                        GlassPill(hazeState = haze) {
+                            if (state.syncing) {
+                                Box(Modifier.size(width = 44.dp, height = 48.dp), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
+                                }
+                            } else {
+                                PillIcon(Icons.Filled.Refresh, stringResource(R.string.refresh), vm::refresh, width = 44.dp)
                             }
-                        } else {
-                            PillIcon(Icons.Filled.Refresh, stringResource(R.string.refresh), vm::refresh, width = 44.dp)
+                            PillIcon(Icons.Filled.Search, stringResource(R.string.search), { vm.setSearching(true) }, width = 44.dp)
                         }
-                        PillIcon(Icons.Filled.Search, stringResource(R.string.search), { vm.setSearching(true) }, width = 44.dp)
-                    }
-                }
+                    },
+                )
             }
             }
         }
@@ -300,6 +305,9 @@ private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsA
     val one = setOf(mail.id)
     // With "confirm before acting" on, the swipe only asks; the action runs when it is confirmed.
     var pending by remember { mutableStateOf<com.cemail.app.data.SwipeAction?>(null) }
+    var bounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
+    // Reports where this card is, so an opened mail can fold back into it.
+    androidx.compose.runtime.DisposableEffect(mail.id) { onDispose { com.cemail.app.ui.glass.ReadTransition.positions.remove(mail.id) } }
     fun perform(action: com.cemail.app.data.SwipeAction) {
         when (action) {
             com.cemail.app.data.SwipeAction.ARCHIVE -> if (startIsArchive) vm.archive(one) else vm.moveToInbox(one)
@@ -315,7 +323,16 @@ private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsA
         mail = mail,
         selected = mail.id in state.selection,
         selectionMode = state.selection.isNotEmpty(),
-        onClick = { if (state.selection.isNotEmpty()) vm.toggleSelect(mail.id) else if (mail.folder == Folder.DRAFTS || mail.folder == Folder.OUTBOX) vm.editDraft(mail) else vm.open(mail.id) },
+        onClick = {
+            if (state.selection.isNotEmpty()) {
+                vm.toggleSelect(mail.id)
+            } else if (mail.folder == Folder.DRAFTS || mail.folder == Folder.OUTBOX) {
+                vm.editDraft(mail)
+            } else {
+                com.cemail.app.ui.glass.ReadTransition.origin = bounds // the mail grows out of this card
+                vm.open(mail.id)
+            }
+        },
         onLongClick = { vm.toggleSelect(mail.id) },
         onToggleStar = { vm.toggleStar(one) },
         swipe = swipe,
@@ -323,7 +340,10 @@ private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsA
         startIsArchive = startIsArchive,
         stripe = stripe,
         showCircle = showCircle,
-        modifier = modifier,
+        modifier = modifier.onGloballyPositioned {
+            bounds = it.boundsInRoot()
+            bounds?.let { rect -> com.cemail.app.ui.glass.ReadTransition.positions[mail.id] = rect }
+        },
     )
     pending?.let { action ->
         androidx.compose.ui.window.Dialog(onDismissRequest = { pending = null }) {
@@ -469,5 +489,32 @@ private fun EmptyFolderButton(box: MailBox, vm: MailViewModel) {
                 androidx.compose.material3.TextButton(onClick = { confirm = false }) { Text(stringResource(R.string.cancel)) }
             },
         )
+    }
+}
+
+/** A header with the title exactly in the middle of the screen, a button at each end, and no overlap between them. */
+@Composable
+private fun CenteredHeader(start: @Composable () -> Unit, title: @Composable () -> Unit, end: @Composable () -> Unit) {
+    androidx.compose.ui.layout.Layout(
+        content = {
+            Box { start() }
+            Box { title() }
+            Box { end() }
+        },
+        modifier = Modifier.fillMaxWidth().height(56.dp),
+    ) { measurables, constraints ->
+        val loose = constraints.copy(minWidth = 0, minHeight = 0)
+        val startPlaced = measurables[0].measure(loose)
+        val endPlaced = measurables[2].measure(loose)
+        val gap = 8.dp.roundToPx()
+        val side = maxOf(startPlaced.width, endPlaced.width)
+        val titlePlaced = measurables[1].measure(
+            loose.copy(maxWidth = (constraints.maxWidth - 2 * (side + gap)).coerceAtLeast(0)),
+        )
+        layout(constraints.maxWidth, constraints.maxHeight) {
+            startPlaced.placeRelative(0, (constraints.maxHeight - startPlaced.height) / 2)
+            endPlaced.placeRelative(constraints.maxWidth - endPlaced.width, (constraints.maxHeight - endPlaced.height) / 2)
+            titlePlaced.placeRelative((constraints.maxWidth - titlePlaced.width) / 2, (constraints.maxHeight - titlePlaced.height) / 2)
+        }
     }
 }
