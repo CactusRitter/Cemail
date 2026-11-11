@@ -256,6 +256,16 @@ private fun GesturesPage(settings: AppSettings, repo: SettingsRepository) {
             }
         }
     }
+    SwitchRow(R.string.settings_swipe_confirm_title, R.string.settings_swipe_confirm_body, settings.swipe.confirm, repo::setSwipeConfirm)
+    SettingsCard {
+        Text(stringResource(R.string.settings_swipe_undo_title), style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.settings_swipe_undo_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            com.cemail.app.data.SwipeConfig.UNDO_CHOICES.forEach { seconds ->
+                ChoiceChip(stringResource(R.string.undo_send_seconds, seconds), settings.swipe.undoSeconds == seconds) { repo.setUndoSeconds(seconds) }
+            }
+        }
+    }
     Text(
         stringResource(R.string.settings_swipe_note),
         Modifier.padding(horizontal = 12.dp),
@@ -281,6 +291,9 @@ private fun NotificationsPage(settings: AppSettings, repo: SettingsRepository) {
     val context = LocalContext.current
     val resources = androidx.compose.ui.platform.LocalResources.current
     val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    if (com.cemail.app.data.push.Push.available) {
+        SwitchRow(R.string.settings_push_title, R.string.settings_push_body, settings.pushEnabled, repo::setPushEnabled)
+    }
     SwitchRow(
         title = R.string.settings_notifications_title,
         body = R.string.settings_notifications_body,

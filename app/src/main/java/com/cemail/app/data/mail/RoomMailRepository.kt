@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
@@ -70,6 +71,10 @@ class RoomMailRepository(
         list.filter { it.id !in off }.map { Label(it.id, it.name) }
     }
 
+    override suspend fun setPush(topic: String?) {
+        if (topic == null) api.stopWatching() else api.watch(topic)
+    }
+
     override suspend fun allLabels(accountId: String): List<Label> =
         if (accountId == this.accountId) labelDao.observe(accountId).first().map { Label(it.id, it.name) } else emptyList()
 
@@ -97,19 +102,43 @@ class RoomMailRepository(
 
     override fun restore(previous: List<Mail>) {
         val current = mails.value.associateBy { it.id }
+        AppLog.i("undo", "...${accountId.takeLast(4)} restore: ${previous.count { it.id in current }} of ${previous.size} found now")
         write(previous.mapNotNull { old -> current[old.id]?.let { it to old } })
     }
 
+    // Messages the user just changed here. The server copy is about to catch up, so a sync that read it a moment ago (the
+    // push that our own change triggers, for instance) must not put the old state back over an Undo.
+    private val touchedUntil = java.util.concurrent.ConcurrentHashMap<Long, Long>()
+    private val inFlight = java.util.concurrent.ConcurrentHashMap<Long, Int>()
+    private val modifyLock = kotlinx.coroutines.sync.Mutex()
+    private fun touched(localId: Long) = (touchedUntil[localId] ?: 0L) > System.currentTimeMillis()
+
     private fun write(changes: List<Pair<Mail, Mail>>) {
+        // Marked at once, before the coroutine starts, so a sync that is already running sees it too.
+        for ((_, after) in changes) {
+            inFlight.merge(after.id, 1) { a, b -> a + b }
+            touchedUntil[after.id] = Long.MAX_VALUE
+        }
         scope.launch(Dispatchers.IO) {
             for ((before, after) in changes) {
-                // Only the flags are written, so the (possibly huge) texts are never loaded here.
-                dao.updateFlags(after.id, after.folder.name, after.read, after.starred, after.pinned, after.snoozedUntil)
-                if (after.labelIds != before.labelIds) dao.updateLabelIds(after.id, after.labelIds.sorted().joinToString(" "))
-                val remote = dao.remoteIdOf(after.id) ?: continue
-                val (add, remove) = LabelDiff.between(before, after)
-                if (add.isNotEmpty() || remove.isNotEmpty()) {
-                    try { api.modify(remote, add, remove) } catch (_: Exception) { /* next sync puts the server state back */ }
+                try {
+                    // Only the flags are written, so the (possibly huge) texts are never loaded here.
+                    dao.updateFlags(after.id, after.folder.name, after.read, after.starred, after.pinned, after.snoozedUntil)
+                    if (after.labelIds != before.labelIds) dao.updateLabelIds(after.id, after.labelIds.sorted().joinToString(" "))
+                    val remote = dao.remoteIdOf(after.id)
+                    val (add, remove) = LabelDiff.between(before, after)
+                    if (remote != null && (add.isNotEmpty() || remove.isNotEmpty())) {
+                        // One at a time and in order, so an Undo reaches Gmail after the change it undoes.
+                        modifyLock.withLock {
+                            try { api.modify(remote, add, remove) } catch (_: Exception) { /* next sync puts the server state back */ }
+                        }
+                    }
+                } finally {
+                    val left = inFlight.merge(after.id, -1) { a, b -> a + b } ?: 0
+                    if (left <= 0) {
+                        inFlight.remove(after.id)
+                        touchedUntil[after.id] = System.currentTimeMillis() + TOUCH_GRACE_MILLIS
+                    }
                 }
             }
         }
@@ -456,6 +485,7 @@ class RoomMailRepository(
 
     /** Puts the labels the server has on the cached copy (and drops it if it became spam). */
     private suspend fun applyLabels(old: MessageEntity, labels: Set<String>) {
+        if (touched(old.localId)) return // changed here a moment ago: what the server says may be older than that
         val state = LabelDiff.stateOf(labels)
         val joined = labels.sorted().joinToString(" ")
         if (state.folder.name != old.folder || state.read != old.read || state.starred != old.starred || joined != old.labelIds) {
@@ -497,7 +527,7 @@ class RoomMailRepository(
                             } else {
                                 dao.update(entity.copy(localId = old.localId, pinned = old.pinned, snoozedUntil = old.snoozedUntil))
                             }
-                        } else if (!quick) {
+                        } else if (!quick && !touched(old.localId)) {
                             val labels = api.getLabels(id).toSet()
                             val state = LabelDiff.stateOf(labels)
                             val joined = labels.sorted().joinToString(" ")
@@ -539,6 +569,8 @@ class RoomMailRepository(
         const val QUERY = "in:anywhere -in:spam -in:chats"
         const val LIMIT = 120
         const val SPAM_LIMIT = 30
+        /** How long after a local change the server's labels are not trusted over the phone's. */
+        const val TOUCH_GRACE_MILLIS = 8_000L
         const val MAX_INLINE_BYTES = 4 * 1024 * 1024
         const val RECENT_MILLIS = 3L * 24 * 60 * 60 * 1000
         const val CHUNK = 250_000

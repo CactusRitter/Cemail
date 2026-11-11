@@ -58,7 +58,7 @@ Para soportar otros proveedores primero hay que separar a Cemail de Gmail, porqu
 6. **Vista previa de adjuntos** dentro de la app (imágenes, PDF) y «Guardar en Descargas».
 7. **Reglas y remitentes VIP**: avisos solo de ciertos remitentes, horas de silencio, avisos distintos por cuenta.
 8. **Tableta y plegables** (dos paneles: lista y mensaje), **bloqueo con huella**, modo oscuro revisado a fondo y más idiomas.
-9. **Push real** (avisos al instante de Gmail): sigue pendiente de decidir si se activa la facturación de Google Cloud (ver abajo).
+9. **Push real** (avisos al instante de Gmail): hecho en 0.33.0 sin facturación (ver `docs/PUSH.md`). Pendiente: Microsoft e IMAP IDLE.
 
 ### E. Pulido y 1.0
 Ajustes finos con el diseño de Celander/Cenotes, accesibilidad, icono definitivo, APK firmado, revisión de textos en todos los idiomas. Se llega a la **1.0** cuando funcionen las cuentas de Gmail, IMAP y Microsoft en tu móvil y lo principal esté probado con correo real.

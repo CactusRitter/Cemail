@@ -21,4 +21,12 @@ data class SwipeConfig(
     val right: SwipeAction = SwipeAction.ARCHIVE,
     val left: SwipeAction = SwipeAction.TRASH,
     val distance: SwipeDistance = SwipeDistance.NORMAL,
-)
+    /** Ask "Confirm: Archive?" before the action is done. */
+    val confirm: Boolean = false,
+    /** Seconds the "Undo" bar stays after an action (swiping or any other). */
+    val undoSeconds: Int = 5,
+) {
+    companion object {
+        val UNDO_CHOICES = listOf(3, 5, 8, 12)
+    }
+}

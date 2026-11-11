@@ -16,6 +16,9 @@ interface MailRepository {
     /** The labels the user created in the account that owns a message (empty if that account is not this store's). */
     suspend fun userLabels(accountId: String): List<Label>
 
+    /** Turns the instant push on ([topic] is the Pub/Sub topic Gmail publishes to) or off (null). Only Gmail has it. */
+    suspend fun setPush(topic: String?) {}
+
     /** Every user label of the account, including the ones switched off in Settings (which [userLabels] leaves out). */
     suspend fun allLabels(accountId: String): List<Label> = userLabels(accountId)
 

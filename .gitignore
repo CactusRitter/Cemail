@@ -16,3 +16,10 @@ keystore.properties
 # Claude Code local settings
 .claude/settings.local.json
 tmp_shots/
+
+# Secretos del relay de push
+push-worker/secrets.local.txt
+
+# Claves de cuentas de servicio (nunca al repositorio)
+*-firebase-adminsdk-*.json
+*.local.json

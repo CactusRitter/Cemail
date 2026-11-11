@@ -184,15 +184,20 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
     }
     fun clearSelection() = ui.update { it.copy(selection = emptySet()) }
 
+    /** How long the "Undo" bar stays after an action; the screen keeps it in line with Settings. */
+    @Volatile var actionUndoMillis: Long = 5_000
+
     // --- actions (each one can be undone) ---
     private fun act(ids: Set<Long>, @StringRes message: Int?, closeOpen: Boolean = false, transform: (Mail) -> Mail) {
         if (ids.isEmpty()) return
         val before = repo.snapshot(ids)
+        // An action that changes nothing (a swipe that fires twice, say) must not replace the "Undo" of the one before it.
+        if (before.isEmpty() || before.all { transform(it) == it }) return
         repo.update(ids, transform)
         ui.update {
             it.copy(
                 selection = it.selection - ids,
-                undo = message?.let { m -> UndoEvent(++undoCounter, m, before) } ?: it.undo,
+                undo = message?.let { m -> UndoEvent(++undoCounter, m, before, durationMillis = actionUndoMillis) } ?: it.undo,
                 openId = if (closeOpen && it.openId in ids) null else it.openId,
             )
         }
@@ -214,9 +219,10 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
     }
     fun spam(ids: Set<Long>) = act(ids, R.string.done_spammed, true) { it.copy(folder = Folder.SPAM, snoozedUntil = null) }
     fun moveToInbox(ids: Set<Long>) = act(ids, R.string.done_marked, true) { it.copy(folder = Folder.INBOX, snoozedUntil = null) }
-    fun toggleStar(ids: Set<Long>) {
+    /** [withUndo]: the swipe gesture offers to undo it; tapping the star does not. */
+    fun toggleStar(ids: Set<Long>, withUndo: Boolean = false) {
         val turnOn = repo.snapshot(ids).any { !it.starred }
-        act(ids, null) { it.copy(starred = turnOn) }
+        act(ids, if (withUndo) R.string.done_marked else null) { it.copy(starred = turnOn) }
     }
     fun togglePin(ids: Set<Long>) {
         val turnOn = repo.snapshot(ids).any { !it.pinned }
@@ -236,6 +242,7 @@ class MailViewModel(private val repo: MailRepository) : ViewModel() {
     }
     fun undo() {
         val u = ui.value.undo ?: return
+        com.cemail.app.AppLog.i("undo", "restoring ${u.previous.size} message(s), folder before: ${u.previous.map { it.folder }}")
         if (u.previous.isNotEmpty()) repo.restore(u.previous)
         u.cancelSend?.let { id ->
             repo.cancelScheduled(id)

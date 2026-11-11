@@ -178,6 +178,9 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
         if (!unifiedView) null else acc.accounts.indexOfFirst { it.id == mail.accountId }.takeIf { it >= 0 }?.let { palette[it % palette.size] }
     }
 
+    // How long the "Undo" bar stays after an action follows Settings.
+    LaunchedEffect(vm, settings.swipe.undoSeconds) { vm.actionUndoMillis = settings.swipe.undoSeconds * 1000L }
+
     // While the app is on screen, look for new mail every minute (in the background SyncWorker does it).
     val lifecycleOwner = LocalLifecycleOwner.current
     // "Manual" turns every automatic check off (an account with its own interval counts on its own).

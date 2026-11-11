@@ -3,6 +3,15 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.33.0 — 2026-11-11
+Notificaciones instantáneas (push) para Gmail, y mejoras de los gestos.
+- Arreglado **Deshacer**: el gesto de deslizar podía disparar la acción dos veces y la segunda borraba el punto de deshacer; además, la sincronización que provoca el push podía devolver el estado antiguo justo después de pulsar Deshacer. Ahora una acción que no cambia nada no toca el deshacer, los cambios hacia Gmail se envían en orden y la sincronización ignora los mensajes tocados hace unos segundos.
+- Arreglado el envío diferido/con deshacer: el trabajo que enviaba el correo se cancelaba a sí mismo en bucle y no llegaba a salir. Probado de punta a punta: el aviso llega unos 4 segundos después de enviar.
+- La confirmación al deslizar es ahora una pregunta corta («¿Archivar?», «¿Borrar?»…) con Sí / No.
+- **Push de verdad**: Gmail avisa al móvil en el momento (Pub/Sub + un Worker gratuito de Cloudflare + Firebase Cloud Messaging), sin esperar a la comprobación de 15 minutos. Interruptor «Notificaciones instantáneas» en Ajustes → Notificaciones y sincronización. Ver `docs/PUSH.md`. Sin facturación y sin Analytics.
+- Gestos: opción **Confirmar antes de actuar** (pregunta antes de archivar, borrar…) y **Tiempo para deshacer** configurable (3, 5, 8 o 12 s). Destacar con el gesto también se puede deshacer.
+- Política de privacidad actualizada con el relé de notificaciones.
+
 ## 0.32.1 — 2026-11-11
 - El logotipo de Google de la pantalla «Añadir una cuenta» se parece más al real: la «G» queda abierta arriba a la derecha, con la barra azul.
 

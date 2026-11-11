@@ -2,6 +2,8 @@ package com.cemail.app.data.mail
 
 import com.cemail.app.AppLog
 import com.cemail.app.data.db.MessageDao
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 
 /** Puts a message in the Outbox: a row with the text, and its attachments in files. Returns the row's id. */
 internal suspend fun MessageDao.scheduleOutbox(accountId: String, mail: Mail, at: Long): Long {
@@ -23,14 +25,16 @@ internal suspend fun MessageDao.cancelOutbox(id: Long) {
  * If it fails it is tried again every couple of minutes (there may be no connection) and, after half an hour, it goes
  * back to Drafts so the text is never lost. Returns true if it was sent.
  */
-internal suspend fun deliverOutbox(dao: MessageDao, accountId: String, id: Long, transmit: suspend (Mail) -> Unit): Boolean {
-    val row = dao.get(id)?.takeIf { it.accountId == accountId && it.folder == Folder.OUTBOX.name } ?: return false
+internal suspend fun deliverOutbox(dao: MessageDao, accountId: String, id: Long, transmit: suspend (Mail) -> Unit): Boolean = withContext(NonCancellable) {
+    // NonCancellable: moving the row to Sent makes the app re-plan the Outbox work, which stops the worker that is sending.
+    // The delivery (and the clean-up after it) must still run to the end.
+    val row = dao.get(id)?.takeIf { it.accountId == accountId && it.folder == Folder.OUTBOX.name } ?: return@withContext false
     val (attachments, images) = Outbox.load(id)
     val mail = row.toMail().copy(
         outgoing = attachments, outgoingImages = images, outgoingHtml = row.bodyHtml?.takeIf { it.isNotBlank() },
     )
     dao.updateFolder(id, Folder.SENT.name)
-    return try {
+    try {
         transmit(mail)
         dao.delete(id)
         Outbox.delete(id)

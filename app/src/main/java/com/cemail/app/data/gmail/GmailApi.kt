@@ -41,6 +41,13 @@ interface GmailApi {
     /** Deletes messages for good (needs Gmail's full-access scope, not just "modify"). */
     suspend fun batchDelete(ids: List<String>)
 
+    /**
+     * Asks Gmail to publish a note to the Pub/Sub topic [topicName] whenever the Inbox changes (the push). It lasts about
+     * a week, so it is asked again every day. [stopWatching] ends it.
+     */
+    suspend fun watch(topicName: String) {}
+    suspend fun stopWatching() {}
+
     /** The mailbox's current history id: the starting point for [changesSince]. */
     suspend fun currentHistoryId(): String
 
@@ -139,6 +146,17 @@ class HttpGmailApi(
         call(Request.Builder().url(url).post(json.encodeToString(BatchDeleteRequest(ids)).toRequestBody(jsonType)).build())
     }
 
+    override suspend fun watch(topicName: String) {
+        val url = BASE.newBuilder().addPathSegment("watch").build()
+        val body = """{"topicName":"$topicName","labelIds":["INBOX"],"labelFilterBehavior":"INCLUDE"}""".toRequestBody(jsonType)
+        call(Request.Builder().url(url).post(body).build())
+    }
+
+    override suspend fun stopWatching() {
+        val url = BASE.newBuilder().addPathSegment("stop").build()
+        call(Request.Builder().url(url).post("{}".toRequestBody(jsonType)).build())
+    }
+
     override suspend fun currentHistoryId(): String {
         val url = BASE.newBuilder().addPathSegment("profile").build()
         return json.decodeFromString<Profile>(call(Request.Builder().url(url).build())).historyId
@@ -179,7 +197,7 @@ class HttpGmailApi(
         return withContext(Dispatchers.IO) {
             client.newCall(request.newBuilder().header("Authorization", "Bearer $token").build()).execute().use { response ->
                 val text = response.body.string()
-                if (!response.isSuccessful) throw GmailHttpException(response.code, "Gmail API ${response.code}")
+                if (!response.isSuccessful) throw GmailHttpException(response.code, "Gmail API ${response.code}: ${text.replace(Regex("\\s+"), " ").take(240)}")
                 text
             }
         }

@@ -296,3 +296,14 @@ fun swipeLabel(action: SwipeAction, startIsArchive: Boolean = true, read: Boolea
     SwipeAction.SNOOZE -> R.string.action_snooze
     SwipeAction.NONE -> R.string.swipe_none
 }
+
+/** The short question asked before a swipe acts ("Archive?", "Delete?"...) when confirmation is on. */
+fun swipeQuestion(action: SwipeAction, startIsArchive: Boolean = true, read: Boolean? = null, starred: Boolean? = null): Int = when (action) {
+    SwipeAction.ARCHIVE -> if (startIsArchive) R.string.swipe_ask_archive else R.string.swipe_ask_inbox
+    SwipeAction.TRASH -> R.string.swipe_ask_trash
+    SwipeAction.TOGGLE_READ -> if (read == true) R.string.swipe_ask_unread else R.string.swipe_ask_read
+    SwipeAction.SPAM -> R.string.swipe_ask_spam
+    SwipeAction.STAR -> if (starred == true) R.string.swipe_ask_unstar else R.string.swipe_ask_star
+    SwipeAction.SNOOZE -> R.string.swipe_ask_snooze
+    SwipeAction.NONE -> R.string.swipe_none
+}

@@ -142,6 +142,7 @@ class CemailApplication : Application() {
         AppLog.init(this)
         com.cemail.app.data.mail.Outbox.init(java.io.File(filesDir, "outbox"))
         CrashLog.install(this)
+        com.cemail.app.data.push.Push.initFirebase(this)
         notifier.createChannel()
         appScope.launch { accountRepository.accounts.collect { updateShortcuts(it) } }
         // The widgets redraw whenever the Inbox changes (a short pause first, so a sync counts as one change).
@@ -163,6 +164,19 @@ class CemailApplication : Application() {
         appScope.launch {
             kotlinx.coroutines.flow.combine(settings.state, accountRepository.accounts) { s, accounts -> SyncWorker.periodFor(s, accounts.map { it.id }) }
                 .distinctUntilChanged().collect { SyncWorker.schedule(this@CemailApplication, it) }
+        }
+        // Instant notifications: whenever the switch or the Gmail accounts change, the relay and Gmail are brought in line
+        // (and the daily renewal is scheduled). Without the keys in local.properties this does nothing.
+        if (com.cemail.app.data.push.Push.available) {
+            appScope.launch {
+                kotlinx.coroutines.flow.combine(
+                    settings.state.map { it.pushEnabled }.distinctUntilChanged(),
+                    accountRepository.accounts.map { list -> list.filter { it.provider == "GMAIL" }.map { it.email }.toSet() }.distinctUntilChanged(),
+                ) { on, _ -> on }.collect { on ->
+                    com.cemail.app.data.push.PushRenewWorker.schedule(this@CemailApplication, on)
+                    com.cemail.app.data.push.Push.sync(this@CemailApplication, on)
+                }
+            }
         }
         // The Outbox: the delivery always follows the earliest message waiting to be sent.
         appScope.launch {

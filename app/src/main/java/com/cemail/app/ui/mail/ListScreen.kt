@@ -298,6 +298,19 @@ fun ListScreen(
 @Composable
 private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsArchive: Boolean, swipe: com.cemail.app.data.SwipeConfig, stripe: Color?, showCircle: Boolean, modifier: Modifier = Modifier) {
     val one = setOf(mail.id)
+    // With "confirm before acting" on, the swipe only asks; the action runs when it is confirmed.
+    var pending by remember { mutableStateOf<com.cemail.app.data.SwipeAction?>(null) }
+    fun perform(action: com.cemail.app.data.SwipeAction) {
+        when (action) {
+            com.cemail.app.data.SwipeAction.ARCHIVE -> if (startIsArchive) vm.archive(one) else vm.moveToInbox(one)
+            com.cemail.app.data.SwipeAction.TRASH -> vm.trash(one)
+            com.cemail.app.data.SwipeAction.TOGGLE_READ -> vm.markRead(one, !mail.read)
+            com.cemail.app.data.SwipeAction.SPAM -> vm.spam(one)
+            com.cemail.app.data.SwipeAction.STAR -> vm.toggleStar(one, withUndo = true)
+            com.cemail.app.data.SwipeAction.SNOOZE -> vm.askSnooze(one)
+            com.cemail.app.data.SwipeAction.NONE -> Unit
+        }
+    }
     MailRow(
         mail = mail,
         selected = mail.id in state.selection,
@@ -306,22 +319,38 @@ private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsA
         onLongClick = { vm.toggleSelect(mail.id) },
         onToggleStar = { vm.toggleStar(one) },
         swipe = swipe,
-        onSwipe = { action ->
-            when (action) {
-                com.cemail.app.data.SwipeAction.ARCHIVE -> if (startIsArchive) vm.archive(one) else vm.moveToInbox(one)
-                com.cemail.app.data.SwipeAction.TRASH -> vm.trash(one)
-                com.cemail.app.data.SwipeAction.TOGGLE_READ -> vm.markRead(one, !mail.read)
-                com.cemail.app.data.SwipeAction.SPAM -> vm.spam(one)
-                com.cemail.app.data.SwipeAction.STAR -> vm.toggleStar(one)
-                com.cemail.app.data.SwipeAction.SNOOZE -> vm.askSnooze(one)
-                com.cemail.app.data.SwipeAction.NONE -> Unit
-            }
-        },
+        onSwipe = { action -> if (swipe.confirm) pending = action else perform(action) },
         startIsArchive = startIsArchive,
         stripe = stripe,
         showCircle = showCircle,
         modifier = modifier,
     )
+    pending?.let { action ->
+        androidx.compose.ui.window.Dialog(onDismissRequest = { pending = null }) {
+            androidx.compose.foundation.layout.Column(
+                Modifier.popIn(initialScale = 0.75f).fillMaxWidth().glass(RoundedCornerShape(28.dp), GlassKind.Menu, elevation = 12.dp).padding(24.dp),
+                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    stringResource(swipeQuestion(action, startIsArchive, mail.read, mail.starred)),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth(), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End) {
+                    Text(
+                        stringResource(R.string.swipe_no),
+                        Modifier.clickable(role = androidx.compose.ui.semantics.Role.Button) { pending = null }.padding(horizontal = 14.dp, vertical = 10.dp),
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                    Text(
+                        stringResource(R.string.swipe_yes),
+                        Modifier.clickable(role = androidx.compose.ui.semantics.Role.Button) { pending = null; perform(action) }.padding(horizontal = 14.dp, vertical = 10.dp),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Composable

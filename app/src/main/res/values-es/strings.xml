@@ -332,4 +332,21 @@
     <string name="account_labels_none">Esta cuenta aún no tiene etiquetas.</string>
     <string name="settings_signature_paste">Pegar HTML del portapapeles</string>
     <string name="settings_signature_paste_empty">El portapapeles no tiene nada que pegar.</string>
+    <string name="settings_push_title">Notificaciones instantáneas</string>
+    <string name="settings_push_body">Gmail avisa a tu teléfono en el momento en que llega un correo, sin esperar a la siguiente comprobación. Pasa por un pequeño servicio gratuito que solo ve tu dirección y un identificador anónimo del teléfono, nunca tus mensajes.</string>
+    <string name="settings_swipe_confirm_title">Confirmar antes de actuar</string>
+    <string name="settings_swipe_confirm_body">Tras deslizar, pregunta primero (por ejemplo «¿Borrar?») en lugar de hacerlo al instante.</string>
+    <string name="settings_swipe_undo_title">Tiempo para deshacer</string>
+    <string name="settings_swipe_undo_body">Cuánto tiempo se queda la barra Deshacer tras deslizar un mensaje (y tras archivarlo, borrarlo o marcarlo de cualquier otra forma).</string>
+    <string name="swipe_ask_archive">¿Archivar?</string>
+    <string name="swipe_ask_inbox">¿Mover a Recibidos?</string>
+    <string name="swipe_ask_trash">¿Borrar?</string>
+    <string name="swipe_ask_read">¿Marcar como leído?</string>
+    <string name="swipe_ask_unread">¿Marcar como no leído?</string>
+    <string name="swipe_ask_spam">¿Marcar como spam?</string>
+    <string name="swipe_ask_star">¿Destacar?</string>
+    <string name="swipe_ask_unstar">¿Quitar la estrella?</string>
+    <string name="swipe_ask_snooze">¿Posponer?</string>
+    <string name="swipe_yes">Sí</string>
+    <string name="swipe_no">No</string>
 </resources>

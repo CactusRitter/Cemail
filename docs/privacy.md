@@ -5,12 +5,12 @@ permalink: /privacy/
 
 # Privacy Policy
 
-*Last updated: 9 November 2026* · [Español](#español)
+*Last updated: 11 November 2026* · [Español](#español)
 
 Cemail ("the app") is an Android email client for Gmail, developed by César Caballero ("I", "me"). This policy explains what information the app accesses, how it is used and stored, and your choices. Cemail is a small personal project distributed to a few people as an APK; it is not published on Google Play.
 
 ## Summary
-- Cemail talks **directly** between your phone and Google. I do not run any server that receives your data.
+- Cemail talks **directly** between your phone and Google. The only server of mine is an optional, free relay for instant notifications (see below) that never receives your messages.
 - Your email stays **on your device**. I never see it, store it, sell it or share it.
 - No advertising, no analytics, no tracking, no crash-reporting services.
 
@@ -28,7 +28,14 @@ The app uses this access only to provide the features you see in the app, at you
 - Messages, labels and attachments you open are cached in a **local database on your phone** so the app works quickly and offline.
 - Sign-in tokens are stored on your phone **encrypted** with a key kept in the Android Keystore.
 - Cloud backup of the app's data is disabled.
-- Nothing is sent to me or to any third party. The only network connections the app makes are to Google's services (for example `accounts.google.com`, `oauth2.googleapis.com` and `gmail.googleapis.com`) and, only if you choose to show remote images in a message, to the servers hosting those images. Remote images are blocked by default.
+- Nothing is sent to me or to any third party, except what the optional instant-notification relay receives (see below). The only network connections the app makes are to Google's services (for example `accounts.google.com`, `oauth2.googleapis.com` and `gmail.googleapis.com`) and, only if you choose to show remote images in a message, to the servers hosting those images. Remote images are blocked by default.
+
+## Instant notifications (optional)
+If you leave "Instant notifications" on (Settings → Notifications and sync), Gmail tells your phone when mail arrives instead of the app checking every few minutes. For that to work:
+- The app asks Gmail to publish a "something changed" note to a Google Cloud Pub/Sub topic of this project. The note holds only your address and a history number, no message content.
+- A small relay that I run on Cloudflare Workers (free plan) receives that note and wakes your phone through Firebase Cloud Messaging (Google).
+- The relay stores, for as long as the feature is on, your **email address** and your phone's **Firebase Cloud Messaging token** (an anonymous identifier of the app on your phone). It never receives or stores message subjects, bodies, attachments, contacts or Google sign-in tokens.
+- Firebase Analytics is not used. You can turn the feature off at any time: the app stops Gmail's notifications and removes your address and token from the relay.
 
 ## Sharing
 I do not sell, rent, share or transfer your data to anyone. Google receives the requests the app makes to its services, as described in [Google's Privacy Policy](https://policies.google.com/privacy).
@@ -53,12 +60,12 @@ César Caballero · cesar.a.caballerot@gmail.com
 
 # Política de privacidad {#español}
 
-*Última actualización: 9 de noviembre de 2026* · [English](#privacy-policy)
+*Última actualización: 11 de noviembre de 2026* · [English](#privacy-policy)
 
 Cemail ("la app") es un cliente de correo para Android que funciona con Gmail, desarrollado por César Caballero ("yo"). Esta política explica a qué información accede la app, cómo se usa y se guarda, y qué puedes decidir tú. Cemail es un pequeño proyecto personal que se reparte como APK a unas pocas personas; no está publicada en Google Play.
 
 ## Resumen
-- Cemail se comunica **directamente** entre tu teléfono y Google. No tengo ningún servidor que reciba tus datos.
+- Cemail se comunica **directamente** entre tu teléfono y Google. El único servidor mío es un servicio gratuito y opcional para las notificaciones instantáneas (ver más abajo) que nunca recibe tus mensajes.
 - Tu correo se queda **en tu dispositivo**. Yo nunca lo veo, lo guardo, lo vendo ni lo comparto.
 - Sin publicidad, sin analíticas, sin seguimiento y sin servicios de informes de errores.
 
@@ -76,7 +83,14 @@ La app usa este acceso solo para ofrecer las funciones que ves en ella, a petici
 - Los mensajes, etiquetas y adjuntos que abres se guardan en una **base de datos local en tu teléfono** para que la app funcione rápido y sin conexión.
 - Los tokens de inicio de sesión se guardan en tu teléfono **cifrados** con una clave del Android Keystore.
 - La copia de seguridad en la nube de los datos de la app está desactivada.
-- No se envía nada a mí ni a terceros. Las únicas conexiones de red de la app son con los servicios de Google (por ejemplo `accounts.google.com`, `oauth2.googleapis.com` y `gmail.googleapis.com`) y, solo si decides mostrar las imágenes remotas de un mensaje, con los servidores que las alojan. Las imágenes remotas están bloqueadas por defecto.
+- No se envía nada a mí ni a terceros, salvo lo que recibe el servicio opcional de notificaciones instantáneas (ver más abajo). Las únicas conexiones de red de la app son con los servicios de Google (por ejemplo `accounts.google.com`, `oauth2.googleapis.com` y `gmail.googleapis.com`) y, solo si decides mostrar las imágenes remotas de un mensaje, con los servidores que las alojan. Las imágenes remotas están bloqueadas por defecto.
+
+## Notificaciones instantáneas (opcional)
+Si dejas activadas las «Notificaciones instantáneas» (Ajustes → Notificaciones y sincronización), Gmail avisa a tu teléfono cuando llega correo en lugar de que la app lo compruebe cada pocos minutos. Para que funcione:
+- La app pide a Gmail que publique una nota de «algo ha cambiado» en un tema de Google Cloud Pub/Sub de este proyecto. La nota solo contiene tu dirección y un número de historial, nada del contenido de los mensajes.
+- Un pequeño servicio que gestiono en Cloudflare Workers (plan gratuito) recibe esa nota y despierta tu teléfono a través de Firebase Cloud Messaging (Google).
+- Ese servicio guarda, mientras la función esté activada, tu **dirección de correo** y el **token de Firebase Cloud Messaging** de tu teléfono (un identificador anónimo de la app en tu teléfono). Nunca recibe ni guarda asuntos, cuerpos, adjuntos, contactos ni tokens de inicio de sesión de Google.
+- No se usa Firebase Analytics. Puedes desactivar la función cuando quieras: la app detiene los avisos de Gmail y borra tu dirección y tu token del servicio.
 
 ## Compartir datos
 No vendo, alquilo, comparto ni transfiero tus datos a nadie. Google recibe las peticiones que la app hace a sus servicios, según su [Política de Privacidad](https://policies.google.com/privacy).

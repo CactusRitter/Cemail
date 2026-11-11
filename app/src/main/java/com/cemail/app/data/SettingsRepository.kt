@@ -28,6 +28,8 @@ data class AppSettings(
     val hiddenLabels: Map<String, Set<String>> = emptyMap(),
     /** Swiping a message from left to right, from right to left, and how far it has to go. */
     val swipe: SwipeConfig = SwipeConfig(),
+    /** Instant notifications through the push relay (only has an effect when the keys are set). */
+    val pushEnabled: Boolean = true,
 ) {
     /** The interval that applies to this account: its own, or the general one. */
     fun syncMinutesFor(accountId: String): Int = accountSync[accountId] ?: syncMinutes
@@ -52,10 +54,13 @@ class SettingsRepository(context: Context) {
         notifications = prefs.getBoolean(KEY_NOTIFICATIONS, true),
         undoSendSeconds = prefs.getInt(KEY_UNDO_SEND, 5),
         accountSync = prefs.all.filterKeys { it.startsWith(KEY_ACCOUNT_SYNC) }.mapNotNull { (k, v) -> (v as? Int)?.let { k.removePrefix(KEY_ACCOUNT_SYNC) to it } }.toMap(),
+        pushEnabled = prefs.getBoolean(KEY_PUSH, true),
         swipe = SwipeConfig(
             right = prefs.getString(KEY_SWIPE_RIGHT, null)?.let { n -> SwipeAction.entries.firstOrNull { it.name == n } } ?: SwipeAction.ARCHIVE,
             left = prefs.getString(KEY_SWIPE_LEFT, null)?.let { n -> SwipeAction.entries.firstOrNull { it.name == n } } ?: SwipeAction.TRASH,
             distance = prefs.getString(KEY_SWIPE_DISTANCE, null)?.let { n -> SwipeDistance.entries.firstOrNull { it.name == n } } ?: SwipeDistance.NORMAL,
+            confirm = prefs.getBoolean(KEY_SWIPE_CONFIRM, false),
+            undoSeconds = prefs.getInt(KEY_UNDO_SECONDS, 5),
         ),
         hiddenLabels = prefs.all.filterKeys { it.startsWith(KEY_HIDDEN_LABELS) }.mapNotNull { (k, v) -> (v as? Set<*>)?.let { k.removePrefix(KEY_HIDDEN_LABELS) to it.filterIsInstance<String>().toSet() } }.toMap(),
     )
@@ -126,6 +131,11 @@ class SettingsRepository(context: Context) {
     fun lastBackgroundCheck(accountId: String): Long = prefs.getLong(KEY_LAST_BG + accountId, 0L)
     fun setLastBackgroundCheck(accountId: String, millis: Long) = prefs.edit().putLong(KEY_LAST_BG + accountId, millis).apply()
 
+    fun setPushEnabled(value: Boolean) {
+        prefs.edit().putBoolean(KEY_PUSH, value).apply()
+        _state.value = _state.value.copy(pushEnabled = value)
+    }
+
     fun setSwipeRight(action: SwipeAction) {
         prefs.edit().putString(KEY_SWIPE_RIGHT, action.name).apply()
         _state.value = _state.value.copy(swipe = _state.value.swipe.copy(right = action))
@@ -134,6 +144,16 @@ class SettingsRepository(context: Context) {
     fun setSwipeLeft(action: SwipeAction) {
         prefs.edit().putString(KEY_SWIPE_LEFT, action.name).apply()
         _state.value = _state.value.copy(swipe = _state.value.swipe.copy(left = action))
+    }
+
+    fun setSwipeConfirm(value: Boolean) {
+        prefs.edit().putBoolean(KEY_SWIPE_CONFIRM, value).apply()
+        _state.value = _state.value.copy(swipe = _state.value.swipe.copy(confirm = value))
+    }
+
+    fun setUndoSeconds(value: Int) {
+        prefs.edit().putInt(KEY_UNDO_SECONDS, value).apply()
+        _state.value = _state.value.copy(swipe = _state.value.swipe.copy(undoSeconds = value))
     }
 
     fun setSwipeDistance(distance: SwipeDistance) {
@@ -157,6 +177,9 @@ class SettingsRepository(context: Context) {
     }
 
     private companion object {
+        const val KEY_PUSH = "push_enabled"
+        const val KEY_SWIPE_CONFIRM = "swipe_confirm"
+        const val KEY_UNDO_SECONDS = "undo_seconds"
         const val KEY_SWIPE_RIGHT = "swipe_right"
         const val KEY_SWIPE_LEFT = "swipe_left"
         const val KEY_SWIPE_DISTANCE = "swipe_distance"

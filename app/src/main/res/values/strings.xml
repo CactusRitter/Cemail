@@ -334,4 +334,21 @@
     <string name="account_labels_none">This account has no labels yet.</string>
     <string name="settings_signature_paste">Paste HTML from the clipboard</string>
     <string name="settings_signature_paste_empty">The clipboard has nothing to paste.</string>
+    <string name="settings_push_title">Instant notifications</string>
+    <string name="settings_push_body">Gmail tells your phone the moment mail arrives, so the notification does not wait for the next check. It goes through a small free relay that only sees your address and an anonymous phone id, never your messages.</string>
+    <string name="settings_swipe_confirm_title">Confirm before acting</string>
+    <string name="settings_swipe_confirm_body">After a swipe, ask first (for example “Delete?”) instead of doing it at once.</string>
+    <string name="settings_swipe_undo_title">Time to undo</string>
+    <string name="settings_swipe_undo_body">How long the Undo bar stays after swiping a message (and after archiving, deleting or marking it any other way).</string>
+    <string name="swipe_ask_archive">Archive?</string>
+    <string name="swipe_ask_inbox">Move to Inbox?</string>
+    <string name="swipe_ask_trash">Delete?</string>
+    <string name="swipe_ask_read">Mark as read?</string>
+    <string name="swipe_ask_unread">Mark as unread?</string>
+    <string name="swipe_ask_spam">Mark as spam?</string>
+    <string name="swipe_ask_star">Star it?</string>
+    <string name="swipe_ask_unstar">Remove the star?</string>
+    <string name="swipe_ask_snooze">Snooze?</string>
+    <string name="swipe_yes">Yes</string>
+    <string name="swipe_no">No</string>
 </resources>

@@ -25,8 +25,8 @@ android {
         applicationId = "com.cemail.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 44
-        versionName = "0.32.1"
+        versionCode = 45
+        versionName = "0.33.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -35,6 +35,14 @@ android {
         val googleClientId = localProp("cemail.oauth.google.clientId")
         buildConfigField("String", "GOOGLE_OAUTH_CLIENT_ID", "\"$googleClientId\"")
         buildConfigField("String", "MICROSOFT_OAUTH_CLIENT_ID", "\"${localProp("cemail.oauth.microsoft.clientId")}\"")
+        // Avisos instantaneos (push): Firebase + el relay de Cloudflare; vacios = la app funciona sin push (docs/PUSH.md).
+        buildConfigField("String", "FIREBASE_PROJECT_ID", "\"${localProp("cemail.firebase.projectId")}\"")
+        buildConfigField("String", "FIREBASE_SENDER_ID", "\"${localProp("cemail.firebase.senderId")}\"")
+        buildConfigField("String", "FIREBASE_APP_ID", "\"${localProp("cemail.firebase.appId")}\"")
+        buildConfigField("String", "FIREBASE_API_KEY", "\"${localProp("cemail.firebase.apiKey")}\"")
+        buildConfigField("String", "PUSH_URL", "\"${localProp("cemail.push.url")}\"")
+        buildConfigField("String", "PUSH_APP_KEY", "\"${localProp("cemail.push.appKey")}\"")
+        buildConfigField("String", "PUBSUB_TOPIC", "\"projects/${localProp("cemail.firebase.projectId")}/topics/gmail-push\"")
         manifestPlaceholders["appAuthRedirectScheme"] =
             "com.googleusercontent.apps." + googleClientId.removeSuffix(".apps.googleusercontent.com").ifEmpty { "unset" }
     }
@@ -102,6 +110,7 @@ room {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
+    implementation(libs.firebase.messaging)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
