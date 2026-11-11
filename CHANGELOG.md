@@ -3,6 +3,10 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.33.3 — 2026-11-11
+- Arreglado: al cambiar de carpeta (por ejemplo de la papelera a Recibidos) podían quedarse tarjetas de la carpeta anterior **superpuestas, a medio desvanecer**, encima de la nueva. Cada carpeta, etiqueta y cuenta es ahora una lista propia, sin fundido cruzado con la anterior; mover o borrar dentro de una lista sigue animándose.
+- La cabecera de las listas ya no tiene botón de actualizar (se actualiza tirando de la lista hacia abajo): quedan dos botones redondos iguales, menú y búsqueda, con el título exactamente en el centro.
+
 ## 0.33.2 — 2026-11-11
 - La animación al abrir un correo con HTML o imágenes ya no se queda atascada hasta que carga el texto: el HTML se prepara fuera del hilo principal, el visor web se coloca cuando termina la animación y se precalienta al arrancar la app. Medido en el Galaxy en frío: el peor fotograma pasó de 250-300 ms a 73 ms.
 - La lista **conserva su posición** al abrir un correo y volver (antes volvía siempre arriba); solo vuelve arriba cuando cambia lo que muestra (otra carpeta, etiqueta, cuenta o búsqueda).

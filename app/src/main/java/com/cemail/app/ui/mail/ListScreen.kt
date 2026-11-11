@@ -165,6 +165,9 @@ fun ListScreen(
                 },
             ),
         ) {
+        // Each folder, label and account is a list of its own: its messages do not cross-fade with those of the one before
+        // (that left half-faded cards of the Inbox drawn over the Trash). Moving or deleting inside a list is still animated.
+        androidx.compose.runtime.key(vm, state.box, state.labelId) {
         LazyColumn(
             state = listState,
             modifier = Modifier
@@ -224,6 +227,7 @@ fun ListScreen(
                 items(state.others, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
             }
         }
+        }
             // Under the top bar, where the pulled list comes down to.
             PullToRefreshDefaults.Indicator(
                 state = pullState,
@@ -266,17 +270,10 @@ fun ListScreen(
                             overflow = TextOverflow.Ellipsis,
                         )
                     },
+                    // Refreshing is done by pulling the list down, so there is no button for it: search is a round button
+                    // just like the menu one on the other side.
                     end = {
-                        GlassPill(hazeState = haze) {
-                            if (state.syncing) {
-                                Box(Modifier.size(width = 44.dp, height = 48.dp), contentAlignment = Alignment.Center) {
-                                    CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
-                                }
-                            } else {
-                                PillIcon(Icons.Filled.Refresh, stringResource(R.string.refresh), vm::refresh, width = 44.dp)
-                            }
-                            PillIcon(Icons.Filled.Search, stringResource(R.string.search), { vm.setSearching(true) }, width = 44.dp)
-                        }
+                        GlassIconButton(Icons.Filled.Search, stringResource(R.string.search), { vm.setSearching(true) }, hazeState = haze)
                     },
                 )
             }
