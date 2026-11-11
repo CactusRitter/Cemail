@@ -114,7 +114,7 @@
 
     <!-- Sign in and accounts -->
     <string name="sign_in_title">Welcome to Cemail</string>
-    <string name="sign_in_body">Sign in with your Google account to read and send your Gmail. Your mail stays on your phone.</string>
+    <string name="sign_in_body">Add your email account (Gmail, Outlook, Yahoo…) to read and send your mail. Your mail stays on your phone.</string>
     <string name="sign_in_google">Sign in with Google</string>
     <string name="sign_in_unverified">Google will say the app is not verified: tap Advanced, then Go to Cemail.</string>
     <string name="sign_in_demo">Look around with example messages</string>
@@ -199,6 +199,7 @@
     <string name="compose_attach">Attach files</string>
     <string name="compose_attach_remove">Remove attachment</string>
     <string name="compose_attach_too_big">Some files were not added: attachments may add up to 10 MB.</string>
+    <string name="compose_attach_unreadable">Some shared files could not be read and were not added.</string>
     <string name="compose_cc">Cc</string>
     <string name="compose_bcc">Bcc</string>
     <string name="compose_copies_toggle">Show Cc and Bcc</string>
@@ -279,6 +280,7 @@
     <string name="imap_server_unknown">Provider not recognised: check the server settings below.</string>
     <string name="account_add_microsoft">Microsoft</string>
     <string name="sign_in_microsoft">Sign in with Microsoft</string>
+    <string name="sign_in_yahoo">Yahoo account</string>
     <string name="notif_snoozed_title">Back in your inbox: %1$s</string>
     <string name="box_spam">Spam</string>
     <string name="done_spammed">Marked as spam</string>

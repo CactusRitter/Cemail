@@ -112,7 +112,7 @@
 
     <!-- Inicio de sesión y cuentas -->
     <string name="sign_in_title">Te damos la bienvenida a Cemail</string>
-    <string name="sign_in_body">Inicia sesión con tu cuenta de Google para leer y enviar tu Gmail. Tu correo se queda en tu teléfono.</string>
+    <string name="sign_in_body">Añade tu cuenta de correo (Gmail, Outlook, Yahoo…) para leer y enviar tu correo. Tu correo se queda en tu teléfono.</string>
     <string name="sign_in_google">Iniciar sesión con Google</string>
     <string name="sign_in_unverified">Google dirá que la app no está verificada: toca Avanzado y luego Ir a Cemail.</string>
     <string name="sign_in_demo">Echar un vistazo con mensajes de ejemplo</string>
@@ -197,6 +197,7 @@
     <string name="compose_attach">Adjuntar archivos</string>
     <string name="compose_attach_remove">Quitar adjunto</string>
     <string name="compose_attach_too_big">Algunos archivos no se añadieron: los adjuntos pueden sumar hasta 10 MB.</string>
+    <string name="compose_attach_unreadable">Algunos archivos compartidos no se pudieron leer y no se añadieron.</string>
     <string name="compose_cc">CC</string>
     <string name="compose_bcc">CCO</string>
     <string name="compose_copies_toggle">Mostrar CC y CCO</string>
@@ -277,6 +278,7 @@
     <string name="imap_server_unknown">Proveedor no reconocido: revisa los ajustes del servidor de abajo.</string>
     <string name="account_add_microsoft">Microsoft</string>
     <string name="sign_in_microsoft">Iniciar sesión con Microsoft</string>
+    <string name="sign_in_yahoo">Cuenta de Yahoo</string>
     <string name="notif_snoozed_title">De vuelta en tu bandeja: %1$s</string>
     <string name="box_spam">Spam</string>
     <string name="done_spammed">Marcado como spam</string>

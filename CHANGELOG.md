@@ -3,6 +3,12 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 1.2.0 — 2026-11-11
+- **Cemail es una app de correo para Android**: aparece al tocar una dirección de correo (enlaces `mailto:` en webs, PDF u otras apps; abre un correo nuevo con destinatario, asunto y texto puestos), en el menú **Compartir** de cualquier app (archivos e imágenes llegan como adjuntos, y el texto compartido como mensaje) y en los botones de otras apps que abren «la app de correo». En el selector se puede marcar «Siempre».
+- Seguridad: solo se adjuntan archivos que otra app comparte; nunca archivos internos de Cemail.
+- Si estabas escribiendo un correo, se guarda en Borradores antes de abrir el nuevo.
+- La pantalla de bienvenida (sin cuentas) ofrece también Yahoo y ya no dice que solo sirve para Gmail.
+
 ## 1.1.0 — 2026-11-11
 - **Yahoo** en «Añadir cuenta», con su logotipo y los pasos para crear la contraseña de aplicación (verificación en dos pasos, por qué el botón de Yahoo puede salir gris) y un enlace a la seguridad de Yahoo. Cemail pone solo los servidores.
 - **Notificaciones**: tocar la notificación de un correo abre ese correo (antes solo abría la lista); con varios correos abre la bandeja de esa cuenta, y en la notificación aparece el nombre que diste a la cuenta. Arreglado también que los botones «Leído» y «Borrar» de la notificación no encontraban el correo.

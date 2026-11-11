@@ -531,7 +531,7 @@ private val FONTS = listOf(
 )
 
 /** Reads a file chosen with the system picker (name, type and bytes); null if it cannot be read. */
-private fun readAttachment(context: Context, uri: Uri): OutAttachment? = try {
+internal fun readAttachment(context: Context, uri: Uri): OutAttachment? = try {
     val resolver = context.contentResolver
     val name = resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
         if (c.moveToFirst()) c.getString(0) else null

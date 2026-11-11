@@ -32,7 +32,14 @@ import com.cemail.app.ui.icons.CemailIcons
 
 /** First screen when there is no account: one button to sign in with Google, or try the demo. */
 @Composable
-fun SignInScreen(state: AccountUiState, onSignIn: () -> Unit, onDemo: () -> Unit, onMicrosoft: () -> Unit, onImap: () -> Unit) {
+fun SignInScreen(
+    state: AccountUiState,
+    onSignIn: () -> Unit,
+    onDemo: () -> Unit,
+    onMicrosoft: () -> Unit,
+    onImap: () -> Unit,
+    onYahoo: () -> Unit = onImap,
+) {
     GlassBackground {
         Column(
             Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(24.dp),
@@ -82,6 +89,12 @@ fun SignInScreen(state: AccountUiState, onSignIn: () -> Unit, onDemo: () -> Unit
                 Text(
                     stringResource(R.string.sign_in_microsoft),
                     Modifier.clickable(enabled = !state.signingIn, role = Role.Button, onClick = onMicrosoft).padding(8.dp),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Text(
+                    stringResource(R.string.sign_in_yahoo),
+                    Modifier.clickable(role = Role.Button, onClick = onYahoo).padding(8.dp),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                 )

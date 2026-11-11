@@ -13,6 +13,16 @@ sealed interface LaunchRequest {
     data class OpenBox(val box: MailBox, val accountId: String? = null) : LaunchRequest
     data object Search : LaunchRequest
     data class OpenMail(val accountId: String, val localId: Long) : LaunchRequest
+
+    /** A message started by another app: a mailto: link, "Send email" or "Share" (with files to attach). */
+    data class Write(
+        val to: String = "",
+        val cc: String = "",
+        val bcc: String = "",
+        val subject: String = "",
+        val body: String = "",
+        val files: List<Uri> = emptyList(),
+    ) : LaunchRequest
 }
 
 /**
@@ -43,9 +53,37 @@ object Launches {
                 val mail = intent.getLongExtra(EXTRA_MAIL, -1L)
                 if (account != null && mail >= 0) LaunchRequest.OpenMail(account, mail) else null
             }
+            Intent.ACTION_SENDTO, Intent.ACTION_VIEW, Intent.ACTION_SEND, Intent.ACTION_SEND_MULTIPLE -> write(intent)
             else -> null
         } ?: return
         pending.value = request
+    }
+
+    /**
+     * Reads what another app wants written: the mailto: address (with its subject, body, cc and bcc) and the usual
+     * extras of "Send email" and "Share". Only files another app shares (content://) are taken, never paths into
+     * Cemail's own files, so no app can slip one of Cemail's private files into a message.
+     */
+    private fun write(intent: Intent): LaunchRequest.Write? {
+        val data = intent.data
+        if (intent.action == Intent.ACTION_VIEW && data?.scheme != "mailto") return null
+        val mailto = data?.takeIf { it.scheme == "mailto" }?.let { runCatching { android.net.MailTo.parse(it.toString()) }.getOrNull() }
+        fun join(vararg parts: String?) = parts.filterNot { it.isNullOrBlank() }.joinToString(", ")
+        val files = buildList {
+            if (intent.action == Intent.ACTION_SEND_MULTIPLE) {
+                androidx.core.content.IntentCompat.getParcelableArrayListExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)?.let(::addAll)
+            } else {
+                androidx.core.content.IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)?.let(::add)
+            }
+        }.filter { it.scheme == "content" && it.authority?.startsWith(BuildConfig.APPLICATION_ID) != true }
+        return LaunchRequest.Write(
+            to = join(mailto?.to, intent.getStringArrayExtra(Intent.EXTRA_EMAIL)?.joinToString(", ")),
+            cc = join(mailto?.cc, intent.getStringArrayExtra(Intent.EXTRA_CC)?.joinToString(", ")),
+            bcc = join(mailto?.headers?.get("bcc"), intent.getStringArrayExtra(Intent.EXTRA_BCC)?.joinToString(", ")),
+            subject = mailto?.subject?.takeIf { it.isNotBlank() } ?: intent.getStringExtra(Intent.EXTRA_SUBJECT).orEmpty(),
+            body = mailto?.body?.takeIf { it.isNotBlank() } ?: intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString().orEmpty(),
+            files = files,
+        )
     }
 
     /** The intent that makes the app carry out [request] (each one is distinct, so widgets can tell them apart). */
@@ -60,6 +98,9 @@ object Launches {
             LaunchRequest.Search -> intent.setAction(ACTION_SEARCH).setData(Uri.parse("cemail://search"))
             is LaunchRequest.OpenMail -> intent.setAction(ACTION_OPEN_MAIL).putExtra(EXTRA_ACCOUNT, request.accountId)
                 .putExtra(EXTRA_MAIL, request.localId).setData(Uri.parse("cemail://mail/${request.localId}"))
+            // Only ever built by other apps; kept so this function covers every request.
+            is LaunchRequest.Write -> intent.setAction(Intent.ACTION_SENDTO)
+                .setData(Uri.parse("mailto:" + Uri.encode(request.to)))
         }
     }
 }

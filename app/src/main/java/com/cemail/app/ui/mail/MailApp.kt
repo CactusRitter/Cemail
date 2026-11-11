@@ -140,7 +140,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
         return
     }
     if (acc.accounts.isEmpty() && !acc.demo) {
-        SignInScreen(acc, startSignIn, accountVm::useDemo, onMicrosoft = startMicrosoft, onImap = { imapForm = IMAP_PLAIN })
+        SignInScreen(acc, startSignIn, accountVm::useDemo, onMicrosoft = startMicrosoft, onImap = { imapForm = IMAP_PLAIN }, onYahoo = { imapForm = IMAP_YAHOO })
         return
     }
     val state by vm.state.collectAsStateWithLifecycle()
@@ -151,7 +151,8 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
     val drawer = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
-    // A request from outside (launcher menu, widget): switch to the right account first, then carry it out.
+    // A request from outside (launcher menu, widget, another app): switch to the right account first, then carry it out.
+    val context = androidx.compose.ui.platform.LocalContext.current
     val request by Launches.pending.collectAsStateWithLifecycle()
     LaunchedEffect(request, acc.selectedId, vm) {
         val r = request ?: return@LaunchedEffect
@@ -161,6 +162,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
             // The unified inbox already shows every account's mail: it stays; another single account switches over.
             is LaunchRequest.OpenMail -> r.accountId.takeIf { acc.selectedId != null }
             LaunchRequest.Search -> null
+            is LaunchRequest.Write -> null // written from the account on screen (or the default one)
         }
         val several = acc.accounts.size > 1
         if (wanted != null && acc.accounts.any { it.id == wanted } && acc.selectedId != wanted) {
@@ -177,6 +179,24 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
             is LaunchRequest.OpenBox -> { vm.closeMail(); vm.selectBox(r.box) }
             LaunchRequest.Search -> { vm.closeMail(); vm.setSearching(true) }
             is LaunchRequest.OpenMail -> vm.open(r.localId)
+            is LaunchRequest.Write -> {
+                // A message being written is kept in Drafts first, never lost.
+                if (state.draft != null) vm.closeCompose(me)
+                vm.closeMail()
+                vm.newDraft(Draft(to = r.to, cc = r.cc, bcc = r.bcc, subject = r.subject, body = r.body))
+                if (r.files.isNotEmpty()) {
+                    // The shared files are read now, while Android lets this app open them.
+                    val files = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        r.files.mapNotNull { readAttachment(context, it) }
+                    }
+                    val problem = when {
+                        files.size < r.files.size -> R.string.compose_attach_unreadable
+                        !vm.attach(files) -> R.string.compose_attach_too_big
+                        else -> null
+                    }
+                    problem?.let { android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_LONG).show() }
+                }
+            }
         }
         Launches.pending.value = null
     }
