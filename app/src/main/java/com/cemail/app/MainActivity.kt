@@ -60,7 +60,9 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 val vm: MailViewModel = viewModel(key = scopeKey, factory = MailViewModel.Factory(repo) { id -> if (id in ids) app.mailRepositoryFor(id) else null })
-                MailApp(vm, accountVm, settings, app.settings)
+                androidx.compose.runtime.CompositionLocalProvider(com.cemail.app.ui.mail.LocalAccountLooks provides settings.accountLooks) {
+                    MailApp(vm, accountVm, settings, app.settings)
+                }
             }
         }
     }

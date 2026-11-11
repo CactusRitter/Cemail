@@ -19,7 +19,7 @@ When you sign in with Google, you grant the app these permissions:
 
 | Permission | What it is used for |
 |---|---|
-| Your Google account email address and basic profile (`openid`, `userinfo.email`) | To show which account is signed in and to tell accounts apart. |
+| Your Google account email address and basic profile (`openid`, `email`, `profile`) | To show which account is signed in and to tell accounts apart, with your name and profile picture. The picture is downloaded once and kept only on your phone. |
 | Gmail access (`https://www.googleapis.com/auth/gmail.modify`) | To read your messages, labels and attachments; to compose and send messages; and to mark as read, star, archive and move messages to the trash. The app cannot permanently delete messages. |
 
 The app uses this access only to provide the features you see in the app, at your request.
@@ -27,8 +27,9 @@ The app uses this access only to provide the features you see in the app, at you
 ## How information is stored
 - Messages, labels and attachments you open are cached in a **local database on your phone** so the app works quickly and offline.
 - Sign-in tokens are stored on your phone **encrypted** with a key kept in the Android Keystore.
+- What you set for each account in Settings (its picture, the name it goes by, the name you send with and its colour) stays on your phone. A picture you pick from your gallery is copied, small, into the app; the original is not changed.
 - Cloud backup of the app's data is disabled.
-- Nothing is sent to me or to any third party, except what the optional instant-notification relay receives (see below). The only network connections the app makes are to Google's services (for example `accounts.google.com`, `oauth2.googleapis.com` and `gmail.googleapis.com`) and, only if you choose to show remote images in a message, to the servers hosting those images. Remote images are blocked by default.
+- Nothing is sent to me or to any third party, except what the optional instant-notification relay receives (see below). The only network connections the app makes are to Google's services (for example `accounts.google.com`, `oauth2.googleapis.com`, `gmail.googleapis.com`, and `openidconnect.googleapis.com` / `googleusercontent.com` for the profile picture), to Microsoft's (`login.microsoftonline.com`, `graph.microsoft.com`) if you add a Microsoft account, and, only if you choose to show remote images in a message, to the servers hosting those images. Remote images are blocked by default.
 
 ## Instant notifications (optional)
 If you leave "Instant notifications" on (Settings → Notifications and sync), Gmail (and Microsoft) tell your phone when mail arrives instead of the app checking every few minutes. For that to work:
@@ -75,7 +76,7 @@ Al iniciar sesión con Google concedes a la app estos permisos:
 
 | Permiso | Para qué se usa |
 |---|---|
-| Dirección de correo de tu cuenta de Google y perfil básico (`openid`, `userinfo.email`) | Para mostrar qué cuenta está activa y distinguir cuentas. |
+| Dirección de correo de tu cuenta de Google y perfil básico (`openid`, `email`, `profile`) | Para mostrar qué cuenta está activa y distinguir cuentas, con tu nombre y tu foto de perfil. La foto se descarga una vez y se guarda solo en tu teléfono. |
 | Acceso a Gmail (`https://www.googleapis.com/auth/gmail.modify`) | Para leer tus mensajes, etiquetas y adjuntos; redactar y enviar mensajes; y marcar como leídos, destacar, archivar y mover a la papelera. La app no puede borrar mensajes de forma permanente. |
 
 La app usa este acceso solo para ofrecer las funciones que ves en ella, a petición tuya.
@@ -83,8 +84,9 @@ La app usa este acceso solo para ofrecer las funciones que ves en ella, a petici
 ## Cómo se guarda la información
 - Los mensajes, etiquetas y adjuntos que abres se guardan en una **base de datos local en tu teléfono** para que la app funcione rápido y sin conexión.
 - Los tokens de inicio de sesión se guardan en tu teléfono **cifrados** con una clave del Android Keystore.
+- Lo que configuras para cada cuenta en Ajustes (su foto, el nombre con que aparece, el nombre para enviar y su color) se queda en tu teléfono. Una foto que elijas de la galería se copia, en pequeño, dentro de la app; el original no se modifica.
 - La copia de seguridad en la nube de los datos de la app está desactivada.
-- No se envía nada a mí ni a terceros, salvo lo que recibe el servicio opcional de notificaciones instantáneas (ver más abajo). Las únicas conexiones de red de la app son con los servicios de Google (por ejemplo `accounts.google.com`, `oauth2.googleapis.com` y `gmail.googleapis.com`) y, solo si decides mostrar las imágenes remotas de un mensaje, con los servidores que las alojan. Las imágenes remotas están bloqueadas por defecto.
+- No se envía nada a mí ni a terceros, salvo lo que recibe el servicio opcional de notificaciones instantáneas (ver más abajo). Las únicas conexiones de red de la app son con los servicios de Google (por ejemplo `accounts.google.com`, `oauth2.googleapis.com`, `gmail.googleapis.com`, y `openidconnect.googleapis.com` / `googleusercontent.com` para la foto de perfil), con los de Microsoft (`login.microsoftonline.com`, `graph.microsoft.com`) si añades una cuenta de Microsoft y, solo si decides mostrar las imágenes remotas de un mensaje, con los servidores que las alojan. Las imágenes remotas están bloqueadas por defecto.
 
 ## Notificaciones instantáneas (opcional)
 Si dejas activadas las «Notificaciones instantáneas» (Ajustes → Notificaciones y sincronización), Gmail (y Microsoft) avisan a tu teléfono cuando llega correo en lugar de que la app lo compruebe cada pocos minutos. Para que funcione:

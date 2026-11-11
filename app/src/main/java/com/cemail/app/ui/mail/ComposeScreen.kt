@@ -64,6 +64,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -188,6 +189,9 @@ fun ComposeScreen(
         }
     }
     var scheduling by remember { mutableStateOf(false) }
+    // The formatting bar is for the text: it shows only while the text is being written, so it never covers the
+    // recipient suggestions.
+    var writingBody by remember { mutableStateOf(false) }
     var showCopies by rememberSaveable { mutableStateOf(draft.cc.isNotBlank() || draft.bcc.isNotBlank()) }
 
     Box(Modifier.fillMaxSize().imePadding()) {
@@ -281,7 +285,8 @@ fun ComposeScreen(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 RichTextEditor(
                     state = rich,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 240.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 240.dp)
+                        .onFocusChanged { writingBody = it.isFocused },
                     placeholder = { Text(stringResource(R.string.compose_body)) },
                     colors = RichTextEditorDefaults.richTextEditorColors(
                         containerColor = Color.Transparent,
@@ -377,7 +382,14 @@ fun ComposeScreen(
         }
 
         // Formatting toolbar, floating over the keyboard.
-        Box(Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.safeDrawing).padding(12.dp)) {
+        AnimatedVisibility(
+            visible = writingBody,
+            modifier = Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.safeDrawing).padding(12.dp),
+            enter = fadeIn(com.cemail.app.ui.glass.glassSpring()) +
+                androidx.compose.animation.scaleIn(com.cemail.app.ui.glass.bounceSpring(), initialScale = 0.9f),
+            exit = fadeOut(com.cemail.app.ui.glass.glassSpring()) +
+                androidx.compose.animation.scaleOut(com.cemail.app.ui.glass.glassSpring(), targetScale = 0.9f),
+        ) {
             FormatBar(rich)
         }
     }
@@ -425,15 +437,16 @@ private fun FromField(
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             accounts.forEach { account ->
                 DropdownMenuItem(
-                    leadingIcon = { Avatar(account.displayName ?: account.email, size = 32) },
+                    leadingIcon = { AccountAvatar(account, accounts, size = 34, ring = true) },
                     text = {
                         Column {
+                            val name = account.shownName()
                             Text(
-                                account.displayName ?: account.email,
+                                name,
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = if (account.id == from.id) FontWeight.Bold else FontWeight.Normal,
                             )
-                            if (account.displayName != null) {
+                            if (name != account.email) {
                                 Text(
                                     account.email,
                                     style = MaterialTheme.typography.bodySmall,

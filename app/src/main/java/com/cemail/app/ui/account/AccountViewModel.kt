@@ -116,7 +116,6 @@ class AccountViewModel(
     fun select(accountId: String?) = local.update { it.copy(selectedId = accountId) }
 
     fun useDemo() = local.update { it.copy(demo = true, error = null) }
-    fun dismissError() = local.update { it.copy(error = null) }
 
     class Factory(
         private val repo: AccountRepository,

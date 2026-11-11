@@ -59,6 +59,8 @@ class RoomMailRepository(
     /** User labels the user switched off in Settings: archived messages that carry only those are not kept. */
     private val hidden: StateFlow<Set<String>> = kotlinx.coroutines.flow.MutableStateFlow(emptySet()),
     private val marks: SyncMarks = SyncMarks.InMemory(),
+    /** The name the user chose to send with (Settings); null lets Gmail use the account's own. */
+    private val senderName: () -> String? = { null },
 ) : MailRepository {
     override val mails: StateFlow<List<Mail>> = dao.observe(accountId)
         .map { list -> list.map { it.toMail() } }
@@ -154,7 +156,7 @@ class RoomMailRepository(
             try {
                 api.send(MimeBuilder.build(
                     mail.senderName, mail.subject, mail.body, mail.outgoing, mail.cc, mail.bcc, mail.outgoingHtml,
-                    mail.inReplyTo, mail.references, mail.outgoingImages,
+                    mail.inReplyTo, mail.references, mail.outgoingImages, from = MimeBuilder.fromHeader(senderName(), selfEmail()),
                 ), mail.threadId)
                 AppLog.i("send", "sent, ${mail.outgoing.size} attachment(s)")
                 dao.delete(localId) // the real copy arrives with the next sync
@@ -172,7 +174,7 @@ class RoomMailRepository(
         api.send(
             MimeBuilder.build(
                 mail.senderName, mail.subject, mail.body, mail.outgoing, mail.cc, mail.bcc, mail.outgoingHtml,
-                mail.inReplyTo, mail.references, mail.outgoingImages,
+                mail.inReplyTo, mail.references, mail.outgoingImages, from = MimeBuilder.fromHeader(senderName(), selfEmail()),
             ),
             mail.threadId,
         )

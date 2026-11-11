@@ -23,8 +23,11 @@ object MimeBuilder {
         inReplyTo: String? = null,
         references: String? = null,
         inlineImages: List<InlineImage> = emptyList(),
+        /** A ready From header (see [fromHeader]); null leaves it to the server. */
+        from: String? = null,
     ): ByteArray {
         val head = StringBuilder().apply {
+            if (!from.isNullOrBlank()) append("From: ").append(oneLine(from)).append("\r\n")
             append("To: ").append(oneLine(to)).append("\r\n")
             if (cc.isNotBlank()) append("Cc: ").append(oneLine(cc)).append("\r\n")
             // Gmail delivers to the Bcc addresses and removes the header from the copies it sends.
@@ -89,6 +92,17 @@ object MimeBuilder {
             }
             append("--$related--")
         }
+    }
+
+    /**
+     * The From header for the name the user chose to send with ("César Caballero <a@b.com>"), or null to let the
+     * server put the account's own name.
+     */
+    fun fromHeader(name: String?, email: String?): String? {
+        val clean = name?.replace(Regex("[\r\n\"<>]"), " ")?.trim()
+        if (clean.isNullOrEmpty() || email.isNullOrBlank()) return null
+        val shown = if (clean.all { it.code in 32..126 }) "\"$clean\"" else encodeHeader(clean)
+        return "$shown <${oneLine(email.trim())}>"
     }
 
     /** ASCII subjects go as they are; anything else becomes an RFC 2047 encoded word. */

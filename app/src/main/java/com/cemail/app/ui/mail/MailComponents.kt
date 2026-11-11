@@ -70,31 +70,6 @@ fun rememberTimeLabel(millis: Long): String {
     }
 }
 
-/** Round avatar with the sender's initial, coloured from the theme (like Thunderbird's contact circles). */
-@Composable
-fun Avatar(name: String, selected: Boolean = false, size: Int = 44) {
-    val c = MaterialTheme.colorScheme
-    val palette = listOf(
-        c.primaryContainer to c.onPrimaryContainer,
-        c.secondaryContainer to c.onSecondaryContainer,
-        c.tertiaryContainer to c.onTertiaryContainer,
-        c.errorContainer to c.onErrorContainer,
-    )
-    val (bg, fg) = palette[(name.lowercase().hashCode() and 0x7fffffff) % palette.size]
-    val fill by animateColorAsState(if (selected) c.primary else bg, glassSpring(), label = "avatarBg")
-    Box(Modifier.size(size.dp).background(fill, CircleShape), contentAlignment = Alignment.Center) {
-        if (selected) {
-            Icon(Icons.Filled.Check, null, tint = c.onPrimary)
-        } else {
-            Text(
-                name.trim().firstOrNull()?.uppercase() ?: "?",
-                color = fg,
-                style = MaterialTheme.typography.titleMedium,
-            )
-        }
-    }
-}
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MailRow(
@@ -269,10 +244,6 @@ private fun Modifier.accountCorner(color: Color, shape: RoundedCornerShape): Mod
         drawPath(crescent, fade)
     }
 }
-
-/** Opaque-ish glass card used for dialogs and the undo bar. */
-@Composable
-fun Modifier.menuGlass(): Modifier = this.glass(RoundedCornerShape(24.dp), GlassKind.Menu, elevation = 12.dp)
 
 
 /** The icon shown behind a message while it is dragged (and in Settings). */

@@ -55,6 +55,7 @@ class CemailApplication : Application() {
                     selfEmail = { accountRepository.accounts.first().firstOrNull { it.id == accountId }?.email },
                     onNewMail = ::notifyNewMail,
                     pushPrefs = getSharedPreferences("push-ms-${accountId.filter { it.isLetterOrDigit() }}", MODE_PRIVATE),
+                    senderName = { settings.state.value.lookOf(accountId).senderName },
                 )
             }
             if (provider == "IMAP") {
@@ -66,6 +67,7 @@ class CemailApplication : Application() {
                     selfEmail = { accountRepository.accounts.first().firstOrNull { it.id == accountId }?.email },
                     onNewMail = ::notifyNewMail,
                     marks = com.cemail.app.data.mail.SyncMarks.Prefs(this, accountId),
+                    senderName = { settings.state.value.lookOf(accountId).senderName },
                 )
             }
             RoomMailRepository(
@@ -78,6 +80,7 @@ class CemailApplication : Application() {
                 marks = com.cemail.app.data.mail.SyncMarks.Prefs(this, accountId),
                 hidden = settings.state.map { it.hiddenLabels[accountId].orEmpty() }.distinctUntilChanged()
                     .stateIn(appScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, settings.state.value.hiddenLabels[accountId].orEmpty()),
+                senderName = { settings.state.value.lookOf(accountId).senderName },
             )
         }
     }
@@ -100,7 +103,7 @@ class CemailApplication : Application() {
         } else {
             accounts.take(3).map { account ->
                 androidx.core.content.pm.ShortcutInfoCompat.Builder(this, "compose-${account.id}")
-                    .setShortLabel(account.displayName ?: account.email.substringBefore('@'))
+                    .setShortLabel(settings.state.value.lookOf(account.id).label ?: account.displayName ?: account.email.substringBefore('@'))
                     .setLongLabel(getString(R.string.shortcut_compose_from, account.email))
                     .setIcon(androidx.core.graphics.drawable.IconCompat.createWithResource(this, R.drawable.ic_action_compose))
                     .setIntent(Launches.intent(this, LaunchRequest.Compose(account.id)))
@@ -138,6 +141,7 @@ class CemailApplication : Application() {
         }
     }
 
+    @OptIn(kotlinx.coroutines.FlowPreview::class) // debounce, for the widgets
     override fun onCreate() {
         super.onCreate()
         AppLog.init(this)
@@ -151,7 +155,16 @@ class CemailApplication : Application() {
             false
         }
         notifier.createChannel()
-        appScope.launch { accountRepository.accounts.collect { updateShortcuts(it) } }
+        appScope.launch {
+            kotlinx.coroutines.flow.combine(accountRepository.accounts, settings.state.map { it.accountLooks }.distinctUntilChanged()) { a, _ -> a }
+                .collect { updateShortcuts(it) }
+        }
+        // Each account's picture comes from Google or Microsoft (unless the user picked one); checked every few days.
+        appScope.launch {
+            accountRepository.accounts.collect { list ->
+                list.forEach { com.cemail.app.data.auth.AccountPhotos.refreshIfStale(this@CemailApplication, it) }
+            }
+        }
         // The widgets redraw whenever the Inbox changes (a short pause first, so a sync counts as one change).
         appScope.launch {
             database.messages().inboxSignature().distinctUntilChanged().debounce(1_500).collect {

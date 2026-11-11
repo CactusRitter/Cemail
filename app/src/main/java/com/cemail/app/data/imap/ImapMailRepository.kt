@@ -54,6 +54,8 @@ class ImapMailRepository(
     private val selfEmail: suspend () -> String? = { null },
     private val onNewMail: (accountId: String, mails: List<Mail>) -> Unit = { _, _ -> },
     private val marks: SyncMarks = SyncMarks.InMemory(),
+    /** The name the user chose to send with (Settings); null keeps the one given when the account was added. */
+    private val senderName: () -> String? = { null },
 ) : MailRepository {
     override val mails: StateFlow<List<Mail>> = dao.observe(accountId)
         .map { list -> list.map { it.toMail() } }
@@ -118,7 +120,7 @@ class ImapMailRepository(
                     mail.senderName, mail.subject, mail.body, mail.outgoing, mail.cc, mail.bcc, mail.outgoingHtml,
                     mail.inReplyTo, mail.references, mail.outgoingImages,
                 )
-                val sent = client.send(raw)
+                val sent = client.send(raw, senderName())
                 AppLog.i("send", "sent over SMTP, ${mail.outgoing.size} attachment(s)")
                 // SMTP servers do not keep a copy: it is added to Sent here.
                 marks.get("role.SENT")?.let { path ->
@@ -143,7 +145,7 @@ class ImapMailRepository(
             mail.senderName, mail.subject, mail.body, mail.outgoing, mail.cc, mail.bcc, mail.outgoingHtml,
             mail.inReplyTo, mail.references, mail.outgoingImages,
         )
-        val sent = client.send(raw)
+        val sent = client.send(raw, senderName())
         marks.get("role.SENT")?.let { path ->
             try {
                 client.withStore { store -> client.appendTo(store, path, sent, seen = true) }

@@ -4,7 +4,13 @@ Las versiones van siempre por debajo de 1.0. La **1.0** será cuando funcionen b
 
 Cada versión termina con la app compilando, sus tests en verde, probada en el emulador y el APK en Drive.
 
-## Dónde estamos (0.25.2)
+## Dónde estamos (1.0.0, 2026-11-11)
+
+**La 1.0.0 es la primera versión para uso real.** Gmail y Microsoft (Outlook) están probados a fondo en dos móviles reales: sincronización, notificaciones instantáneas (push) en las dos, enviar con cuenta elegida en «De», cuenta predeterminada, respuestas desde la cuenta que recibió el mensaje, contactos, gestos con confirmación y deshacer, firma, personalización de cada cuenta (foto del proveedor o de la galería, nombre, nombre para enviar, color).
+
+Pendiente conocido: **IMAP** no se ha probado con una cuenta real (funciona en tests, pero falta probarlo con un servidor de verdad) y no tiene push. Borradores en el servidor (API de Gmail/Graph) siguen siendo locales.
+
+### Histórico: estado en la 0.25.2
 
 Hecho: menú del icono (0.20), widgets Inbox y Tools (0.21), firma por cuenta (0.22), sincronización incremental con el historial de Gmail, conversaciones (tarjeta con el resto del hilo), etiquetas desde el mensaje y sugerencias de contactos (0.25), cuenta de Google (varias) con bandeja unificada, sincronización (manual, con la app abierta y en segundo plano), etiquetas como carpetas, lectura de HTML saneado, imágenes incrustadas, adjuntos (ver, abrir, compartir, adjuntar), redactar con formato y destinatarios en píldoras con CC/CCO, enviar de verdad por Gmail, responder en el mismo hilo y «responder a todos», notificaciones con «Leído» y «Borrar», registro de actividad compartible, fijar, posponer (local) y deshacer, ajustes de aspecto.
 

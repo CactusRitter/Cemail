@@ -181,11 +181,9 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
     LaunchedEffect(accountCount) { if (settingsRoute == SettingsRoute.ADD) settingsRoute = SettingsRoute.ACCOUNTS }
 
     // In the unified inbox every message carries a thin line in the colour of its account.
-    val palette = accountPalette()
     val unifiedView = acc.accounts.size > 1 && acc.selectedId == null
-    val stripeOf: (Mail) -> Color? = { mail ->
-        if (!unifiedView) null else acc.accounts.indexOfFirst { it.id == mail.accountId }.takeIf { it >= 0 }?.let { palette[it % palette.size] }
-    }
+    val colors = acc.accounts.associate { it.id to accountColor(it, acc.accounts) }
+    val stripeOf: (Mail) -> Color? = { mail -> if (!unifiedView) null else colors[mail.accountId] }
 
     // The list keeps its place while a message is read; it goes back to the top only when what it shows changes.
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
@@ -437,8 +435,6 @@ private fun UndoRow(undo: UndoEvent, vm: MailViewModel) {
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
             )
-        } else {
-            Unit
         }
     }
 }

@@ -48,7 +48,6 @@ fun accountPalette(): List<Color> {
 @Composable
 fun AccountSwitcher(acc: AccountUiState, onSelect: (String?) -> Unit, revealed: Boolean) {
     val accounts = acc.accounts
-    val palette = accountPalette()
     val several = accounts.size > 1
     if (accounts.isEmpty()) {
         AccountRow(stringResource(R.string.demo_account), DEMO_ME, color = null, selected = true, onClick = {}, modifier = Modifier.popIn(revealed, 0, 0.8f))
@@ -56,12 +55,13 @@ fun AccountSwitcher(acc: AccountUiState, onSelect: (String?) -> Unit, revealed: 
     }
     accounts.forEachIndexed { index, account ->
         AccountRow(
-            title = account.displayName ?: account.email,
+            title = account.shownName(),
             subtitle = account.email,
-            color = palette[index % palette.size],
+            color = accountColor(account, accounts),
             selected = !several || acc.selectedId == account.id,
             onClick = { onSelect(account.id) },
             modifier = Modifier.popIn(revealed, index * 22, 0.8f),
+            leading = { AccountAvatar(account, accounts, size = 34, ring = true) },
         )
     }
     if (several) {
@@ -76,9 +76,20 @@ fun AccountSwitcher(acc: AccountUiState, onSelect: (String?) -> Unit, revealed: 
     }
 }
 
-/** One account: a ring in its colour, its name over its address, and a check when it is the one on screen. */
+/**
+ * One account: its picture ringed in its colour (or just the ring, for "All accounts"), its name over its address, and
+ * a check when it is the one on screen.
+ */
 @Composable
-private fun AccountRow(title: String, subtitle: String, color: Color?, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun AccountRow(
+    title: String,
+    subtitle: String,
+    color: Color?,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    leading: (@Composable () -> Unit)? = null,
+) {
     val shape = RoundedCornerShape(50)
     Row(
         modifier
@@ -90,8 +101,12 @@ private fun AccountRow(title: String, subtitle: String, color: Color?, selected:
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) {
-            Box(Modifier.size(12.dp).border(2.dp, color ?: MaterialTheme.colorScheme.onSurfaceVariant, CircleShape))
+        if (leading != null) {
+            leading()
+        } else {
+            Box(Modifier.size(34.dp), contentAlignment = Alignment.Center) {
+                Box(Modifier.size(12.dp).border(2.dp, color ?: MaterialTheme.colorScheme.onSurfaceVariant, CircleShape))
+            }
         }
         Column(Modifier.weight(1f)) {
             Text(

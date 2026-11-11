@@ -68,7 +68,6 @@
     <string name="snoozed_until">Vuelve %1$s</string>
 
     <!-- Lectura -->
-    <string name="to_me">para mí</string>
     <string name="attachment">Tiene adjuntos</string>
     <string name="reply_prefix">Re: %1$s</string>
     <string name="forward_prefix">Fwd: %1$s</string>
@@ -119,9 +118,6 @@
     <string name="sign_in_demo">Echar un vistazo con mensajes de ejemplo</string>
     <string name="sign_in_failed">No se pudo iniciar sesión. Inténtalo de nuevo.</string>
     <string name="sign_in_not_configured">Esta compilación no tiene ID de cliente de Google. Mira docs/OAUTH_SETUP.md.</string>
-    <string name="account_add">Añadir cuenta</string>
-    <string name="account_remove">Quitar cuenta</string>
-    <string name="refresh">Actualizar</string>
     <string name="sync_failed">No se pudo sincronizar alguna cuenta. Revisa la conexión; los detalles están en Ajustes, Registro de actividad.</string>
     <string name="demo_label_shopping">Compras</string>
     <string name="demo_label_amazon">Amazon</string>
@@ -152,7 +148,6 @@
     <string name="settings_remove_body">Se cerrará la sesión de %1$s y sus mensajes se borrarán de este teléfono. En Gmail no cambia nada.</string>
     <string name="cancel">Cancelar</string>
     <string name="settings_no_accounts">No hay ninguna cuenta con sesión iniciada.</string>
-    <string name="settings_section_sync">Correo nuevo</string>
     <string name="settings_sync_title">Comprobar correo nuevo</string>
     <string name="settings_sync_body">Cada cuánto busca Cemail mensajes nuevos por su cuenta. Las notificaciones usan también este ajuste. Con Manual, el correo solo llega al pulsar actualizar.</string>
     <string name="sync_manual">Manual</string>
@@ -237,7 +232,6 @@
     <string name="eml_failed">No se pudo descargar el mensaje. Comprueba tu conexión.</string>
     <string name="compose_signature_remove">Quitar la firma de este mensaje</string>
     <string name="settings_signature_import">Importar desde un mensaje (.eml) o archivo .html</string>
-    <string name="settings_signature_replace">Cambiar</string>
     <string name="settings_signature_remove">Quitar</string>
     <string name="settings_signature_import_failed">No se pudo leer ninguna firma de ese archivo.</string>
     <string name="action_labels">Etiquetas</string>
@@ -322,6 +316,21 @@
     <string name="swipe_none">Nada</string>
     <string name="swipe_toggle_read">Leído / no leído</string>
     <string name="accounts_add_button">Añadir</string>
+    <string name="account_look_title">Personalizar</string>
+    <string name="account_photo_title">Foto</string>
+    <string name="account_photo_gallery">Elegir de la galería</string>
+    <string name="account_photo_provider">Usar la de %1$s</string>
+    <string name="account_photo_remove">Quitar la foto</string>
+    <string name="account_photo_failed">No se pudo leer la imagen</string>
+    <string name="account_photo_none">Esta cuenta no tiene foto allí (o no hay conexión)</string>
+    <string name="account_label_title">Nombre de la cuenta</string>
+    <string name="account_label_body">Cómo se llama la cuenta en las listas, por ejemplo «Gmail», «Trabajo» u «Outlook». Vacío: el nombre del titular.</string>
+    <string name="account_sender_title">Nombre para enviar</string>
+    <string name="account_sender_body">El nombre que ven quienes reciben tus mensajes. Vacío: el que tenga puesto el proveedor.</string>
+    <string name="account_sender_hint">El del proveedor</string>
+    <string name="account_color_title">Color</string>
+    <string name="account_color_body">Marca los mensajes de esta cuenta en la bandeja unificada y su foto.</string>
+    <string name="account_color_auto">Automático</string>
     <string name="add_account_title">Añadir una cuenta</string>
     <string name="add_google_body">Gmail y cuentas de Google</string>
     <string name="add_microsoft_body">Outlook, Hotmail y Microsoft 365</string>

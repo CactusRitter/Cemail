@@ -32,10 +32,19 @@ data class AppSettings(
     val pushEnabled: Boolean = true,
     /** The account (by id) new messages are sent from when the screen does not say which (the unified inbox); null = the first one. */
     val defaultAccountId: String? = null,
+    /** Per account (by id): the name shown for it, the name it sends with and its colour. */
+    val accountLooks: Map<String, AccountLook> = emptyMap(),
 ) {
+    fun lookOf(accountId: String): AccountLook = accountLooks[accountId] ?: AccountLook()
     /** The interval that applies to this account: its own, or the general one. */
     fun syncMinutesFor(accountId: String): Int = accountSync[accountId] ?: syncMinutes
 }
+
+/**
+ * How one account looks and signs: [label] replaces its name in the lists ("Gmail", "Outlook"…), [senderName] is the
+ * name recipients see (null = the server's own) and [color] its colour (null = one of the theme's, by position).
+ */
+data class AccountLook(val label: String? = null, val senderName: String? = null, val color: Accent? = null)
 
 /** Small app preferences, kept in SharedPreferences and exposed as a StateFlow (same approach as Cenotes). */
 class SettingsRepository(context: Context) {
@@ -58,6 +67,9 @@ class SettingsRepository(context: Context) {
         accountSync = prefs.all.filterKeys { it.startsWith(KEY_ACCOUNT_SYNC) }.mapNotNull { (k, v) -> (v as? Int)?.let { k.removePrefix(KEY_ACCOUNT_SYNC) to it } }.toMap(),
         pushEnabled = prefs.getBoolean(KEY_PUSH, true),
         defaultAccountId = prefs.getString(KEY_DEFAULT_ACCOUNT, null),
+        accountLooks = prefs.all.keys.mapNotNull { k ->
+            listOf(KEY_ACCOUNT_LABEL, KEY_SENDER_NAME, KEY_ACCOUNT_COLOR).firstOrNull { k.startsWith(it) }?.let { k.removePrefix(it) }
+        }.toSet().associateWith { id -> readLook(id) },
         swipe = SwipeConfig(
             right = prefs.getString(KEY_SWIPE_RIGHT, null)?.let { n -> SwipeAction.entries.firstOrNull { it.name == n } } ?: SwipeAction.ARCHIVE,
             left = prefs.getString(KEY_SWIPE_LEFT, null)?.let { n -> SwipeAction.entries.firstOrNull { it.name == n } } ?: SwipeAction.TRASH,
@@ -97,11 +109,6 @@ class SettingsRepository(context: Context) {
         get() = prefs.getBoolean(KEY_ASKED, false)
         set(value) = prefs.edit().putBoolean(KEY_ASKED, value).apply()
 
-    fun setAccent(accent: Accent) {
-        prefs.edit().putString(KEY_ACCENT, accent.name).apply()
-        _state.value = _state.value.copy(accent = accent)
-    }
-
     fun setTransparency(value: Int) {
         prefs.edit().putInt(KEY_TRANSPARENCY, value).apply()
         _state.value = _state.value.copy(transparency = value)
@@ -137,6 +144,23 @@ class SettingsRepository(context: Context) {
     fun setPushEnabled(value: Boolean) {
         prefs.edit().putBoolean(KEY_PUSH, value).apply()
         _state.value = _state.value.copy(pushEnabled = value)
+    }
+
+    private fun readLook(id: String) = AccountLook(
+        label = prefs.getString(KEY_ACCOUNT_LABEL + id, null),
+        senderName = prefs.getString(KEY_SENDER_NAME + id, null),
+        color = prefs.getString(KEY_ACCOUNT_COLOR + id, null)?.let { n -> Accent.entries.firstOrNull { it.name == n } },
+    )
+
+    /** Saves how an account looks; blank texts and a null colour go back to the defaults. */
+    fun setAccountLook(accountId: String, look: AccountLook) {
+        fun put(key: String, value: String?) = prefs.edit().apply {
+            if (value.isNullOrBlank()) remove(key + accountId) else putString(key + accountId, value.trim())
+        }.apply()
+        put(KEY_ACCOUNT_LABEL, look.label)
+        put(KEY_SENDER_NAME, look.senderName)
+        put(KEY_ACCOUNT_COLOR, look.color?.name)
+        _state.value = _state.value.copy(accountLooks = _state.value.accountLooks + (accountId to readLook(accountId)))
     }
 
     fun setDefaultAccount(accountId: String?) {
@@ -187,6 +211,9 @@ class SettingsRepository(context: Context) {
     private companion object {
         const val KEY_PUSH = "push_enabled"
         const val KEY_DEFAULT_ACCOUNT = "default_account"
+        const val KEY_ACCOUNT_LABEL = "account_label_"
+        const val KEY_SENDER_NAME = "account_sender_"
+        const val KEY_ACCOUNT_COLOR = "account_color_"
         const val KEY_SWIPE_CONFIRM = "swipe_confirm"
         const val KEY_UNDO_SECONDS = "undo_seconds"
         const val KEY_SWIPE_RIGHT = "swipe_right"

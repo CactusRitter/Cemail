@@ -38,7 +38,8 @@ object ContactSuggestions {
             arrayOf(ContactsContract.CommonDataKinds.Email.DISPLAY_NAME_PRIMARY, ContactsContract.CommonDataKinds.Email.ADDRESS),
             "${ContactsContract.CommonDataKinds.Email.DISPLAY_NAME_PRIMARY} LIKE ? OR ${ContactsContract.CommonDataKinds.Email.ADDRESS} LIKE ?",
             arrayOf(like, like),
-            "${ContactsContract.CommonDataKinds.Email.TIMES_CONTACTED} DESC, ${ContactsContract.CommonDataKinds.Email.DISPLAY_NAME_PRIMARY}",
+            // (Android stopped counting how often each contact is used, so the list simply goes by name.)
+            ContactsContract.CommonDataKinds.Email.DISPLAY_NAME_PRIMARY,
         )?.use { cursor ->
             while (cursor.moveToNext() && found.size < max) {
                 val address = cursor.getString(1)?.trim().orEmpty()

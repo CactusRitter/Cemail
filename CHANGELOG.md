@@ -3,6 +3,14 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 1.0.0 — 2026-11-11
+Primera versión para uso real.
+- **Personalizar cada cuenta** (Ajustes → Cuentas → la cuenta): **foto** (la de Google o Microsoft, que se toma sola, o una de la galería), **nombre de la cuenta** para las listas («Gmail», «Outlook»…), **nombre para enviar** (el que ven quienes reciben tus correos) y **color** (entre los colores del sistema de diseño, o automático).
+- Las fotos y los nombres aparecen en el menú lateral, en Ajustes y en el desplegable «De».
+- Al redactar, la barra de formato solo aparece mientras se escribe el texto, así ya no tapa las sugerencias de contactos.
+- Limpieza: código y textos que ya no se usaban, avisos del compilador resueltos; los contactos se ordenan por nombre (Android ya no cuenta cuántas veces se usa cada uno).
+- Probado en el OPPO y el Samsung: sincronización, push de Gmail y de Microsoft, envío con cuenta elegida, respuestas, contactos, personalización y nombre de remitente (en Gmail). IMAP sigue sin probar con una cuenta real.
+
 ## 0.35.0 — 2026-11-11
 - **Campo «De» al redactar**: siempre se ve desde qué cuenta sale el mensaje, y un desplegable con todas las cuentas conectadas permite cambiarla (sin escribir nada). Al cambiar de cuenta se cambia también la firma.
 - **Cuenta predeterminada** (Ajustes → Cuentas): desde ella se envían los mensajes nuevos de la bandeja unificada. En la bandeja de una cuenta se usa esa cuenta, y al responder (o darse de baja por correo) se usa la cuenta a la que llegó el mensaje.

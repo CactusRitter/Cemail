@@ -60,8 +60,15 @@ import com.cemail.app.ui.glass.pressScale
 import com.cemail.app.ui.icons.CemailIcons
 import com.cemail.app.ui.icons.GoogleLogo
 import com.cemail.app.ui.icons.MicrosoftLogo
-import com.cemail.app.ui.mail.Avatar
+import com.cemail.app.ui.mail.AccountAvatar
 import com.cemail.app.ui.mail.HtmlBody
+import com.cemail.app.ui.mail.shade
+import com.cemail.app.ui.mail.shownName
+import com.cemail.app.ui.theme.Accent
+import com.cemail.app.data.AccountLook
+import com.cemail.app.data.auth.AccountPhotos
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.compose.foundation.background
 import kotlinx.coroutines.launch
 
 /**
@@ -82,7 +89,10 @@ internal fun AccountsPage(accounts: List<AccountEntity>, settings: AppSettings, 
             )
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 accounts.forEach { account ->
-                    ChoiceChip(account.email, account.id == current.id) { repo.setDefaultAccount(account.id) }
+                    val name = account.shownName()
+                    // A name the user gave says enough; otherwise the address (owners often share one name).
+                    val label = if (settings.lookOf(account.id).label != null) name else account.email
+                    ChoiceChip(label, account.id == current.id) { repo.setDefaultAccount(account.id) }
                 }
             }
         }
@@ -97,11 +107,11 @@ internal fun AccountsPage(accounts: List<AccountEntity>, settings: AppSettings, 
     }
     accounts.forEachIndexed { index, account ->
         BigRow(
-            title = account.displayName ?: account.email,
+            title = account.shownName(),
             body = stringResource(R.string.account_row_body, account.email, providerName(account)),
             index = index,
             onClick = { onRoute(SettingsRoute.account(account.id)) },
-        ) { Avatar(account.displayName ?: account.email, size = 48) }
+        ) { AccountAvatar(account, accounts, size = 52, ring = true) }
     }
     Row(
         Modifier
@@ -144,7 +154,13 @@ internal fun AddAccountPage(onGoogle: () -> Unit, onMicrosoft: () -> Unit, onIma
 /** Everything that is set for one account: signature, how often it is checked, which labels sync, and removing it. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun AccountDetailPage(account: AccountEntity, settings: AppSettings, repo: SettingsRepository, onRemove: () -> Unit) {
+internal fun AccountDetailPage(
+    account: AccountEntity,
+    accounts: List<AccountEntity>,
+    settings: AppSettings,
+    repo: SettingsRepository,
+    onRemove: () -> Unit,
+) {
     val context = LocalContext.current
     val app = context.applicationContext as CemailApplication
     var removing by remember { mutableStateOf(false) }
@@ -152,14 +168,18 @@ internal fun AccountDetailPage(account: AccountEntity, settings: AppSettings, re
     // Header: who this is.
     SettingsCard {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            Avatar(account.displayName ?: account.email, size = 52)
+            AccountAvatar(account, accounts, size = 56, ring = true)
             Column(Modifier.weight(1f)) {
-                Text(account.displayName ?: account.email, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(account.shownName(), style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(account.email, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(providerName(account), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
             }
         }
     }
+
+    // --- Picture, names and colour ---
+    SectionTitle(R.string.account_look_title)
+    AccountLookCard(account, settings.lookOf(account.id), repo)
 
     // --- Signature: plain text, or HTML pasted from the clipboard or imported from a .eml/.html file ---
     SectionTitle(R.string.settings_section_signature)
@@ -243,6 +263,116 @@ internal fun AccountDetailPage(account: AccountEntity, settings: AppSettings, re
                         removing = false
                         onRemove()
                     }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * How an account looks: its picture (from the gallery, or the one it has at Google or Microsoft), the name it goes by
+ * in the lists, the name recipients see, and its colour. Everything is saved as it is typed or picked.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun AccountLookCard(account: AccountEntity, look: AccountLook, repo: SettingsRepository) {
+    val context = LocalContext.current
+    val app = context.applicationContext as CemailApplication
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val gallery = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            if (!AccountPhotos.setFromUri(context, account.id, uri)) {
+                Toast.makeText(context, R.string.account_photo_failed, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+    val fieldColors = TextFieldDefaults.colors(
+        focusedContainerColor = Color.Transparent,
+        unfocusedContainerColor = Color.Transparent,
+    )
+    var label by remember(account.id) { mutableStateOf(look.label.orEmpty()) }
+    var sender by remember(account.id) { mutableStateOf(look.senderName.orEmpty()) }
+
+    SettingsCard {
+        // Picture.
+        Text(stringResource(R.string.account_photo_title), style = MaterialTheme.typography.titleSmall)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            ChoiceChip(stringResource(R.string.account_photo_gallery), false) {
+                gallery.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            }
+            if (account.provider == "GMAIL" || account.provider == "MICROSOFT") {
+                ChoiceChip(stringResource(R.string.account_photo_provider, providerName(account)), false) {
+                    scope.launch {
+                        if (!AccountPhotos.useProvider(app, account)) {
+                            Toast.makeText(context, R.string.account_photo_none, Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+            } else if (AccountPhotos.file(context, account.id).exists()) {
+                ChoiceChip(stringResource(R.string.account_photo_remove), false) { AccountPhotos.remove(context, account.id) }
+            }
+        }
+    }
+    SettingsCard {
+        // The name in the lists.
+        Text(stringResource(R.string.account_label_title), style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.account_label_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        TextField(
+            value = label,
+            onValueChange = {
+                label = it
+                repo.setAccountLook(account.id, look.copy(label = it, senderName = sender))
+            },
+            placeholder = { Text(account.displayName ?: account.email) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            colors = fieldColors,
+        )
+    }
+    SettingsCard {
+        // The name recipients see.
+        Text(stringResource(R.string.account_sender_title), style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.account_sender_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        TextField(
+            value = sender,
+            onValueChange = {
+                sender = it
+                repo.setAccountLook(account.id, look.copy(label = label, senderName = it))
+            },
+            placeholder = { Text(account.displayName ?: stringResource(R.string.account_sender_hint)) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            colors = fieldColors,
+        )
+    }
+    SettingsCard {
+        // Colour: one of the design system's, or the automatic one.
+        Text(stringResource(R.string.account_color_title), style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.account_color_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            itemVerticalAlignment = Alignment.CenterVertically,
+        ) {
+            ChoiceChip(stringResource(R.string.account_color_auto), look.color == null) {
+                repo.setAccountLook(account.id, look.copy(label = label, senderName = sender, color = null))
+            }
+            Accent.entries.forEach { accent ->
+                val selected = look.color == accent
+                val name = stringResource(accent.label)
+                Box(
+                    Modifier
+                        .pressScale(0.9f)
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(accent.shade())
+                        .clickable(role = Role.RadioButton, onClickLabel = name) {
+                            repo.setAccountLook(account.id, look.copy(label = label, senderName = sender, color = accent))
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (selected) Icon(Icons.Filled.Check, name, tint = MaterialTheme.colorScheme.surface)
                 }
             }
         }

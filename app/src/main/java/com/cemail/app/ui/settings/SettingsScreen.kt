@@ -118,7 +118,7 @@ fun SettingsScreen(
     val goBack = { SettingsRoute.parent(route)?.let(onRoute) ?: onClose() }
     val account = SettingsRoute.accountId(route)?.let { id -> accounts.firstOrNull { it.id == id } }
     val title = when {
-        account != null -> account.displayName ?: account.email
+        account != null -> settings.lookOf(account.id).label ?: account.displayName ?: account.email
         route == SettingsRoute.ACCOUNTS -> stringResource(R.string.settings_section_accounts)
         route == SettingsRoute.ADD -> stringResource(R.string.add_account_title)
         route == SettingsRoute.MESSAGES -> stringResource(R.string.settings_section_messages)
@@ -170,7 +170,7 @@ fun SettingsScreen(
                     target == SettingsRoute.MAIN -> MainPage(settings, accounts.size, onRoute)
                     target == SettingsRoute.ACCOUNTS -> AccountsPage(accounts, settings, repo, onRoute)
                     target == SettingsRoute.ADD -> AddAccountPage(onAddGoogle, onAddMicrosoft, onAddImap)
-                    targetAccount != null -> AccountDetailPage(targetAccount, settings, repo) {
+                    targetAccount != null -> AccountDetailPage(targetAccount, accounts, settings, repo) {
                         onRoute(SettingsRoute.ACCOUNTS)
                         onRemoveAccount(targetAccount.id)
                     }

@@ -153,14 +153,19 @@ class MailViewModel(
         MailBox.TRASH -> folder == Folder.TRASH
     }
 
-    init {
-        refresh()
+    @OptIn(kotlinx.coroutines.FlowPreview::class) // debounce
+    private fun followSearch() {
         // The full-text search follows what is typed, a moment after the last key.
         viewModelScope.launch {
             ui.map { it.query }.distinctUntilChanged().debounce(200).collect { query ->
                 searchHits.value = if (query.isBlank()) emptySet() else repo.searchIds(query)
             }
         }
+    }
+
+    init {
+        refresh()
+        followSearch()
     }
 
     /** Syncs with the server; a failure is told with the same bar that offers Undo. */
@@ -289,7 +294,6 @@ class MailViewModel(
         }
     }
     fun discardDraft() = ui.update { it.copy(draft = null) }
-    fun updateDraft(draft: Draft) = ui.update { it.copy(draft = draft) }
 
     /** Changes the draft being written from its latest state (several fields can be edited at the same time). */
     fun editDraft(transform: (Draft) -> Draft) = ui.update { s -> s.draft?.let { s.copy(draft = transform(it)) } ?: s }

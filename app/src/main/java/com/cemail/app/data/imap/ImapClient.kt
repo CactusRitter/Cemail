@@ -266,9 +266,9 @@ class ImapClient(private val config: ImapConfig) {
     }
 
     /** Sends [raw] (a complete message without From) over SMTP and returns it as it went out, to be kept in Sent. */
-    fun send(raw: ByteArray): ByteArray {
+    fun send(raw: ByteArray, displayName: String? = null): ByteArray {
         val message = MimeMessage(session, ByteArrayInputStream(raw))
-        message.setFrom(InternetAddress(config.email, config.displayName))
+        message.setFrom(InternetAddress(config.email, displayName?.takeIf { it.isNotBlank() } ?: config.displayName, "UTF-8"))
         message.sentDate = Date()
         message.saveChanges()
         val transport = session.getTransport(smtpProtocol)

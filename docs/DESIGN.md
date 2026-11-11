@@ -75,3 +75,9 @@ Reglas: las ventanas y menús salen de su botón (`origin`); lo que está en el 
 - **Gestos de deslizar**: el fondo que aparece al arrastrar usa `primaryContainer`, o `errorContainer` para las acciones destructivas (papelera, spam). El umbral es una fracción del ancho (30 / 45 / 60 %).
 - **Abrir un correo** (0.33.1): el visor crece desde la tarjeta tocada (`expandFrom`, rectángulo redondeado que se abre con muelle `dampingRatio 0,9 / stiffness 170` mientras el contenido aparece), y la lista se desvanece detrás. Al cerrar se hace lo opuesto: el visor se pliega hasta la tarjeta (su posición actual, `ReadTransition.positions`) y la lista aparece detrás (`targetContentZIndex = -1`). Sin origen (notificación, búsqueda) se usa la transición de pantallas de siempre.
 - **Cabecera** (0.33.1): el título va en el centro de la pantalla (`CenteredHeader`), no en el hueco que dejan los extremos.
+
+## Cuentas: foto, nombre y color (añadido en Cemail 1.0.0)
+- **Color de cada cuenta**: se elige entre los colores de acento del sistema (`Accent`, el mismo juego que Celander usa para sus calendarios), con su tono claro u oscuro según el tema; «Automático» usa `accountPalette()` por posición. No hay colores libres.
+- **Foto de cuenta** (`AccountAvatar`): la del proveedor (Google o Microsoft) o una de la galería, recortada en círculo; sin foto, la inicial sobre el contenedor del color de la cuenta. En listas de cuentas lleva un **aro de 2 dp** en el color de la cuenta.
+- **Campo «De»** al redactar: misma tipografía que «Para» (etiqueta `bodyMedium`, dirección `labelLarge`); el desplegable lista las cuentas con su foto.
+- **Barra de formato** al redactar: solo aparece mientras se escribe el texto del mensaje (entra con muelle `bounceSpring`), para no tapar las sugerencias de destinatarios.

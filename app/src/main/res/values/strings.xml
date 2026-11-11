@@ -70,7 +70,6 @@
     <string name="snoozed_until">Back %1$s</string>
 
     <!-- Reading -->
-    <string name="to_me">to me</string>
     <string name="attachment">Has attachments</string>
     <string name="reply_prefix">Re: %1$s</string>
     <string name="forward_prefix">Fwd: %1$s</string>
@@ -121,9 +120,6 @@
     <string name="sign_in_demo">Look around with example messages</string>
     <string name="sign_in_failed">Could not sign in. Please try again.</string>
     <string name="sign_in_not_configured">This build has no Google client ID. See docs/OAUTH_SETUP.md.</string>
-    <string name="account_add">Add account</string>
-    <string name="account_remove">Remove account</string>
-    <string name="refresh">Refresh</string>
     <string name="sync_failed">Could not sync one of your accounts. Check your connection; details are in Settings, Activity log.</string>
     <string name="demo_label_shopping">Shopping</string>
     <string name="demo_label_amazon">Amazon</string>
@@ -154,7 +150,6 @@
     <string name="settings_remove_body">%1$s will be signed out and its messages deleted from this phone. Nothing changes in Gmail.</string>
     <string name="cancel">Cancel</string>
     <string name="settings_no_accounts">No account signed in.</string>
-    <string name="settings_section_sync">New mail</string>
     <string name="settings_sync_title">Check for new mail</string>
     <string name="settings_sync_body">How often Cemail looks for new messages on its own. Notifications use this too. With Manual, mail only arrives when you tap refresh.</string>
     <string name="sync_manual">Manual</string>
@@ -239,7 +234,6 @@
     <string name="eml_failed">Could not download the message. Check your connection.</string>
     <string name="compose_signature_remove">Leave out the signature</string>
     <string name="settings_signature_import">Import from a message (.eml) or .html file</string>
-    <string name="settings_signature_replace">Replace</string>
     <string name="settings_signature_remove">Remove</string>
     <string name="settings_signature_import_failed">No signature could be read from that file.</string>
     <string name="action_labels">Labels</string>
@@ -324,6 +318,21 @@
     <string name="swipe_none">Nothing</string>
     <string name="swipe_toggle_read">Read / unread</string>
     <string name="accounts_add_button">Add</string>
+    <string name="account_look_title">Personalize</string>
+    <string name="account_photo_title">Picture</string>
+    <string name="account_photo_gallery">Choose from gallery</string>
+    <string name="account_photo_provider">Use the one from %1$s</string>
+    <string name="account_photo_remove">Remove picture</string>
+    <string name="account_photo_failed">The picture could not be read</string>
+    <string name="account_photo_none">This account has no picture there (or there is no connection)</string>
+    <string name="account_label_title">Account name</string>
+    <string name="account_label_body">How the account is called in the lists, for example \"Gmail\", \"Work\" or \"Outlook\". Empty: the owner\'s name.</string>
+    <string name="account_sender_title">Name for sending</string>
+    <string name="account_sender_body">The name people see when they get your messages. Empty: the one set at the provider.</string>
+    <string name="account_sender_hint">As set at the provider</string>
+    <string name="account_color_title">Colour</string>
+    <string name="account_color_body">Marks this account\'s messages in the unified inbox and its picture.</string>
+    <string name="account_color_auto">Automatic</string>
     <string name="add_account_title">Add an account</string>
     <string name="add_google_body">Gmail and Google accounts</string>
     <string name="add_microsoft_body">Outlook, Hotmail and Microsoft 365</string>

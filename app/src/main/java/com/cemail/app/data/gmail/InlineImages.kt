@@ -38,7 +38,7 @@ object InlineImages {
             if (!cid.isNullOrEmpty() && mime != null) {
                 val data = part.body?.data?.let { Base64.getUrlDecoder().decode(it) }
                 if (data != null || part.body?.attachmentId != null) {
-                    found += InlinePart(cid, mime, data, part.body?.attachmentId)
+                    found += InlinePart(cid, mime, data, part.body.attachmentId)
                 }
             }
             part.parts.forEach(::walk)

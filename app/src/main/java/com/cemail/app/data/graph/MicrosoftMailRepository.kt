@@ -58,6 +58,8 @@ class MicrosoftMailRepository(
     private val onNewMail: (accountId: String, mails: List<Mail>) -> Unit = { _, _ -> },
     /** Where this account's Graph subscription (id and secret) is kept between runs; null disables push. */
     private val pushPrefs: android.content.SharedPreferences? = null,
+    /** The name the user chose to send with (Settings); null lets Microsoft use the account's own. */
+    private val senderName: () -> String? = { null },
 ) : MailRepository {
     override val mails: StateFlow<List<Mail>> = dao.observe(accountId)
         .map { list -> list.map { it.toMail() } }
@@ -119,7 +121,7 @@ class MicrosoftMailRepository(
                 api.sendMime(
                     MimeBuilder.build(
                         mail.senderName, mail.subject, mail.body, mail.outgoing, mail.cc, mail.bcc, mail.outgoingHtml,
-                        mail.inReplyTo, mail.references, mail.outgoingImages,
+                        mail.inReplyTo, mail.references, mail.outgoingImages, from = MimeBuilder.fromHeader(senderName(), selfEmail()),
                     ),
                 )
                 AppLog.i("send", "sent through Microsoft Graph, ${mail.outgoing.size} attachment(s)")
@@ -137,7 +139,7 @@ class MicrosoftMailRepository(
         api.sendMime(
             MimeBuilder.build(
                 mail.senderName, mail.subject, mail.body, mail.outgoing, mail.cc, mail.bcc, mail.outgoingHtml,
-                mail.inReplyTo, mail.references, mail.outgoingImages,
+                mail.inReplyTo, mail.references, mail.outgoingImages, from = MimeBuilder.fromHeader(senderName(), selfEmail()),
             ),
         )
     }

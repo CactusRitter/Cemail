@@ -32,10 +32,10 @@ class AccountRepository(
         tokens.clear(accountId)
         messages.deleteAccount(accountId)
         java.io.File(inlineRoot, accountId).deleteRecursively()
+        // Its picture (see AccountPhotos) goes too.
+        inlineRoot.parentFile?.let { java.io.File(it, "avatars/${accountId.filter { c -> c.isLetterOrDigit() }}.jpg").delete() }
         dao.delete(accountId)
     }
-
-    fun tokensOf(accountId: String): Tokens? = tokens.load(accountId)
 
     /** Adds (or updates) an IMAP account; its settings and password are kept encrypted. */
     suspend fun addImap(config: com.cemail.app.data.imap.ImapConfig) {
