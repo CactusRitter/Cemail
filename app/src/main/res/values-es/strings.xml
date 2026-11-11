@@ -328,6 +328,7 @@
     <string name="account_sender_title">Nombre para enviar</string>
     <string name="account_sender_body">El nombre que ven quienes reciben tus mensajes. Vacío: el que tenga puesto el proveedor.</string>
     <string name="account_sender_hint">El del proveedor</string>
+    <string name="account_sender_microsoft">Microsoft siempre envía con el nombre de tu cuenta de Microsoft. Para cambiarlo, edita tu perfil en account.microsoft.com.</string>
     <string name="account_color_title">Color</string>
     <string name="account_color_body">Marca los mensajes de esta cuenta en la bandeja unificada y su foto.</string>
     <string name="account_color_auto">Automático</string>

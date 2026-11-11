@@ -3,6 +3,10 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 1.0.1 — 2026-11-11
+- Las cuentas de Microsoft (Outlook) ya no ofrecen «Nombre para enviar»: Microsoft siempre pone el nombre de la cuenta de Microsoft (comprobado con un envío real), así que en su lugar se explica dónde cambiarlo. En Gmail e IMAP sigue funcionando.
+- Probado el envío desde Outlook a Gmail: llega bien (la primera vez Gmail lo puso en Spam; al moverlo a Recibidos aprende).
+
 ## 1.0.0 — 2026-11-11
 Primera versión para uso real.
 - **Personalizar cada cuenta** (Ajustes → Cuentas → la cuenta): **foto** (la de Google o Microsoft, que se toma sola, o una de la galería), **nombre de la cuenta** para las listas («Gmail», «Outlook»…), **nombre para enviar** (el que ven quienes reciben tus correos) y **color** (entre los colores del sistema de diseño, o automático).

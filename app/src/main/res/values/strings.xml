@@ -330,6 +330,7 @@
     <string name="account_sender_title">Name for sending</string>
     <string name="account_sender_body">The name people see when they get your messages. Empty: the one set at the provider.</string>
     <string name="account_sender_hint">As set at the provider</string>
+    <string name="account_sender_microsoft">Microsoft always sends with the name of your Microsoft account. To change it, edit your profile at account.microsoft.com.</string>
     <string name="account_color_title">Colour</string>
     <string name="account_color_body">Marks this account\'s messages in the unified inbox and its picture.</string>
     <string name="account_color_auto">Automatic</string>

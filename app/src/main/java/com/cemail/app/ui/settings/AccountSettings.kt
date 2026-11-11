@@ -331,8 +331,12 @@ private fun AccountLookCard(account: AccountEntity, look: AccountLook, repo: Set
         )
     }
     SettingsCard {
-        // The name recipients see.
+        // The name recipients see. Microsoft always uses the Microsoft account's own name, so there it can only be explained.
         Text(stringResource(R.string.account_sender_title), style = MaterialTheme.typography.titleSmall)
+        if (account.provider == "MICROSOFT") {
+            Text(stringResource(R.string.account_sender_microsoft), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            return@SettingsCard
+        }
         Text(stringResource(R.string.account_sender_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         TextField(
             value = sender,

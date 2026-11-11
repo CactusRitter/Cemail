@@ -55,7 +55,6 @@ class CemailApplication : Application() {
                     selfEmail = { accountRepository.accounts.first().firstOrNull { it.id == accountId }?.email },
                     onNewMail = ::notifyNewMail,
                     pushPrefs = getSharedPreferences("push-ms-${accountId.filter { it.isLetterOrDigit() }}", MODE_PRIVATE),
-                    senderName = { settings.state.value.lookOf(accountId).senderName },
                 )
             }
             if (provider == "IMAP") {
