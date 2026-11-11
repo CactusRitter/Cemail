@@ -47,6 +47,11 @@ import com.cemail.app.ui.glass.glassSpring
 import com.cemail.app.ui.glass.softBounceSpring
 import com.cemail.app.ui.glass.popIn
 import com.cemail.app.ui.glass.pressScale
+import androidx.compose.material3.pulltorefresh.pullToRefresh
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import kotlinx.coroutines.delay
+import com.cemail.app.ui.theme.LocalGlass
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
@@ -95,6 +100,7 @@ fun MailBox.labelRes(): Int = when (this) {
     MailBox.TRASH -> R.string.box_trash
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun ListScreen(
     state: MailUiState,
@@ -113,6 +119,32 @@ fun ListScreen(
         // instead of a flat white fill.
         GlassBackground(Modifier.hazeSource(haze)) {}
         val empty = state.pinned.isEmpty() && state.others.isEmpty()
+        // Pull down to refresh: the indicator shows only for a refresh the user asked for, not for the automatic ones.
+        val pullState = rememberPullToRefreshState()
+        var pulled by remember { mutableStateOf(false) }
+        LaunchedEffect(pulled, state.syncing) {
+            if (pulled && !state.syncing) {
+                delay(700) // long enough to be seen, and for the sync to start
+                if (!state.syncing) pulled = false
+            }
+        }
+        LaunchedEffect(pulled) {
+            if (pulled) {
+                delay(20_000)
+                pulled = false
+            }
+        }
+        Box(
+            Modifier.fillMaxSize().pullToRefresh(
+                state = pullState,
+                isRefreshing = pulled,
+                enabled = !selecting && !state.searching,
+                onRefresh = {
+                    pulled = true
+                    vm.refresh()
+                },
+            ),
+        ) {
         LazyColumn(
             Modifier.fillMaxSize().hazeSource(haze),
             contentPadding = PaddingValues(
@@ -167,6 +199,17 @@ fun ListScreen(
             } else {
                 items(state.others, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, stripeOf(mail), showSenderCircle, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
             }
+        }
+            // Under the top bar, where the pulled list comes down to.
+            PullToRefreshDefaults.Indicator(
+                state = pullState,
+                isRefreshing = pulled,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() + 72.dp),
+                containerColor = LocalGlass.current.menu,
+                color = MaterialTheme.colorScheme.primary,
+            )
         }
 
         // Top bar: glass pill over the list (menu, title or search field, search).

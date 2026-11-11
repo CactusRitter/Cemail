@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 0.31.1 — 2026-11-11
+- **Tirar hacia abajo para actualizar** en todas las bandejas y etiquetas: el indicador (con el cristal de la app) solo sale cuando lo pides tú, no en las comprobaciones automáticas, y no funciona mientras buscas o seleccionas.
+
 ## 0.31.0 — 2026-11-11
 Animaciones nuevas y coherentes, todas con resortes (documentadas en docs/DESIGN.md, «Movimiento»).
 - Los botones se encogen al pulsarlos y vuelven con rebote; los botones flotantes (redactar, responder, menú) aparecen desde el centro creciendo hasta su tamaño.
