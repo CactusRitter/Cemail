@@ -160,7 +160,7 @@ fun ListScreen(
         }
     }
     // The new rows can arrive a moment after the swap; the list stays at the top meanwhile.
-    LaunchedEffect(live.pinned, live.others) { if (entering) listState.scrollToItem(0) }
+    LaunchedEffect(epoch, live.pinned, live.others) { if (entering) listState.scrollToItem(0) }
     val haze = rememberHazeState()
     val selecting = state.selection.isNotEmpty()
     val startIsArchive = state.box != MailBox.ARCHIVE && state.box != MailBox.TRASH && state.box != MailBox.SPAM

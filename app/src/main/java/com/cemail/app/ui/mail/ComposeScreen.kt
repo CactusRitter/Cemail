@@ -74,6 +74,8 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -280,6 +282,7 @@ fun ComposeScreen(
                     label = { Text(stringResource(R.string.compose_subject)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, autoCorrectEnabled = true, keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
                     colors = colors,
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -288,6 +291,7 @@ fun ComposeScreen(
                     modifier = Modifier.fillMaxWidth().heightIn(min = 240.dp)
                         .onFocusChanged { writingBody = it.isFocused },
                     placeholder = { Text(stringResource(R.string.compose_body)) },
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, autoCorrectEnabled = true, keyboardType = KeyboardType.Text),
                     colors = RichTextEditorDefaults.richTextEditorColors(
                         containerColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent,
