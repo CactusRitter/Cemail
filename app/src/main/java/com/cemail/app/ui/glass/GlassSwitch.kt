@@ -31,6 +31,7 @@ fun GlassSwitch(checked: Boolean, onCheckedChange: ((Boolean) -> Unit)?, modifie
     val track by animateColorAsState(if (checked) c.primary else c.surfaceVariant.copy(alpha = 0.6f), glassSpring(), label = "track")
     val knob by animateColorAsState(if (checked) c.onPrimary else c.outline, glassSpring(), label = "knob")
     val x by animateDpAsState(if (checked) 16.dp else 0.dp, bounceSpring(), label = "knobX")
+    val shape = com.cemail.app.ui.theme.LocalSkin.current.shape(CircleShape)
     val toggle = if (onCheckedChange != null) {
         Modifier.toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
     } else {
@@ -40,13 +41,13 @@ fun GlassSwitch(checked: Boolean, onCheckedChange: ((Boolean) -> Unit)?, modifie
         modifier
             .then(toggle)
             .size(width = 40.dp, height = 24.dp)
-            .background(track, CircleShape)
-            .border(1.dp, if (checked) c.primary else c.outline.copy(alpha = 0.5f), CircleShape)
+            .background(track, shape)
+            .border(1.dp, if (checked) c.primary else c.outline.copy(alpha = 0.5f), shape)
             .padding(3.dp),
         contentAlignment = Alignment.CenterStart,
     ) {
         // Knob: a little smaller when off, like a pressed-in button, and full size when on.
-        Box(Modifier.offset(x = x).size(18.dp).padding(if (checked) 0.dp else 2.dp).background(knob, CircleShape))
+        Box(Modifier.offset(x = x).size(18.dp).padding(if (checked) 0.dp else 2.dp).background(knob, shape))
     }
 }
 

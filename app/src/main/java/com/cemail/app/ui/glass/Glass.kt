@@ -35,7 +35,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.PathEffect
+import com.cemail.app.ui.theme.Edge
 import com.cemail.app.ui.theme.LocalGlass
+import com.cemail.app.ui.theme.LocalSkin
+import com.cemail.app.ui.theme.Skin
+import com.cemail.app.ui.theme.SkinLook
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
@@ -65,6 +72,8 @@ fun Modifier.glass(
         GlassKind.Pinned -> glass.pinned
         GlassKind.Menu -> glass.menu
     }
+    val skin = LocalSkin.current
+    if (skin.skin != Skin.GLASS) return skinSurface(skin, skin.shape(shape), fill, kind, elevation, glass.shadow)
     var m = this
     if (elevation > 0.dp) m = m.shadow(elevation, shape, ambientColor = glass.shadow, spotColor = glass.shadow)
     m = m.clip(shape)
@@ -81,10 +90,96 @@ fun Modifier.glass(
     return m.border(1.dp, Brush.verticalGradient(listOf(glass.borderTop, glass.borderBottom)), shape)
 }
 
+/** A surface in one of the looks being tried out (not glass): solid fill, and the look's own edge and shadow. */
+private fun Modifier.skinSurface(skin: SkinLook, shape: Shape, fill: Color, kind: GlassKind, elevation: Dp, shadow: Color): Modifier {
+    var m = this
+    val floating = kind != GlassKind.Card
+    if (skin.hardShadow > 0.dp) {
+        m = m.hardShadow(shape, skin.hardShadowColor, if (kind == GlassKind.Menu) skin.hardShadow * 1.5f else skin.hardShadow)
+    } else if (skin.softShadow && elevation > 0.dp) {
+        m = m.shadow(elevation * 0.6f, shape, ambientColor = shadow, spotColor = shadow)
+    }
+    m = m.clip(shape).background(fill)
+    return when (skin.edge) {
+        Edge.GLASS -> m
+        // No edge, but small controls (chips, buttons) sitting on a card of the same colour get a fine outline.
+        Edge.NONE -> if (skin.edgeColor.alpha == 0f) m else m.drawWithContent {
+            drawContent()
+            if (kind == GlassKind.Card && size.height < 64.dp.toPx()) {
+                drawOutline(shape.createOutline(size, layoutDirection, this), skin.edgeColor, style = androidx.compose.ui.graphics.drawscope.Stroke(skin.edgeWidth.toPx()))
+            }
+        }
+        Edge.LINE -> m.border(skin.edgeWidth, if (floating) skin.strongEdgeColor else skin.edgeColor, shape)
+        Edge.DOUBLE -> {
+            val lined = m.border(skin.edgeWidth, if (floating) skin.strongEdgeColor else skin.edgeColor, shape)
+            // Dialogs get a second line inside the first, like a box drawn with ═ in a terminal.
+            if (kind != GlassKind.Menu) lined else lined.drawBehind {
+                val w = skin.edgeWidth.toPx()
+                val inset = 4.dp.toPx()
+                drawRect(
+                    skin.strongEdgeColor, Offset(inset, inset), Size(size.width - 2 * inset, size.height - 2 * inset),
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(w),
+                )
+            }
+        }
+        Edge.BEVEL -> m.drawBehind {
+            // Selected things are pressed in (sunken); a raised button with a shadow (write) stays raised.
+            bevel(skin.bevel, raised = kind != GlassKind.Pinned || elevation > 0.dp)
+            if (kind == GlassKind.Menu && skin.titleBar.size >= 2) {
+                // The title bar of a Windows 98 window, as a strip along the top of dialogs.
+                val inset = 3 * pixel()
+                drawRect(
+                    Brush.horizontalGradient(skin.titleBar), Offset(inset, inset),
+                    Size(size.width - 2 * inset, 9.dp.toPx()),
+                )
+            }
+        }
+    }
+}
+
+/** One device pixel per dp, rounded, so thin lines stay sharp. */
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.pixel(): Float = kotlin.math.max(1f, kotlin.math.round(density))
+
+/**
+ * Windows 98 edge: two lines on each side, light along the top and start and dark along the bottom and end (raised), or
+ * the other way round (sunken, like a text field). [top] and [bottom] false leave those sides open (rows of a group).
+ */
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.bevel(c: List<Color>, raised: Boolean, top: Boolean = true, bottom: Boolean = true) {
+    if (c.size < 4) return
+    val w = pixel()
+    val (hi, light, shade, dark) = c
+    fun frame(inset: Float, tl: Color, br: Color) {
+        val l = inset
+        val r = size.width - inset
+        val t = if (top) inset else 0f
+        val b = if (bottom) size.height - inset else size.height
+        if (top) drawRect(tl, Offset(l, t), Size(r - l, w))
+        drawRect(tl, Offset(l, t), Size(w, b - t))
+        if (bottom) drawRect(br, Offset(l, b - w), Size(r - l, w))
+        drawRect(br, Offset(r - w, t), Size(w, b - t))
+    }
+    if (raised) {
+        frame(0f, light, dark)
+        frame(w, hi, shade)
+    } else {
+        frame(0f, shade, hi)
+        frame(w, dark, light)
+    }
+}
+
+/** A solid shadow without blur: the shape again, moved [offset] down and towards the end. */
+private fun Modifier.hardShadow(shape: Shape, color: Color, offset: Dp): Modifier = drawBehind {
+    val o = offset.toPx()
+    val outline = shape.createOutline(size, layoutDirection, this)
+    val dx = if (layoutDirection == androidx.compose.ui.unit.LayoutDirection.Rtl) -o else o
+    translate(dx, o) { drawOutline(outline, color) }
+}
+
 /** Soft gradient with blurred colour blobs that the glass surfaces float on. */
 @Composable
 fun GlassBackground(modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
     val glass = LocalGlass.current
+    val scanlines = LocalSkin.current.scanlines
     Box(
         modifier
             .fillMaxSize()
@@ -98,6 +193,16 @@ fun GlassBackground(modifier: Modifier = Modifier, content: @Composable BoxScope
                         radius = radius,
                         center = center,
                     )
+                }
+                if (scanlines != null) {
+                    // The lines of a CRT screen: one dark device-pixel row every 3 dp.
+                    val step = 3.dp.toPx()
+                    val h = kotlin.math.max(1f, kotlin.math.round(density))
+                    var y = 0f
+                    while (y < size.height) {
+                        drawRect(scanlines, Offset(0f, y), Size(size.width, h))
+                        y += step
+                    }
                 }
             },
         content = content,
@@ -163,11 +268,12 @@ fun PillIcon(
     val tint by animateColorAsState(
         if (selected) colors.primary else colors.onSurface, glassSpring(), label = "pillTint",
     )
+    val shape = LocalSkin.current.shape(CircleShape)
     Box(
         Modifier
             .pressScale(0.85f)
             .size(width = width, height = 48.dp)
-            .clip(CircleShape)
+            .clip(shape)
             .background(container)
             .clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
@@ -206,6 +312,12 @@ enum class GroupPos {
 @Composable
 fun Modifier.glassSegment(pos: GroupPos, radius: Dp = 20.dp, kind: GlassKind = GlassKind.Card): Modifier {
     val glass = LocalGlass.current
+    val skin = LocalSkin.current
+    if (skin.skin != Skin.GLASS) {
+        val pinned = kind == GlassKind.Pinned
+        val fill = if (pinned) skin.listPinned ?: glass.pinned else skin.listFill ?: glass.card
+        return skinSegment(skin, pos, radius, fill, pinned)
+    }
     val fill = if (kind == GlassKind.Pinned) glass.pinned else glass.card
     val divider = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
     val shape = pos.shape(radius)
@@ -236,3 +348,56 @@ fun Modifier.glassSegment(pos: GroupPos, radius: Dp = 20.dp, kind: GlassKind = G
             }
         }
 }
+
+/**
+ * One row of a group in a look that is not glass. With a gap (Modern) every row is its own tile, with big corners
+ * on the outside of the group and small ones where two rows meet; without one the rows share a card with the look's
+ * edge (lines, bevel) and dividers, and the hard shadow, if any, runs down the whole group.
+ */
+private fun Modifier.skinSegment(skin: SkinLook, pos: GroupPos, radius: Dp, fill: Color, pinned: Boolean): Modifier {
+    val r = skin.radius(radius)
+    if (skin.groupGap > 0.dp) {
+        val inner = minOf(skin.innerCorner, r)
+        val shape = RoundedCornerShape(
+            topStart = if (pos.hasTop) r else inner, topEnd = if (pos.hasTop) r else inner,
+            bottomStart = if (pos.hasBottom) r else inner, bottomEnd = if (pos.hasBottom) r else inner,
+        )
+        val spaced = if (pos.hasBottom) this else padding(bottom = skin.groupGap)
+        return spaced.skinSurface(skin, shape, fill, if (pinned) GlassKind.Pinned else GlassKind.Card, 0.dp, Color.Transparent)
+    }
+    val shape = pos.shape(r)
+    var m = this
+    if (skin.hardShadow > 0.dp) m = m.hardShadow(shape, skin.hardShadowColor, skin.hardShadow)
+    return m.clip(shape).background(fill).drawWithContent {
+        drawContent()
+        when (skin.edge) {
+            Edge.BEVEL -> bevel(skin.bevel, raised = false, top = pos.hasTop, bottom = pos.hasBottom)
+            Edge.LINE, Edge.DOUBLE -> {
+                val stroke = skin.edgeWidth.toPx()
+                val half = stroke / 2f
+                val rr = r.toPx()
+                // As in the glass: the frame goes on past the seams, so no line shows where two rows meet.
+                val top = if (pos.hasTop) half else -2 * rr - stroke
+                val bottom = if (pos.hasBottom) size.height - half else size.height + 2 * rr + stroke
+                drawRoundRect(
+                    skin.edgeColor, Offset(half, top), Size(size.width - stroke, bottom - top),
+                    androidx.compose.ui.geometry.CornerRadius(kotlin.math.max(rr - half, 0f)),
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(stroke),
+                )
+            }
+            Edge.GLASS, Edge.NONE -> Unit
+        }
+        val divider = skin.divider
+        if (!pos.hasBottom && divider != null) {
+            val w = skin.dividerWidth.toPx()
+            val inset = skin.dividerInset.toPx()
+            val y = size.height - w / 2f
+            val dashes = if (skin.dashedDivider) PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 4.dp.toPx())) else null
+            drawLine(divider, Offset(inset, y), Offset(size.width - inset, y), w, pathEffect = dashes)
+        }
+    }
+}
+
+/** Colour for text and icons drawn straight on the background: [default], unless the look needs another (Retro's teal desktop). */
+@Composable
+fun onBackdrop(default: Color): Color = LocalSkin.current.backdropInk ?: default

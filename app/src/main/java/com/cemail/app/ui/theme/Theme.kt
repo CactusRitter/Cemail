@@ -37,7 +37,7 @@ fun paletteFrom(base: Color): AccentPalette {
 }
 
 /** Hue (0–360), saturation and lightness (0–1) of [color]; plain maths, so it also runs in unit tests. */
-private fun hslOf(color: Color): FloatArray {
+internal fun hslOf(color: Color): FloatArray {
     val r = color.red
     val g = color.green
     val b = color.blue
@@ -257,10 +257,26 @@ fun glassColors(
 
 val LocalGlass = staticCompositionLocalOf { glassColors(dark = false, transparency = 65, accent = Accent.INDIGO.palette) }
 
+/** Whether the app is dark now: the look may force it (AMOLED, Terminal), otherwise the light/dark setting. */
+@Composable
+fun AppSettings.isDarkNow(): Boolean = skin.forcedDark ?: themeMode.isDark()
+
 @Composable
 fun CemailTheme(settings: AppSettings = AppSettings(), content: @Composable () -> Unit) {
-    val dark = settings.themeMode.isDark()
+    val dark = settings.isDarkNow()
     val accent = settings.accentPalette
+    if (settings.skin != Skin.GLASS) {
+        val theme = androidx.compose.runtime.remember(settings.skin, dark, accent) { skinTheme(settings.skin, dark, accent) }
+        MaterialTheme(colorScheme = theme.scheme, typography = theme.typography, shapes = theme.shapes) {
+            CompositionLocalProvider(
+                LocalGlass provides theme.glass,
+                LocalSkin provides theme.look,
+                LocalContentColor provides theme.scheme.onSurface,
+                content = content,
+            )
+        }
+        return
+    }
     val glass = glassColors(dark, settings.transparency, accent, settings.themeStyle)
     val colors = if (dark) {
         darkColorScheme(
@@ -290,6 +306,7 @@ fun CemailTheme(settings: AppSettings = AppSettings(), content: @Composable () -
     MaterialTheme(colorScheme = colors) {
         CompositionLocalProvider(
             LocalGlass provides glass,
+            LocalSkin provides SkinLook(Skin.GLASS, dark),
             LocalContentColor provides colors.onSurface,
             content = content,
         )

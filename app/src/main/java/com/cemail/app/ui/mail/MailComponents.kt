@@ -105,7 +105,9 @@ fun MailRow(
         },
         positionalThreshold = { total -> total * swipe.distance.fraction },
     )
-    val shape = pos.shape(20.dp)
+    val skin = com.cemail.app.ui.theme.LocalSkin.current
+    val radius = skin.radius(20.dp)
+    val shape = pos.shape(radius)
     SwipeToDismissBox(
         state = state,
         modifier = modifier,
@@ -136,7 +138,7 @@ fun MailRow(
         Row(
             Modifier
                 .glassSegment(pos, 20.dp, kind)
-                .then(if (stripe != null) Modifier.accountCorner(stripe, pos.hasTop) else Modifier)
+                .then(if (stripe != null) Modifier.accountCorner(stripe, if (pos.hasTop) radius else 0.dp) else Modifier)
                 .combinedClickable(role = Role.Button, onClick = onClick, onLongClick = onLongClick)
                 .padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.Top,
@@ -211,7 +213,7 @@ private fun SenderTag(name: String, read: Boolean, asLabel: Boolean) {
     Text(
         name,
         Modifier
-            .background(if (read) c.surfaceVariant.copy(alpha = 0.6f) else c.primary.copy(alpha = 0.16f), RoundedCornerShape(8.dp))
+            .background(if (read) c.surfaceVariant.copy(alpha = 0.6f) else c.primary.copy(alpha = 0.16f), com.cemail.app.ui.theme.LocalSkin.current.shape(RoundedCornerShape(8.dp)))
             .padding(horizontal = 8.dp, vertical = 1.dp),
         style = MaterialTheme.typography.labelMedium,
         fontWeight = FontWeight.Bold,
@@ -226,11 +228,12 @@ private fun SenderTag(name: String, read: Boolean, asLabel: Boolean) {
  * thins to nothing along the top (~110 dp) and down the side (~34 dp), over a soft glow of the same colour.
  * Used in the unified inbox only. Mirrored in right-to-left layouts.
  */
-private fun Modifier.accountCorner(color: Color, rounded: Boolean): Modifier = this.drawWithContent {
+private fun Modifier.accountCorner(color: Color, corner: androidx.compose.ui.unit.Dp): Modifier = this.drawWithContent {
     drawContent()
     val d = density
     val rtl = layoutDirection == LayoutDirection.Rtl
-    val r = if (rounded) 20f * d else 0f
+    val r = corner.toPx()
+    val rounded = r > 0f
     val crescent = if (!rounded) Path().apply {
         // Flat top edge (middle rows of a group): same visible size as the one hugging the rounded corner.
         moveTo(0f, 12f * d)

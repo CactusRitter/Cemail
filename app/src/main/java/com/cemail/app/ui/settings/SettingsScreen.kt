@@ -398,6 +398,19 @@ private fun NotificationsPage(settings: AppSettings, repo: SettingsRepository) {
 @Composable
 private fun AppearancePage(settings: AppSettings, repo: SettingsRepository) {
     // Like Celander's "Design": light or dark, the colour (eight, or any hue), and the glass.
+    val glassLook = settings.skin == com.cemail.app.ui.theme.Skin.GLASS
+    SettingsCard {
+        Text(stringResource(R.string.skin_title), style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.skin_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            com.cemail.app.ui.theme.Skin.entries.forEach { skin ->
+                ChoiceChip(stringResource(skin.label), settings.skin == skin) { repo.setSkin(skin) }
+            }
+        }
+        if (settings.skin.forcedDark != null) {
+            Text(stringResource(R.string.skin_always_dark), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
     SettingsCard {
         Text(stringResource(R.string.theme_mode_title), style = MaterialTheme.typography.titleSmall)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -409,12 +422,14 @@ private fun AppearancePage(settings: AppSettings, repo: SettingsRepository) {
                 ChoiceChip(stringResource(label), settings.themeMode == mode) { repo.setThemeMode(mode) }
             }
         }
-        HorizontalDivider(Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)
-        Text(stringResource(R.string.style_title), style = MaterialTheme.typography.titleSmall)
-        Text(stringResource(R.string.style_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            com.cemail.app.ui.theme.ThemeStyle.entries.forEach { style ->
-                ChoiceChip(stringResource(style.label), settings.themeStyle == style) { repo.setThemeStyle(style) }
+        if (glassLook) {
+            HorizontalDivider(Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)
+            Text(stringResource(R.string.style_title), style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.style_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                com.cemail.app.ui.theme.ThemeStyle.entries.forEach { style ->
+                    ChoiceChip(stringResource(style.label), settings.themeStyle == style) { repo.setThemeStyle(style) }
+                }
             }
         }
         HorizontalDivider(Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)
@@ -437,7 +452,7 @@ private fun AppearancePage(settings: AppSettings, repo: SettingsRepository) {
         Text(stringResource(R.string.accent_custom), Modifier.padding(top = 4.dp), style = MaterialTheme.typography.titleSmall)
         HueBar(settings.customHue, repo::setCustomHue)
     }
-    SettingsCard {
+    if (glassLook) SettingsCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.settings_transparency_title), Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
             Text(

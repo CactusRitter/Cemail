@@ -112,7 +112,7 @@ internal fun syncIntervalLabel(minutes: Int): String = when {
 /** A round icon on the theme's container colour. */
 @Composable
 internal fun IconBubble(size: Dp = 48.dp, background: Color = MaterialTheme.colorScheme.primaryContainer, content: @Composable () -> Unit) {
-    Box(Modifier.size(size).clip(CircleShape).background(background), contentAlignment = Alignment.Center) { content() }
+    Box(Modifier.size(size).clip(com.cemail.app.ui.theme.LocalSkin.current.shape(CircleShape)).background(background), contentAlignment = Alignment.Center) { content() }
 }
 
 /**

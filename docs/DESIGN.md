@@ -106,3 +106,13 @@ Cada grupo de la lista (Fijados, Hoy, Ayer, Semana pasada, Anteriores, o todo si
 
 ## Botón rápido (1.4.9)
 Botón redondo de 48 dp (cristal `Chrome`; `Pinned` y acento mientras su filtro está activo) justo encima del de redactar. Acciones (Ajustes → Mensajes): filtro de no leídos, filtro de destacados, cambio de cuenta (ciclo Todas → cuentas en el orden de Ajustes; con una cuenta, su foto con anillo), búsqueda o ninguno. Ajustes → Cuentas tiene «Orden de las cuentas» (flechas subir/bajar).
+
+## Diseños en pruebas (rama `styles-lab`)
+Además del cristal, Ajustes → Apariencia → Diseño ofrece seis aspectos completos, cada uno inspirado en clientes de correo conocidos. Están en `ui/theme/Skin.kt` (`Skin`, `SkinLook`, `skinTheme`) y cambian toda la app sin tocar las pantallas: `Modifier.glass`, `glassSegment`, `GlassBackground`, `PillIcon`, `GlassSwitch` e `IconBubble` leen `LocalSkin` y dibujan el relleno, el borde, las esquinas y la sombra de cada aspecto; el tema de Material (colores, tipografía, formas) sale del mismo sitio. Con el cristal todo sigue exactamente igual.
+- **Moderno** (Gmail, Material 3 Expressive): superficies opacas teñidas con el acento, filas como baldosas separadas 2 dp (esquinas de 20 dp fuera del grupo y 6 dp dentro), sin bordes salvo un contorno fino en los controles pequeños, botón de redactar cuadrado-redondeado.
+- **AMOLED** (Spark o Superhuman de noche): negro puro, bordes de un pelo, sin sombras ni desenfoque. Siempre oscuro.
+- **Retro 98** (Outlook Express): escritorio verde azulado, ventanas grises con bisel, esquinas rectas, lista blanca hundida, barra de título en los menús. Lo seleccionado se ve pulsado.
+- **Terminal** (mutt, Pine): fósforo verde sobre negro con líneas de barrido, letra monoespaciada con brillo, cajas de línea doble en los menús y separadores discontinuos. Siempre oscuro y sin color de acento.
+- **Papel** (Hey, boletines): crema y tinta, letra con serifa, remitentes en versalitas, reglas finas.
+- **Brutalista** (Gumroad): colores planos, bordes negros de 2 dp y sombras duras desplazadas (en oscuro, del color de acento).
+Las opciones propias del cristal (estilo de fondo y transparencia) se ocultan con los otros diseños. Falta decidir cuáles se quedan y llevarlos a Celander y Cenotes.
