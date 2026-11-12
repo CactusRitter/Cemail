@@ -398,6 +398,14 @@
     <string name="account_color_title">Color</string>
     <string name="account_color_body">Marca los mensajes de esta cuenta en la bandeja unificada y su foto.</string>
     <string name="account_color_auto">Automático</string>
+    <string name="account_color_red">Rojo</string>
+    <string name="account_color_orange">Naranja</string>
+    <string name="account_color_yellow">Amarillo</string>
+    <string name="account_color_green">Verde</string>
+    <string name="account_color_cyan">Cian</string>
+    <string name="account_color_blue">Azul</string>
+    <string name="account_color_purple">Morado</string>
+    <string name="account_color_magenta">Magenta</string>
     <string name="add_account_title">Añadir una cuenta</string>
     <string name="add_google_body">Gmail y cuentas de Google</string>
     <string name="add_microsoft_body">Outlook, Hotmail y Microsoft 365</string>

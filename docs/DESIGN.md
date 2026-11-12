@@ -78,7 +78,7 @@ Reglas: las ventanas y menús salen de su botón (`origin`); lo que está en el 
 - **Cabecera** (0.33.1): el título va en el centro de la pantalla (`CenteredHeader`), no en el hueco que dejan los extremos.
 
 ## Cuentas: foto, nombre y color (añadido en Cemail 1.0.0)
-- **Color de cada cuenta**: se elige entre los colores de acento del sistema (`Accent`, el mismo juego que Celander usa para sus calendarios), con su tono claro u oscuro según el tema; «Automático» usa `accountPalette()` por posición. No hay colores libres.
+- **Color de cada cuenta** (cambiado en la rama `styles-lab`): ocho colores vivos propios de las cuentas (`AccountColor`: rojo, naranja, amarillo, verde, cian, azul, morado y magenta), aparte de los colores de acento de la app, para que cada cuenta destaque de un vistazo; cada uno tiene un tono para tema claro y otro más luminoso para oscuro. «Automático» los reparte por posición empezando por los cuatro más distintos (rojo, azul, verde, amarillo). Los colores guardados por versiones anteriores (acentos) pasan al vivo más parecido. No hay colores libres.
 - **Foto de cuenta** (`AccountAvatar`): la del proveedor (Google o Microsoft) o una de la galería, recortada en círculo; sin foto, la inicial sobre el contenedor del color de la cuenta. En listas de cuentas lleva un **aro de 2 dp** en el color de la cuenta.
 - **Campo «De»** al redactar: misma tipografía que «Para» (etiqueta `bodyMedium`, dirección `labelLarge`); el desplegable lista las cuentas con su foto.
 - **Barra de formato** al redactar: solo aparece mientras se escribe el texto del mensaje (entra con muelle `bounceSpring`), para no tapar las sugerencias de destinatarios.

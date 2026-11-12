@@ -70,7 +70,7 @@ enum class QuickAction { UNREAD, STARRED, ACCOUNT, SEARCH, NONE }
 fun <T> List<T>.orderedBy(order: List<String>, id: (T) -> String): List<T> =
     if (order.isEmpty()) this else sortedBy { a -> order.indexOf(id(a)).let { if (it < 0) Int.MAX_VALUE else it } }
 
-data class AccountLook(val label: String? = null, val senderName: String? = null, val color: Accent? = null)
+data class AccountLook(val label: String? = null, val senderName: String? = null, val color: com.cemail.app.ui.theme.AccountColor? = null)
 
 /** Small app preferences, kept in SharedPreferences and exposed as a StateFlow (same approach as Cenotes). */
 class SettingsRepository(context: Context) {
@@ -222,7 +222,7 @@ class SettingsRepository(context: Context) {
     private fun readLook(id: String) = AccountLook(
         label = prefs.getString(KEY_ACCOUNT_LABEL + id, null),
         senderName = prefs.getString(KEY_SENDER_NAME + id, null),
-        color = prefs.getString(KEY_ACCOUNT_COLOR + id, null)?.let { n -> Accent.entries.firstOrNull { it.name == n } },
+        color = prefs.getString(KEY_ACCOUNT_COLOR + id, null)?.let { com.cemail.app.ui.theme.AccountColor.fromStored(it) },
     )
 
     /** Saves how an account looks; blank texts and a null colour go back to the defaults. */

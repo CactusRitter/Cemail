@@ -400,6 +400,14 @@
     <string name="account_color_title">Colour</string>
     <string name="account_color_body">Marks this account\'s messages in the unified inbox and its picture.</string>
     <string name="account_color_auto">Automatic</string>
+    <string name="account_color_red">Red</string>
+    <string name="account_color_orange">Orange</string>
+    <string name="account_color_yellow">Yellow</string>
+    <string name="account_color_green">Green</string>
+    <string name="account_color_cyan">Cyan</string>
+    <string name="account_color_blue">Blue</string>
+    <string name="account_color_purple">Purple</string>
+    <string name="account_color_magenta">Magenta</string>
     <string name="add_account_title">Add an account</string>
     <string name="add_google_body">Gmail and Google accounts</string>
     <string name="add_microsoft_body">Outlook, Hotmail and Microsoft 365</string>

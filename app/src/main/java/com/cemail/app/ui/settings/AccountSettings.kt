@@ -42,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -67,7 +68,6 @@ import com.cemail.app.ui.mail.AccountAvatar
 import com.cemail.app.ui.mail.HtmlBody
 import com.cemail.app.ui.mail.shade
 import com.cemail.app.ui.mail.shownName
-import com.cemail.app.ui.theme.Accent
 import com.cemail.app.data.AccountLook
 import com.cemail.app.data.auth.AccountPhotos
 import androidx.activity.result.PickVisualMediaRequest
@@ -422,7 +422,7 @@ private fun AccountLookCard(account: AccountEntity, look: AccountLook, repo: Set
         )
     }
     SettingsCard {
-        // Colour: one of the design system's, or the automatic one.
+        // Colour: one of the eight vivid account colours, or the automatic one (by its place in the list).
         Text(stringResource(R.string.account_color_title), style = MaterialTheme.typography.titleSmall)
         Text(stringResource(R.string.account_color_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         FlowRow(
@@ -433,7 +433,7 @@ private fun AccountLookCard(account: AccountEntity, look: AccountLook, repo: Set
             ChoiceChip(stringResource(R.string.account_color_auto), look.color == null) {
                 repo.setAccountLook(account.id, look.copy(label = label, senderName = sender, color = null))
             }
-            Accent.entries.forEach { accent ->
+            com.cemail.app.ui.theme.AccountColor.entries.forEach { accent ->
                 val selected = look.color == accent
                 val name = stringResource(accent.label)
                 Box(
@@ -447,7 +447,8 @@ private fun AccountLookCard(account: AccountEntity, look: AccountLook, repo: Set
                         },
                     contentAlignment = Alignment.Center,
                 ) {
-                    if (selected) Icon(Icons.Filled.Check, name, tint = MaterialTheme.colorScheme.surface)
+                    // Dark tick on the light colours (yellow, cyan), white on the others.
+                    if (selected) Icon(Icons.Filled.Check, name, tint = if (accent.shade().luminance() > 0.5f) Color.Black else Color.White)
                 }
             }
         }
