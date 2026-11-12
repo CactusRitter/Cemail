@@ -77,7 +77,12 @@ data class GraphInline(
 /** What the Microsoft repository needs from Microsoft Graph. */
 class GraphApi(
     private val tokens: AccessTokenProvider,
-    private val client: OkHttpClient = OkHttpClient.Builder().dns(Ipv4First).build(),
+    // A full sync lists whole folders with their bodies: Microsoft can take well over the default 10 s to answer.
+    private val client: OkHttpClient = OkHttpClient.Builder()
+        .dns(Ipv4First)
+        .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+        .build(),
 ) {
     private val json = Json { ignoreUnknownKeys = true }
     private val textType = "text/plain".toMediaType()
@@ -214,6 +219,11 @@ class GraphApi(
                 } catch (e: java.net.ConnectException) {
                     // A first attempt on a dead route (often right after the app starts): one more try before giving up.
                     if (++attempt > 1) throw e
+                } catch (e: java.net.SocketTimeoutException) {
+                    // Microsoft answering slowly: one more try after a short pause. Only for reads, so a message that
+                    // was in fact sent is never sent twice.
+                    if (request.method != "GET" || ++attempt > 1) throw e
+                    kotlinx.coroutines.delay(1_500)
                 }
             }
             @Suppress("UNREACHABLE_CODE") error("unreachable")
