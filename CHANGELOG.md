@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 1.8.1 — 2026-11-13
+- Tabletas: con la lista de mensajes a la derecha, el menú (botón de las tres líneas) también se abre por la derecha.
+
 ## 1.8.0 — 2026-11-12
 - Borradores en el servidor (Gmail y Outlook), sin copias repetidas: el borrador se guarda solo al salir de Redactar (nunca mientras escribes, nunca vacío), y al reabrirlo y volver a guardarlo se actualiza el mismo en vez de crear otro. Al enviarlo, tirarlo a la papelera o vaciarlo, desaparece también del servidor. Si el servidor falla, el borrador se queda en el teléfono y la siguiente vez sustituye al que hubiera allí.
 - Ajustes → Copia de ajustes: guarda en un archivo (Drive, Descargas…) el aspecto, los gestos, las notificaciones, las firmas y el nombre y color de cada cuenta, y los restaura aquí o en otro dispositivo. Nunca incluye contraseñas ni el acceso a las cuentas.

@@ -69,6 +69,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -272,6 +275,12 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
     ) { vm.selectBox(MailBox.INBOX) }
 
     GlassBackground {
+        // With the list on the right (wide screens), the menu slides in from the right too: the drawer is laid out
+        // mirrored, and the menu and the screens inside it get the real direction back.
+        val direction = LocalLayoutDirection.current
+        val drawerDirection = if (!com.cemail.app.ui.glass.LocalListOnRight.current) direction
+            else if (direction == LayoutDirection.Ltr) LayoutDirection.Rtl else LayoutDirection.Ltr
+        CompositionLocalProvider(LocalLayoutDirection provides drawerDirection) {
         ModalNavigationDrawer(
             drawerState = drawer,
             gesturesEnabled = state.draft == null && state.open == null,
@@ -282,6 +291,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                     drawerContainerColor = Color.Transparent,
                     windowInsets = WindowInsets(0),
                 ) {
+                    CompositionLocalProvider(LocalLayoutDirection provides direction) {
                     DrawerContent(state, acc, unified = unifiedView, revealed = drawer.targetValue == DrawerValue.Open, onOpenSettings = {
                         settingsRoute = SettingsRoute.MAIN
                         showSettings = true
@@ -296,10 +306,12 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                         vm.selectBox(box)
                         scope.launch { drawer.close() }
                     })
+                    }
                 }
             },
             scrimColor = MaterialTheme.colorScheme.scrim.copy(alpha = 0.3f),
         ) {
+            CompositionLocalProvider(LocalLayoutDirection provides direction) {
             // The data of a screen that is on its way out must outlive the state that closed it.
             var lastDraft by remember { mutableStateOf(draft) }
             if (draft != null) lastDraft = draft
@@ -365,6 +377,8 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                 }
                 UndoBar(state.undo, vm, Modifier.align(Alignment.BottomCenter))
             }
+            }
+        }
         }
     }
 
