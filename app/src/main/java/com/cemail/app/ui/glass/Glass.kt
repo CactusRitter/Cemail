@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -25,6 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -171,4 +174,65 @@ fun PillIcon(
     ) {
         Icon(icon, contentDescription, tint = tintOverride ?: tint)
     }
+}
+
+/** Where a row sits inside a group that shares one glass card. */
+enum class GroupPos {
+    Single, First, Middle, Last;
+
+    val hasTop get() = this == Single || this == First
+    val hasBottom get() = this == Single || this == Last
+
+    fun shape(radius: Dp): Shape = RoundedCornerShape(
+        topStart = if (hasTop) radius else 0.dp, topEnd = if (hasTop) radius else 0.dp,
+        bottomStart = if (hasBottom) radius else 0.dp, bottomEnd = if (hasBottom) radius else 0.dp,
+    )
+
+    companion object {
+        /** Position of item [index] in a list of [size]. */
+        fun of(index: Int, size: Int) = when {
+            size <= 1 -> Single
+            index == 0 -> First
+            index == size - 1 -> Last
+            else -> Middle
+        }
+    }
+}
+
+/**
+ * One row of a group drawn as a slice of a single frosted card: the rows of a group touch, the rounded corners
+ * and the bright edge belong to the group as a whole, and a hairline separates one row from the next.
+ */
+@Composable
+fun Modifier.glassSegment(pos: GroupPos, radius: Dp = 20.dp, kind: GlassKind = GlassKind.Card): Modifier {
+    val glass = LocalGlass.current
+    val fill = if (kind == GlassKind.Pinned) glass.pinned else glass.card
+    val divider = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
+    val shape = pos.shape(radius)
+    return this
+        .clip(shape)
+        .background(fill)
+        .drawWithContent {
+            drawContent()
+            val r = radius.toPx()
+            val stroke = 1.dp.toPx()
+            val half = stroke / 2f
+            val mid = androidx.compose.ui.graphics.lerp(glass.borderTop, glass.borderBottom, 0.5f)
+            val brush = when (pos) {
+                GroupPos.Single -> Brush.verticalGradient(listOf(glass.borderTop, glass.borderBottom), 0f, size.height)
+                GroupPos.First -> Brush.verticalGradient(listOf(glass.borderTop, mid), 0f, size.height)
+                GroupPos.Middle -> Brush.verticalGradient(listOf(mid, mid))
+                GroupPos.Last -> Brush.verticalGradient(listOf(mid, glass.borderBottom), 0f, size.height)
+            }
+            // The frame is drawn on a rectangle taller than the row where the group goes on, so no line shows at the seam.
+            val top = if (pos.hasTop) half else -2 * r
+            val bottom = if (pos.hasBottom) size.height - half else size.height + 2 * r
+            drawRoundRect(
+                brush, Offset(half, top), Size(size.width - stroke, bottom - top),
+                androidx.compose.ui.geometry.CornerRadius(r - half), style = androidx.compose.ui.graphics.drawscope.Stroke(stroke),
+            )
+            if (!pos.hasBottom) {
+                drawLine(divider, Offset(14.dp.toPx(), size.height - half), Offset(size.width - 14.dp.toPx(), size.height - half), stroke)
+            }
+        }
 }

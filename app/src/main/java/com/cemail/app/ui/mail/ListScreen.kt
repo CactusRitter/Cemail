@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import com.cemail.app.ui.glass.GroupPos
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -180,7 +182,7 @@ fun ListScreen(
                 top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() + 80.dp,
                 bottom = 120.dp,
             ),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp), // rows of a group touch; the gap after a group is added to its last row
         ) {
             if (empty) {
                 item {
@@ -211,7 +213,7 @@ fun ListScreen(
             }
             if (state.pinned.isNotEmpty()) {
                 item(key = "h-pinned") { SectionHeader(stringResource(R.string.section_pinned)) }
-                items(state.pinned, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
+                itemsIndexed(state.pinned, key = { _, m -> m.id }) { i, mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, GroupPos.of(i, state.pinned.size), Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
                 if (state.others.isNotEmpty() && !grouped) item(key = "h-mail") { SectionHeader(stringResource(R.string.section_mail)) }
             }
             if (grouped) {
@@ -221,10 +223,10 @@ fun ListScreen(
                     val list = groups[section] ?: return@forEach
                     val collapsed = section in state.collapsedSections
                     item(key = "d-$section") { DateHeader(section, list.size, collapsed) { vm.toggleSection(section) } }
-                    if (!collapsed) items(list, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
+                    if (!collapsed) itemsIndexed(list, key = { _, m -> m.id }) { i, mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, GroupPos.of(i, list.size), Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
                 }
             } else {
-                items(state.others, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
+                itemsIndexed(state.others, key = { _, m -> m.id }) { i, mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, GroupPos.of(i, state.others.size), Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
             }
         }
         }
@@ -301,7 +303,7 @@ fun ListScreen(
 }
 
 @Composable
-private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsArchive: Boolean, swipe: com.cemail.app.data.SwipeConfig, stripe: Color?, showCircle: Boolean, modifier: Modifier = Modifier) {
+private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsArchive: Boolean, swipe: com.cemail.app.data.SwipeConfig, stripe: Color?, showCircle: Boolean, pos: GroupPos, modifier: Modifier = Modifier) {
     val one = setOf(mail.id)
     // With "confirm before acting" on, the swipe only asks; the action runs when it is confirmed.
     var pending by remember { mutableStateOf<com.cemail.app.data.SwipeAction?>(null) }
@@ -340,7 +342,8 @@ private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsA
         startIsArchive = startIsArchive,
         stripe = stripe,
         showCircle = showCircle,
-        modifier = modifier.onGloballyPositioned {
+        pos = pos,
+        modifier = modifier.padding(bottom = if (pos.hasBottom) 8.dp else 0.dp).onGloballyPositioned {
             bounds = it.boundsInRoot()
             bounds?.let { rect -> com.cemail.app.ui.glass.ReadTransition.positions[mail.id] = rect }
         },
@@ -377,7 +380,7 @@ private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsA
 private fun SectionHeader(text: String) {
     Text(
         text,
-        Modifier.padding(start = 8.dp, top = 8.dp),
+        Modifier.padding(start = 8.dp, top = 8.dp, bottom = 8.dp),
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.primary,
     )
@@ -440,7 +443,7 @@ private fun DateHeader(section: DateSection, count: Int, collapsed: Boolean, onC
         DateSection.OLDER -> R.string.section_older
     }
     Row(
-        Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).padding(start = 8.dp, top = 8.dp, bottom = 2.dp),
+        Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).padding(start = 8.dp, top = 8.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -464,7 +467,7 @@ private fun DateHeader(section: DateSection, count: Int, collapsed: Boolean, onC
 private fun EmptyFolderButton(box: MailBox, vm: MailViewModel) {
     var confirm by remember { mutableStateOf(false) }
     val name = stringResource(box.labelRes())
-    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+    Box(Modifier.fillMaxWidth().padding(bottom = 8.dp), contentAlignment = Alignment.Center) {
         Text(
             stringResource(if (box == MailBox.TRASH) R.string.empty_trash else R.string.empty_spam),
             Modifier

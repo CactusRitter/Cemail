@@ -55,7 +55,8 @@ import androidx.compose.ui.unit.dp
 import com.cemail.app.R
 import com.cemail.app.data.mail.Mail
 import com.cemail.app.ui.glass.GlassKind
-import com.cemail.app.ui.glass.glass
+import com.cemail.app.ui.glass.GroupPos
+import com.cemail.app.ui.glass.glassSegment
 import com.cemail.app.ui.glass.glassSpring
 import com.cemail.app.ui.icons.CemailIcons
 
@@ -87,6 +88,8 @@ fun MailRow(
     stripe: Color? = null,
     /** false hides the round sender picture (Settings). */
     showCircle: Boolean = true,
+    /** Place of the row inside the card its group shares. */
+    pos: GroupPos = GroupPos.Single,
     modifier: Modifier = Modifier,
 ) {
     val state = rememberSwipeToDismissBoxState(
@@ -100,7 +103,7 @@ fun MailRow(
         },
         positionalThreshold = { total -> total * swipe.distance.fraction },
     )
-    val shape = RoundedCornerShape(20.dp)
+    val shape = pos.shape(20.dp)
     SwipeToDismissBox(
         state = state,
         modifier = modifier,
@@ -130,9 +133,8 @@ fun MailRow(
         val kind = if (selected || !mail.read) GlassKind.Pinned else GlassKind.Card
         Row(
             Modifier
-                .glass(shape, kind)
-                .clip(shape)
-                .then(if (stripe != null) Modifier.accountCorner(stripe, shape) else Modifier)
+                .glassSegment(pos, 20.dp, kind)
+                .then(if (stripe != null) Modifier.accountCorner(stripe, pos.hasTop) else Modifier)
                 .combinedClickable(role = Role.Button, onClick = onClick, onLongClick = onLongClick)
                 .padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.Top,
@@ -220,15 +222,15 @@ private fun SenderTag(name: String, read: Boolean, asLabel: Boolean) {
  * thins to nothing along the top (~110 dp) and down the side (~34 dp), over a soft glow of the same colour.
  * Used in the unified inbox only. Mirrored in right-to-left layouts.
  */
-private fun Modifier.accountCorner(color: Color, shape: RoundedCornerShape): Modifier = this.drawWithContent {
+private fun Modifier.accountCorner(color: Color, rounded: Boolean): Modifier = this.drawWithContent {
     drawContent()
     val d = density
     val rtl = layoutDirection == LayoutDirection.Rtl
-    val r = 20f * d
+    val r = if (rounded) 20f * d else 0f
     val crescent = Path().apply {
         moveTo(0f, 34f * d)
         lineTo(0f, r)
-        arcTo(Rect(0f, 0f, 2 * r, 2 * r), 180f, 90f, false)
+        if (r > 0f) arcTo(Rect(0f, 0f, 2 * r, 2 * r), 180f, 90f, false)
         lineTo(112f * d, 0f)
         cubicTo(72f * d, 0.5f * d, 40f * d, 2f * d, 22f * d, 5.5f * d)
         cubicTo(9f * d, 9f * d, 1.5f * d, 18f * d, 0f, 34f * d)

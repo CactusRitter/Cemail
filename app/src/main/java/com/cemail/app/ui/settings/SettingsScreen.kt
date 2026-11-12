@@ -227,10 +227,10 @@ private fun MainPage(settings: AppSettings, accountCount: Int, onRoute: (String)
     )
     val rows: List<Triple<String, String, Pair<String, ImageVector>>> = listOf(
         Triple(stringResource(R.string.settings_section_accounts), pluralStringResource(R.plurals.accounts_count, accountCount, accountCount), SettingsRoute.ACCOUNTS to Icons.Filled.Person),
+        Triple(stringResource(R.string.settings_section_appearance), stringResource(R.string.settings_row_appearance_body), SettingsRoute.APPEARANCE to CemailIcons.Palette),
         Triple(stringResource(R.string.settings_section_messages), stringResource(R.string.settings_row_messages_body), SettingsRoute.MESSAGES to Icons.Filled.Email),
         Triple(stringResource(R.string.settings_gestures_title), summary, SettingsRoute.GESTURES to Icons.AutoMirrored.Filled.ArrowForward),
         Triple(stringResource(R.string.settings_notifications_page), stringResource(R.string.settings_row_notifications_body), SettingsRoute.NOTIFICATIONS to Icons.Filled.Notifications),
-        Triple(stringResource(R.string.settings_section_appearance), stringResource(R.string.settings_row_appearance_body), SettingsRoute.APPEARANCE to CemailIcons.Palette),
         Triple(stringResource(R.string.settings_section_diagnostics), stringResource(R.string.settings_row_diagnostics_body), SettingsRoute.DIAGNOSTICS to Icons.Filled.Info),
     )
     rows.forEachIndexed { index, (title, body, target) ->
