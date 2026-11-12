@@ -18,6 +18,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -291,10 +294,15 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
             if (draft != null) lastDraft = draft
             var lastOpen by remember { mutableStateOf(open) }
             if (open != null) lastOpen = open
+            val listScreen: @Composable () -> Unit = {
+                ListScreen(state, vm, filter = listFilter, quickButton = { haze -> QuickButton(settings.quickAction, listFilter, { listFilter = it }, acc, { id -> accountVm.select(id) }, { vm.setSearching(true) }, haze) }, grouped = settings.groupByDate && state.query.isBlank(), groupCards = settings.groupCards, stripeOf = stripeOf, showSenderCircle = settings.showSenderCircle, swipe = settings.swipe, listState = listState, onOpenDrawer = { scope.launch { drawer.open() } })
+            }
+            // Tablets and open foldables (wide windows): the list and the open message side by side, like Gmail.
+            val twoPane = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= TWO_PANE_MIN_WIDTH
             val screen = when {
                 draft != null -> Screen.COMPOSE
                 showSettings -> Screen.SETTINGS
-                open != null -> Screen.READ
+                open != null && !twoPane -> Screen.READ
                 else -> Screen.LIST
             }
             Box(Modifier.fillMaxSize()) {
@@ -321,12 +329,19 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                     label = "screen",
                 ) { target ->
                     when (target) {
-                        Screen.COMPOSE -> lastDraft?.let { ComposeScreen(it, vm, acc.accounts, defaultFrom) }
-                        Screen.SETTINGS -> SettingsScreen(
-                            settings, settingsRepo, acc.accounts, settingsRoute, { settingsRoute = it }, accountVm::remove,
-                            onAddGoogle = startSignIn, onAddMicrosoft = startMicrosoft, onAddImap = { imapForm = IMAP_PLAIN }, onAddYahoo = { imapForm = IMAP_YAHOO },
-                        ) { showSettings = false }
-                        Screen.READ -> lastOpen?.let {
+                        Screen.COMPOSE -> Centered { lastDraft?.let { ComposeScreen(it, vm, acc.accounts, defaultFrom) } }
+                        Screen.SETTINGS -> Centered {
+                            SettingsScreen(
+                                settings, settingsRepo, acc.accounts, settingsRoute, { settingsRoute = it }, accountVm::remove,
+                                onAddGoogle = startSignIn, onAddMicrosoft = startMicrosoft, onAddImap = { imapForm = IMAP_PLAIN }, onAddYahoo = { imapForm = IMAP_YAHOO },
+                            ) { showSettings = false }
+                        }
+                        Screen.LIST -> if (twoPane) TwoPane(
+                            list = { listScreen() },
+                            open = open,
+                            reading = { ReadScreen(it, vm, settings.alwaysShowImages, state.labels, state.thread) },
+                        ) else Centered { listScreen() }
+                        Screen.READ -> Centered { lastOpen?.let {
                             // Taken once per opening: the card that was tapped is where the mail grows from.
                             val origin = remember { ReadTransition.consume() }
                             // Leaving towards the list: the mail folds back into its card.
@@ -334,8 +349,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                             Box(Modifier.fillMaxSize().expandFrom(origin, it.id, closing)) {
                                 ReadScreen(it, vm, settings.alwaysShowImages, state.labels, state.thread)
                             }
-                        }
-                        Screen.LIST -> ListScreen(state, vm, filter = listFilter, quickButton = { haze -> QuickButton(settings.quickAction, listFilter, { listFilter = it }, acc, { id -> accountVm.select(id) }, { vm.setSearching(true) }, haze) }, grouped = settings.groupByDate && state.query.isBlank(), groupCards = settings.groupCards, stripeOf = stripeOf, showSenderCircle = settings.showSenderCircle, swipe = settings.swipe, listState = listState, onOpenDrawer = { scope.launch { drawer.open() } })
+                        } }
                     }
                 }
                 UndoBar(state.undo, vm, Modifier.align(Alignment.BottomCenter))
@@ -501,3 +515,58 @@ private const val POLL_MILLIS = 60_000L
 
 /** What is on top; [depth] says how "deep" it is, to choose the direction of the transition. */
 private enum class Screen(val depth: Int) { LIST(0), READ(1), SETTINGS(1), COMPOSE(2) }
+
+/** From this window width (dp) the list and the open message are shown side by side: tablets, open foldables. */
+private const val TWO_PANE_MIN_WIDTH = 840
+
+/** Widest a single screen grows: on a tablet or an open foldable it stays centred instead of stretching. */
+private val MAX_CONTENT_WIDTH = 720.dp
+
+/** [content] centred, no wider than [MAX_CONTENT_WIDTH] (on a phone it simply fills the screen). */
+@Composable
+internal fun Centered(content: @Composable () -> Unit) {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        Box(Modifier.fillMaxHeight().widthIn(max = MAX_CONTENT_WIDTH).fillMaxWidth()) { content() }
+    }
+}
+
+/**
+ * The list on the start side and the open message beside it (wide windows). The list takes about a third of the
+ * width (between 360 and 480 dp); with no message open, the reading side says where to tap.
+ */
+@Composable
+private fun TwoPane(list: @Composable () -> Unit, open: Mail?, reading: @Composable (Mail) -> Unit) {
+    // The card-to-message unfolding of phones does not apply here: the message has its own side.
+    LaunchedEffect(open?.id) { ReadTransition.consume() }
+    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
+        val listWidth = (maxWidth * 0.36f).coerceIn(360.dp, 480.dp)
+        Row(Modifier.fillMaxSize()) {
+            Box(Modifier.width(listWidth).fillMaxHeight()) { list() }
+            Box(Modifier.weight(1f).fillMaxHeight()) {
+                AnimatedContent(
+                    targetState = open,
+                    contentKey = { it?.id },
+                    transitionSpec = {
+                        (fadeIn(glassSpring()) + scaleIn(softBounceSpring(), initialScale = 0.96f)) togetherWith fadeOut(glassSpring())
+                    },
+                    label = "readingPane",
+                ) { mail ->
+                    if (mail != null) {
+                        reading(mail)
+                    } else {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Icon(CemailIcons.Mail, null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(
+                                    stringResource(R.string.pane_empty),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = com.cemail.app.ui.glass.onBackdrop(MaterialTheme.colorScheme.onSurfaceVariant),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

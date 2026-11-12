@@ -88,6 +88,8 @@ fun MailRow(
     stripe: Color? = null,
     /** false hides the round sender picture (Settings). */
     showCircle: Boolean = true,
+    /** The message is on view in the reading side (tablets): it is highlighted. */
+    current: Boolean = false,
     /** Place of the row inside the card its group shares. */
     pos: GroupPos = GroupPos.Single,
     /** true: the rows share a card, so an unread row is told apart by bold type only (no stronger fill). */
@@ -134,7 +136,7 @@ fun MailRow(
             }
         },
     ) {
-        val kind = if (selected || (!mail.read && !inGroup)) GlassKind.Pinned else GlassKind.Card
+        val kind = if (selected || current || (!mail.read && !inGroup)) GlassKind.Pinned else GlassKind.Card
         Row(
             Modifier
                 .glassSegment(pos, 20.dp, kind)

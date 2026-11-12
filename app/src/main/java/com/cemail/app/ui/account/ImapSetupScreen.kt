@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -126,10 +127,13 @@ fun ImapSetupScreen(accountVm: AccountViewModel, yahoo: Boolean = false, onClose
     }
 
     GlassBackground {
-        Box(Modifier.fillMaxSize().imePadding()) {
+        // Centred and no wider than a phone column on tablets and open foldables.
+        Box(Modifier.fillMaxSize().imePadding(), contentAlignment = Alignment.TopCenter) {
             Column(
                 Modifier
-                    .fillMaxSize()
+                    .fillMaxHeight()
+                    .widthIn(max = 720.dp)
+                    .fillMaxWidth()
                     .windowInsetsPadding(WindowInsets.safeDrawing)
                     .verticalScroll(rememberScrollState())
                     .padding(start = 12.dp, end = 12.dp, top = 80.dp, bottom = 24.dp),

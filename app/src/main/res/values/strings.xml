@@ -14,6 +14,7 @@
     <string name="accent_pink">Raspberry</string>
     <string name="style_title">Style</string>
     <string name="style_body">The background and the tint of the glass.</string>
+    <string name="pane_empty">Choose a message to read it here.</string>
     <string name="skin_title">Design</string>
     <string name="skin_body">The look of the whole app. Glass is the one shared with Celander and Cenotes; the others are being tried out.</string>
     <string name="skin_always_dark">This design is always dark.</string>

@@ -117,3 +117,8 @@ Además del cristal, Ajustes → Apariencia → Diseño ofrece cinco aspectos co
 Las opciones propias del cristal (estilo de fondo y transparencia) se ocultan con los otros diseños, y «Claro u oscuro» con los que solo tienen un modo (AMOLED). Terminal (mutt, Pine) se probó y se quitó. Falta decidir cuáles se quedan y llevarlos a Celander y Cenotes.
 
 **Sombra 3D del cristal** (Apariencia → Sombra 3D, solo con el cristal): la sombra dura de Brutalista aplicada al cristal. Cada superficie lleva debajo su propia forma desplazada 4 dp hacia abajo y hacia el final (5 dp los botones flotantes, 6 dp los menús), sin desenfoque; en claro es un tono profundo del acento al 50 %, en oscuro un brillo del acento al 38 %. Solo se dibuja la parte que asoma, para que no se vea a través del cristal, y en las tarjetas por grupo la sombra corre seguida por todas las filas.
+
+## Tabletas y plegables (1.7.1)
+- Desde 840 dp de ancho de ventana (`TWO_PANE_MIN_WIDTH` en `MailApp.kt`): dos paneles, la lista a la izquierda (36 % del ancho, entre 360 y 480 dp) y el mensaje abierto a la derecha; sin mensaje, un aviso centrado. El mensaje abierto se resalta en la lista como uno seleccionado (sin la marca).
+- Por debajo, una sola pantalla; en anchos medianos (plegable abierto en vertical) cada pantalla se centra con un máximo de 720 dp (`Centered`), y la tarjeta de bienvenida de 560 dp.
+- La actividad gestiona los cambios de tamaño (`configChanges`), así que girar, plegar o cambiar de ventana no reinicia la app ni pierde la pantalla.

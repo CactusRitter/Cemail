@@ -380,6 +380,8 @@ private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsA
     MailRow(
         mail = mail,
         selected = mail.id in state.selection,
+        // The message on view beside the list (tablets): highlighted like a selected one, without the tick.
+        current = state.open?.id == mail.id,
         selectionMode = state.selection.isNotEmpty(),
         onClick = {
             if (state.selection.isNotEmpty()) {

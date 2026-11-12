@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
@@ -47,7 +48,7 @@ fun SignInScreen(
             verticalArrangement = Arrangement.Center,
         ) {
             Column(
-                Modifier.fillMaxWidth().glass(RoundedCornerShape(32.dp), GlassKind.Card).padding(28.dp),
+                Modifier.widthIn(max = 560.dp).fillMaxWidth().glass(RoundedCornerShape(32.dp), GlassKind.Card).padding(28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {

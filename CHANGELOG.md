@@ -3,6 +3,10 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 1.7.1 — 2026-11-12
+- Tabletas y plegables abiertos: con la pantalla ancha (desde 840 dp, como una tableta en vertical u horizontal), la lista y el mensaje abierto se ven uno al lado del otro, como en Gmail; el mensaje abierto queda resaltado en la lista. Redactar, Ajustes, el inicio de sesión y la cuenta IMAP se centran con un ancho máximo en vez de estirarse.
+- Al girar la pantalla, plegar o desplegar el móvil, o cambiar el tamaño de la ventana, la app ya no se reinicia: sigue donde estabas.
+
 ## 1.7.0 — 2026-11-12
 - Ajustes → Apariencia → Diseño: además del cristal, cinco aspectos completos para toda la app, inspirados en otros clientes de correo: Moderno (Gmail), AMOLED (negro puro, siempre oscuro), Retro 98 (Outlook Express), Papel (editorial, con serifa) y Brutalista (bordes gruesos y sombras duras). En los diseños que solo tienen modo oscuro no aparece «Claro u oscuro».
 - Sombra 3D para el cristal (Apariencia → Sombra 3D): la sombra sólida de Brutalista bajo tarjetas y botones, del color de acento.
