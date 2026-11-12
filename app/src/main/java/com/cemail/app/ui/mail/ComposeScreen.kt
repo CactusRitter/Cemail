@@ -37,6 +37,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -190,6 +191,25 @@ fun ComposeScreen(
             vm.editDraft { d -> d.copy(body = rich.toPlainText(), html = html) }
         }
     }
+    // A reopened draft that answers a message: its original is quoted again from the phone (or the server).
+    LaunchedEffect(draft.quotePending, draft.replyToId) {
+        if (!draft.quotePending) return@LaunchedEffect
+        val original = draft.replyToId?.let { vm.full(it) }
+        if (original == null) {
+            vm.editDraft { d -> d.copy(quotePending = false, quoteMissing = true) }
+            return@LaunchedEffect
+        }
+        val html = original.bodyHtml.orEmpty()
+        val pictures = if (HtmlSanitizer.hasInlineImages(html)) vm.inlineImages(original.id) else emptyMap()
+        val (quote, css) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+            if (html.isBlank()) com.cemail.app.data.gmail.SignatureHtml.plainToHtml(original.body) to ""
+            else HtmlSanitizer.clean(html, pictures) to HtmlSanitizer.styles(html)
+        }
+        val quoted = original.body.lines().joinToString("\n") { "> $it" }
+        vm.editDraft { d ->
+            d.copy(quotePending = false, quoteHtml = quote, quoteCss = css, quoteHeader = quoteHeaderOf(context, original), quoteText = quoted)
+        }
+    }
     var scheduling by remember { mutableStateOf(false) }
     // The formatting bar is for the text: it shows only while the text is being written, so it never covers the
     // recipient suggestions.
@@ -314,6 +334,17 @@ fun ComposeScreen(
                     Box(Modifier.fillMaxWidth().height(170.dp).clip(RoundedCornerShape(24.dp))) {
                         HtmlBody(HtmlSanitizer.page(signature, 0, ""), true, Modifier.fillMaxSize()) { }
                     }
+                }
+            }
+            if (draft.quoteMissing) {
+                // A reopened draft whose original message has since been deleted.
+                Row(
+                    Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card).padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Icon(Icons.Filled.Warning, null, tint = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.compose_quote_gone), style = MaterialTheme.typography.bodyMedium)
                 }
             }
             draft.quoteHtml?.let { quote ->
@@ -567,4 +598,13 @@ internal fun readAttachment(context: Context, uri: Uri): OutAttachment? = try {
 } catch (e: Exception) {
     AppLog.e("attach", "could not read the chosen file", e)
     null
+}
+
+/** "On <date>, <name> wrote:" for the message being answered. */
+internal fun quoteHeaderOf(context: android.content.Context, mail: com.cemail.app.data.mail.Mail): String {
+    val whenText = android.text.format.DateUtils.formatDateTime(
+        context, mail.timeMillis,
+        android.text.format.DateUtils.FORMAT_SHOW_DATE or android.text.format.DateUtils.FORMAT_SHOW_TIME or android.text.format.DateUtils.FORMAT_ABBREV_MONTH,
+    )
+    return context.getString(R.string.quote_header, whenText, mail.senderName)
 }

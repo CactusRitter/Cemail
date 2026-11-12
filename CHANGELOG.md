@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 1.6.3 — 2026-11-12
+- Un borrador de respuesta guarda solo una marca del mensaje original; al reabrirlo, el original vuelve a citarse desde el teléfono (con su diseño e imágenes). Si el mensaje ya no existe, el borrador avisa «El mensaje al que respondes ya no existe».
+
 ## 1.6.2 — 2026-11-12
 - **Responder y reenviar con el correo original tal cual**: el mensaje citado se ve con su diseño y sus imágenes (no en texto plano) debajo de tu texto, con una x para quitarlo; al enviar, el correo lleva el original en HTML (con sus imágenes incrustadas) y también en texto plano. Las imágenes remotas del original se muestran en la vista previa solo si las tenías activadas al leerlo.
 

@@ -67,6 +67,9 @@ data class Draft(
     val quoteText: String = "",
     /** The original's remote pictures are shown in the preview only if the reader had them on. */
     val quoteShowImages: Boolean = false,
+    /** A reopened draft that answers a message: its original is being looked up (quotePending) or no longer exists (quoteMissing). */
+    val quotePending: Boolean = false,
+    val quoteMissing: Boolean = false,
     /** The account (id) the message is sent from; null until the compose screen picks the default one. */
     val fromAccountId: String? = null,
     val threadId: String? = null,
@@ -324,6 +327,8 @@ class MailViewModel(
 
     /** Re-opens a saved draft for editing (the stored copy is removed; it is saved again on close). */
     fun editDraft(mail: Mail) {
+        val savedHtml = mail.bodyHtml?.takeIf { h -> h.isNotBlank() }
+        val quotedId = savedHtml?.let { h -> QUOTE_MARK.find(h)?.groupValues?.get(1)?.toLongOrNull() }
         // A scheduled message is taken out of the Outbox; its attachments come back into the editor.
         val attachments = if (mail.folder == Folder.OUTBOX) {
             com.cemail.app.data.mail.Outbox.load(mail.id).first.also { repo.cancelScheduled(mail.id) }
@@ -335,7 +340,8 @@ class MailViewModel(
             it.copy(
                 draft = Draft(
                     to = mail.senderName, subject = mail.subject, body = mail.body,
-                    cc = mail.cc, bcc = mail.bcc, html = mail.bodyHtml?.takeIf { h -> h.isNotBlank() }, attachments = attachments,
+                    cc = mail.cc, bcc = mail.bcc, html = savedHtml?.replace(QUOTE_MARK, ""), attachments = attachments,
+                    replyToId = quotedId, quotePending = quotedId != null,
                     signed = true, fromAccountId = mail.accountId.takeIf { id -> id.isNotBlank() }, threadId = mail.threadId, inReplyTo = mail.inReplyTo, references = mail.references,
                 ),
             )
@@ -393,7 +399,10 @@ class MailViewModel(
             images = inline
             finalBody = body.trimEnd() + "\n\n-- \n" + SignatureHtml.toText(signature)
         }
-        quoteHtml?.let { quote ->
+        if (folder == Folder.DRAFTS && replyToId != null && (quoteHtml != null || quotePending)) {
+            // A saved draft keeps only a mark of the message it answers; the original is looked up again when it is reopened.
+            finalHtml = (finalHtml ?: SignatureHtml.plainToHtml(finalBody)) + QUOTE_MARK_PREFIX + replyToId + QUOTE_MARK_SUFFIX
+        } else quoteHtml?.let { quote ->
             val (merged, inline) = SignatureHtml.appendQuote(finalHtml ?: SignatureHtml.plainToHtml(finalBody), quoteHeader, quote)
             finalHtml = merged
             images = images + inline
@@ -479,3 +488,8 @@ enum class SnoozeOption(@StringRes val label: Int) {
 
 /** Gmail refuses messages over 25 MB; files grow by a third when encoded, so the files may add up to 10 MB. */
 const val MAX_ATTACHMENT_BYTES = 10L * 1024 * 1024
+
+/** Mark inside a saved draft: which message the draft answers (its original is quoted again when the draft is reopened). */
+const val QUOTE_MARK_PREFIX = "<div data-cemail-quote=\""
+const val QUOTE_MARK_SUFFIX = "\"></div>"
+private val QUOTE_MARK = Regex("""<div data-cemail-quote="(\d+)"></div>""")
