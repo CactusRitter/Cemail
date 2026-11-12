@@ -162,7 +162,7 @@ class ImapClient(private val config: ImapConfig) {
             }
         }
         try { walk(message) } catch (_: Exception) { /* a broken part: keep what was read */ }
-        val plain = text ?: html?.let { Jsoup.parse(it).text() }.orEmpty()
+        val plain = text?.let(::decodeEntities) ?: html?.let { Jsoup.parse(it).text() }.orEmpty()
         val time = (message.receivedDate ?: message.sentDate ?: Date(0)).time
         return ParsedMessage(
             subject = try { message.subject.orEmpty() } catch (_: Exception) { "" },
@@ -289,3 +289,12 @@ class ImapClient(private val config: ImapConfig) {
         folder.appendMessages(arrayOf(message))
     }
 }
+
+private val ENTITY = Regex("""&(#\d{1,7}|#x[0-9a-fA-F]{1,6}|[a-zA-Z][a-zA-Z0-9]{1,31});""")
+
+/**
+ * Some webmails (A1/aon among them) write HTML entities such as `&nbsp;` or `&auml;` into the text/plain part too:
+ * they are turned back into the characters, so previews read "Bestätigung" and not "Best&auml;tigung".
+ */
+internal fun decodeEntities(text: String): String =
+    if (ENTITY.containsMatchIn(text)) org.jsoup.parser.Parser.unescapeEntities(text, false).replace('\u00A0', ' ') else text

@@ -666,7 +666,8 @@ class RoomMailRepository(
 internal fun MessageEntity.capped() = copy(body = body.take(400_000), bodyHtml = bodyHtml?.take(1_200_000))
 
 internal fun MessageEntity.toMail() = Mail(
-    id = localId, senderName = senderName, senderEmail = senderEmail, subject = subject, body = body,
+    // The text of messages saved before entities were decoded on arrival (see decodeEntities) reads right too.
+    id = localId, senderName = senderName, senderEmail = senderEmail, subject = subject, body = com.cemail.app.data.imap.decodeEntities(body),
     timeMillis = timeMillis, folder = Folder.valueOf(folder), read = read, starred = starred, pinned = pinned,
     snoozedUntil = snoozedUntil, hasAttachment = hasAttachment,
     labelIds = labelIds.split(" ").filter { it.isNotEmpty() }.toSet(), bodyHtml = bodyHtml, accountId = accountId,
