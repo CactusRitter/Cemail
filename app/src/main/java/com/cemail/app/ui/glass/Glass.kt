@@ -66,6 +66,8 @@ fun Modifier.glass(
     kind: GlassKind = GlassKind.Card,
     elevation: Dp = 0.dp,
     hazeState: HazeState? = null,
+    // Solid ground under the translucent fill, for buttons that float over the content of a message.
+    opaque: Boolean = false,
 ): Modifier {
     val glass = LocalGlass.current
     val fill = when (kind) {
@@ -75,7 +77,7 @@ fun Modifier.glass(
         GlassKind.Menu -> glass.menu
     }
     val skin = LocalSkin.current
-    if (skin.skin != Skin.GLASS) return skinSurface(skin, skin.shape(shape), fill, kind, elevation, glass.shadow)
+    if (skin.skin != Skin.GLASS) return skinSurface(skin, skin.shape(shape), fill, kind, elevation, glass.shadow, if (opaque) MaterialTheme.colorScheme.surface else null)
     var m = this
     if (skin.hardShadow > 0.dp) {
         // "3D" glass: a solid shadow under every surface instead of the soft one (Appearance → 3D shadow).
@@ -84,6 +86,7 @@ fun Modifier.glass(
         m = m.shadow(elevation, shape, ambientColor = glass.shadow, spotColor = glass.shadow)
     }
     m = m.clip(shape)
+    if (opaque) m = m.background(MaterialTheme.colorScheme.surface)
     m = if (hazeState != null) {
         m.hazeEffect(hazeState) {
             blurRadius = 24.dp
@@ -98,7 +101,7 @@ fun Modifier.glass(
 }
 
 /** A surface in one of the looks being tried out (not glass): solid fill, and the look's own edge and shadow. */
-private fun Modifier.skinSurface(skin: SkinLook, shape: Shape, fill: Color, kind: GlassKind, elevation: Dp, shadow: Color): Modifier {
+private fun Modifier.skinSurface(skin: SkinLook, shape: Shape, fill: Color, kind: GlassKind, elevation: Dp, shadow: Color, under: Color? = null): Modifier {
     var m = this
     val floating = kind != GlassKind.Card
     if (skin.hardShadow > 0.dp) {
@@ -106,7 +109,7 @@ private fun Modifier.skinSurface(skin: SkinLook, shape: Shape, fill: Color, kind
     } else if (skin.softShadow && elevation > 0.dp) {
         m = m.shadow(elevation * 0.6f, shape, ambientColor = shadow, spotColor = shadow)
     }
-    m = m.clip(shape).background(fill)
+    m = m.clip(shape).then(if (under != null) Modifier.background(under) else Modifier).background(fill)
     return when (skin.edge) {
         Edge.GLASS -> m
         // No edge, but small controls (chips, buttons) sitting on a card of the same colour get a fine outline.

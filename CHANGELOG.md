@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 1.8.2 — 2026-11-13
+- Sombra 3D: los botones flotantes dentro de un correo («Responder» y «Más») ya tienen la sombra, como el resto.
+
 ## 1.8.1 — 2026-11-13
 - Tabletas: con la lista de mensajes a la derecha, el menú (botón de las tres líneas) también se abre por la derecha.
 
