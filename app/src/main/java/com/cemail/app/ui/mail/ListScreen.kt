@@ -116,6 +116,7 @@ fun ListScreen(
     state: MailUiState,
     vm: MailViewModel,
     grouped: Boolean,
+    groupCards: Boolean = true,
     stripeOf: (Mail) -> Color?,
     showSenderCircle: Boolean,
     swipe: com.cemail.app.data.SwipeConfig,
@@ -213,7 +214,7 @@ fun ListScreen(
             }
             if (state.pinned.isNotEmpty()) {
                 item(key = "h-pinned") { SectionHeader(stringResource(R.string.section_pinned)) }
-                itemsIndexed(state.pinned, key = { _, m -> m.id }) { i, mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, GroupPos.of(i, state.pinned.size), Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
+                itemsIndexed(state.pinned, key = { _, m -> m.id }) { i, mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, if (groupCards) GroupPos.of(i, state.pinned.size) else GroupPos.Single, groupCards, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
                 if (state.others.isNotEmpty() && !grouped) item(key = "h-mail") { SectionHeader(stringResource(R.string.section_mail)) }
             }
             if (grouped) {
@@ -223,10 +224,10 @@ fun ListScreen(
                     val list = groups[section] ?: return@forEach
                     val collapsed = section in state.collapsedSections
                     item(key = "d-$section") { DateHeader(section, list.size, collapsed) { vm.toggleSection(section) } }
-                    if (!collapsed) itemsIndexed(list, key = { _, m -> m.id }) { i, mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, GroupPos.of(i, list.size), Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
+                    if (!collapsed) itemsIndexed(list, key = { _, m -> m.id }) { i, mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, if (groupCards) GroupPos.of(i, list.size) else GroupPos.Single, groupCards, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
                 }
             } else {
-                itemsIndexed(state.others, key = { _, m -> m.id }) { i, mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, GroupPos.of(i, state.others.size), Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
+                itemsIndexed(state.others, key = { _, m -> m.id }) { i, mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, if (groupCards) GroupPos.of(i, state.others.size) else GroupPos.Single, groupCards, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
             }
         }
         }
@@ -303,7 +304,7 @@ fun ListScreen(
 }
 
 @Composable
-private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsArchive: Boolean, swipe: com.cemail.app.data.SwipeConfig, stripe: Color?, showCircle: Boolean, pos: GroupPos, modifier: Modifier = Modifier) {
+private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsArchive: Boolean, swipe: com.cemail.app.data.SwipeConfig, stripe: Color?, showCircle: Boolean, pos: GroupPos, groupCards: Boolean, modifier: Modifier = Modifier) {
     val one = setOf(mail.id)
     // With "confirm before acting" on, the swipe only asks; the action runs when it is confirmed.
     var pending by remember { mutableStateOf<com.cemail.app.data.SwipeAction?>(null) }
@@ -343,6 +344,7 @@ private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsA
         stripe = stripe,
         showCircle = showCircle,
         pos = pos,
+        inGroup = groupCards,
         modifier = modifier.padding(bottom = if (pos.hasBottom) 8.dp else 0.dp).onGloballyPositioned {
             bounds = it.boundsInRoot()
             bounds?.let { rect -> com.cemail.app.ui.glass.ReadTransition.positions[mail.id] = rect }

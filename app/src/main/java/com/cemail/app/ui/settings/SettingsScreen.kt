@@ -402,6 +402,13 @@ private fun AppearancePage(settings: AppSettings, repo: SettingsRepository) {
             }
         }
         HorizontalDivider(Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)
+        Text(stringResource(R.string.cards_title), style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.cards_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            ChoiceChip(stringResource(R.string.cards_grouped), settings.groupCards) { repo.setGroupCards(true) }
+            ChoiceChip(stringResource(R.string.cards_single), !settings.groupCards) { repo.setGroupCards(false) }
+        }
+        HorizontalDivider(Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)
         Text(stringResource(R.string.accent_title), style = MaterialTheme.typography.titleSmall)
         Text(stringResource(R.string.accent_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

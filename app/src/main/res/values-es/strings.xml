@@ -149,6 +149,10 @@
     <string name="settings_section_messages">Mensajes</string>
     <string name="settings_images_title">Mostrar siempre las imágenes externas</string>
     <string name="settings_images_body">Carga las imágenes de internet en todos los mensajes. Los remitentes pueden usarlas para saber que abriste el correo.</string>
+    <string name="cards_title">Tarjetas de mensajes</string>
+    <string name="cards_body">Una tarjeta por cada grupo, o una tarjeta por cada mensaje.</string>
+    <string name="cards_grouped">Por grupo</string>
+    <string name="cards_single">Individuales</string>
     <string name="settings_group_title">Agrupar mensajes por fecha</string>
     <string name="settings_group_body">Divide la lista en Hoy, Ayer, Última semana y Antiguos, cada una se puede contraer.</string>
     <string name="section_today">Hoy</string>

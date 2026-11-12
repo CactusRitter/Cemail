@@ -324,7 +324,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                                 ReadScreen(it, vm, settings.alwaysShowImages, state.labels, state.thread)
                             }
                         }
-                        Screen.LIST -> ListScreen(state, vm, grouped = settings.groupByDate && state.query.isBlank(), stripeOf = stripeOf, showSenderCircle = settings.showSenderCircle, swipe = settings.swipe, listState = listState, onOpenDrawer = { scope.launch { drawer.open() } })
+                        Screen.LIST -> ListScreen(state, vm, grouped = settings.groupByDate && state.query.isBlank(), groupCards = settings.groupCards, stripeOf = stripeOf, showSenderCircle = settings.showSenderCircle, swipe = settings.swipe, listState = listState, onOpenDrawer = { scope.launch { drawer.open() } })
                     }
                 }
                 UndoBar(state.undo, vm, Modifier.align(Alignment.BottomCenter))

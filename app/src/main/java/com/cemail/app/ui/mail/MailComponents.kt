@@ -90,6 +90,8 @@ fun MailRow(
     showCircle: Boolean = true,
     /** Place of the row inside the card its group shares. */
     pos: GroupPos = GroupPos.Single,
+    /** true: the rows share a card, so an unread row is told apart by bold type only (no stronger fill). */
+    inGroup: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val state = rememberSwipeToDismissBoxState(
@@ -130,7 +132,7 @@ fun MailRow(
             }
         },
     ) {
-        val kind = if (selected || !mail.read) GlassKind.Pinned else GlassKind.Card
+        val kind = if (selected || (!mail.read && !inGroup)) GlassKind.Pinned else GlassKind.Card
         Row(
             Modifier
                 .glassSegment(pos, 20.dp, kind)
@@ -158,6 +160,7 @@ fun MailRow(
                     Text(
                         rememberTimeLabel(mail.timeMillis),
                         style = MaterialTheme.typography.labelMedium,
+                        fontWeight = if (mail.read) FontWeight.Normal else FontWeight.Bold,
                         color = if (mail.read) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
                     )
                 }
@@ -173,6 +176,7 @@ fun MailRow(
                         mail.preview,
                         Modifier.weight(1f),
                         style = MaterialTheme.typography.bodySmall,
+                        fontWeight = if (mail.read) FontWeight.Normal else FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,

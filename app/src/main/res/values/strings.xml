@@ -151,6 +151,10 @@
     <string name="settings_section_messages">Messages</string>
     <string name="settings_images_title">Always show external images</string>
     <string name="settings_images_body">Load pictures from the internet in every message. Senders can use them to know you opened the email.</string>
+    <string name="cards_title">Message cards</string>
+    <string name="cards_body">One card for each group, or one card for every message.</string>
+    <string name="cards_grouped">By group</string>
+    <string name="cards_single">Individual</string>
     <string name="settings_group_title">Group messages by date</string>
     <string name="settings_group_body">Split the list into Today, Yesterday, Last week and Older, each one collapsible.</string>
     <string name="section_today">Today</string>

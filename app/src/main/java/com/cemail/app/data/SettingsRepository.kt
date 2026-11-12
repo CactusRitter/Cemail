@@ -20,6 +20,7 @@ data class AppSettings(
     val alwaysShowImages: Boolean = false,
     /** Split the message list into Today, Yesterday, Last week and Older sections. */
     val groupByDate: Boolean = true,
+    val groupCards: Boolean = true,
     /** Minutes between automatic checks for new mail; 0 = manual (never on its own). */
     val syncMinutes: Int = 15,
     /** Round picture (the initial) next to each message in the list. */
@@ -75,6 +76,7 @@ class SettingsRepository(context: Context) {
         transparency = prefs.getInt(KEY_TRANSPARENCY, 65),
         alwaysShowImages = prefs.getBoolean(KEY_IMAGES, false),
         groupByDate = prefs.getBoolean(KEY_GROUP, true),
+        groupCards = prefs.getBoolean(KEY_GROUP_CARDS, true),
         syncMinutes = prefs.getInt(KEY_SYNC, 15),
         showSenderCircle = prefs.getBoolean(KEY_CIRCLE, true),
         notifications = prefs.getBoolean(KEY_NOTIFICATIONS, true),
@@ -154,6 +156,11 @@ class SettingsRepository(context: Context) {
     fun setAlwaysShowImages(value: Boolean) {
         prefs.edit().putBoolean(KEY_IMAGES, value).apply()
         _state.value = _state.value.copy(alwaysShowImages = value)
+    }
+
+    fun setGroupCards(value: Boolean) {
+        prefs.edit().putBoolean(KEY_GROUP_CARDS, value).apply()
+        _state.value = _state.value.copy(groupCards = value)
     }
 
     fun setGroupByDate(value: Boolean) {
@@ -269,6 +276,7 @@ class SettingsRepository(context: Context) {
         const val KEY_SYNC = "sync_minutes"
         const val KEY_IMAGES = "always_show_images"
         const val KEY_GROUP = "group_by_date"
+        const val KEY_GROUP_CARDS = "group_cards"
         const val KEY_ACCENT = "accent"
         const val KEY_TRANSPARENCY = "transparency"
     }
