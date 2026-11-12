@@ -81,35 +81,20 @@ fun Modifier.glass(
 /** Soft gradient with blurred colour blobs that the glass surfaces float on. */
 @Composable
 fun GlassBackground(modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
-    val dark = LocalGlass.current.dark
-    val accent = MaterialTheme.colorScheme.primary
+    val glass = LocalGlass.current
     Box(
         modifier
             .fillMaxSize()
             .drawBehind {
-                val base = if (dark) {
-                    listOf(Color(0xFF141B33), Color(0xFF171A2B), Color(0xFF1D1825))
-                } else {
-                    listOf(Color(0xFFECE6F6), Color(0xFFF4EDF0), Color(0xFFEEF1EB))
-                }
-                drawRect(Brush.verticalGradient(base))
-                fun blob(color: Color, cx: Float, cy: Float, r: Float) {
-                    val center = Offset(size.width * cx, size.height * cy)
-                    val radius = size.maxDimension * r
+                drawRect(Brush.verticalGradient(glass.gradient))
+                glass.blobs.forEach { blob ->
+                    val center = Offset(size.width * blob.x, size.height * blob.y)
+                    val radius = size.maxDimension * blob.radius
                     drawCircle(
-                        Brush.radialGradient(listOf(color, Color.Transparent), center = center, radius = radius),
+                        Brush.radialGradient(listOf(blob.color, Color.Transparent), center = center, radius = radius),
                         radius = radius,
                         center = center,
                     )
-                }
-                if (dark) {
-                    blob(Color(0xFF1C4250).copy(alpha = 0.55f), 0.1f, 0.45f, 0.5f)
-                    blob(accent.copy(alpha = 0.16f), 0.9f, 0.08f, 0.45f)
-                    blob(Color(0xFF3A2440).copy(alpha = 0.5f), 0.85f, 0.95f, 0.5f)
-                } else {
-                    blob(accent.copy(alpha = 0.12f), 0.15f, 0.05f, 0.5f)
-                    blob(Color(0xFFF7D9CF).copy(alpha = 0.7f), 0.95f, 0.55f, 0.45f)
-                    blob(Color(0xFFDCEFE3).copy(alpha = 0.8f), 0.05f, 0.95f, 0.5f)
                 }
             },
         content = content,

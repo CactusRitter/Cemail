@@ -394,6 +394,14 @@ private fun AppearancePage(settings: AppSettings, repo: SettingsRepository) {
             }
         }
         HorizontalDivider(Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)
+        Text(stringResource(R.string.style_title), style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.style_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            com.cemail.app.ui.theme.ThemeStyle.entries.forEach { style ->
+                ChoiceChip(stringResource(style.label), settings.themeStyle == style) { repo.setThemeStyle(style) }
+            }
+        }
+        HorizontalDivider(Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)
         Text(stringResource(R.string.accent_title), style = MaterialTheme.typography.titleSmall)
         Text(stringResource(R.string.accent_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
