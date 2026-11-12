@@ -207,6 +207,19 @@ interface MessageDao {
     @Query("UPDATE messages SET folder = :folder WHERE localId = :localId")
     suspend fun updateFolder(localId: Long, folder: String)
 
+    /** Links a draft saved on the phone to its copy on the server; a copy of it the sync brought in first is dropped. */
+    @androidx.room.Transaction
+    suspend fun linkDraft(localId: Long, accountId: String, remoteId: String) {
+        deleteByRemote(accountId, remoteId, keep = localId)
+        setRemoteId(localId, remoteId)
+    }
+
+    @Query("DELETE FROM messages WHERE accountId = :accountId AND remoteId = :remoteId AND localId != :keep")
+    suspend fun deleteByRemote(accountId: String, remoteId: String, keep: Long)
+
+    @Query("UPDATE messages SET remoteId = :remoteId WHERE localId = :localId")
+    suspend fun setRemoteId(localId: Long, remoteId: String)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(message: MessageEntity): Long
 

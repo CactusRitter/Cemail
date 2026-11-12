@@ -112,6 +112,7 @@ object SettingsRoute {
     const val NOTIFICATIONS = "notifications"
     const val APPEARANCE = "appearance"
     const val DIAGNOSTICS = "diagnostics"
+    const val BACKUP = "backup"
     private const val ACCOUNT = "account:"
 
     fun account(id: String) = ACCOUNT + id
@@ -156,6 +157,7 @@ fun SettingsScreen(
         route == SettingsRoute.NOTIFICATIONS -> stringResource(R.string.settings_notifications_page)
         route == SettingsRoute.APPEARANCE -> stringResource(R.string.settings_section_appearance)
         route == SettingsRoute.DIAGNOSTICS -> stringResource(R.string.settings_section_diagnostics)
+        route == SettingsRoute.BACKUP -> stringResource(R.string.settings_section_backup)
         else -> stringResource(R.string.settings_title)
     }
 
@@ -209,6 +211,7 @@ fun SettingsScreen(
                     target == SettingsRoute.NOTIFICATIONS -> NotificationsPage(settings, repo)
                     target == SettingsRoute.APPEARANCE -> AppearancePage(settings, repo)
                     target == SettingsRoute.DIAGNOSTICS -> DiagnosticsPage()
+                    target == SettingsRoute.BACKUP -> BackupPage(repo)
                     else -> Unit // an account that was just removed: the screen is on its way out
                 }
             }
@@ -231,6 +234,7 @@ private fun MainPage(settings: AppSettings, accountCount: Int, onRoute: (String)
         Triple(stringResource(R.string.settings_section_messages), stringResource(R.string.settings_row_messages_body), SettingsRoute.MESSAGES to Icons.Filled.Email),
         Triple(stringResource(R.string.settings_gestures_title), summary, SettingsRoute.GESTURES to Icons.AutoMirrored.Filled.ArrowForward),
         Triple(stringResource(R.string.settings_notifications_page), stringResource(R.string.settings_row_notifications_body), SettingsRoute.NOTIFICATIONS to Icons.Filled.Notifications),
+        Triple(stringResource(R.string.settings_section_backup), stringResource(R.string.settings_row_backup_body), SettingsRoute.BACKUP to CemailIcons.Archive),
         Triple(stringResource(R.string.settings_section_diagnostics), stringResource(R.string.settings_row_diagnostics_body), SettingsRoute.DIAGNOSTICS to Icons.Filled.Info),
     )
     rows.forEachIndexed { index, (title, body, target) ->
@@ -581,5 +585,46 @@ private fun DiagnosticsPage() {
                 }
             }
         }
+    }
+}
+
+/**
+ * Settings → Backup of settings: every setting saved to a file the user picks (Drive, Downloads…) and brought back on
+ * this or another device. Accounts are not in it (they are signed in again); their names, colours and signatures are.
+ */
+@Composable
+private fun BackupPage(repo: SettingsRepository) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var message by remember { mutableStateOf<Int?>(null) }
+    val save = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json"),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        message = runCatching {
+            context.contentResolver.openOutputStream(uri)!!.use { it.write(repo.exportJson().toByteArray()) }
+        }.fold({ R.string.backup_saved }, { R.string.backup_failed })
+    }
+    val open = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val text = runCatching { context.contentResolver.openInputStream(uri)!!.use { it.readBytes().decodeToString() } }.getOrNull()
+        message = when {
+            text == null -> R.string.backup_failed
+            repo.importJson(text) -> R.string.backup_restored
+            else -> R.string.backup_invalid
+        }
+    }
+    val fileName = stringResource(R.string.backup_file)
+    SettingsCard {
+        Text(stringResource(R.string.backup_title), style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.backup_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ChoiceChip(stringResource(R.string.backup_export), false) { save.launch(fileName) }
+            ChoiceChip(stringResource(R.string.backup_import), false) {
+                open.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
+            }
+        }
+        message?.let { Text(stringResource(it), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary) }
     }
 }

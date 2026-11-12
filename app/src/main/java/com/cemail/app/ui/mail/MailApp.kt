@@ -168,6 +168,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
             is LaunchRequest.OpenBox -> r.accountId
             // The unified inbox already shows every account's mail: it stays; another single account switches over.
             is LaunchRequest.OpenMail -> r.accountId.takeIf { acc.selectedId != null }
+            is LaunchRequest.Snooze -> r.accountId.takeIf { acc.selectedId != null }
             LaunchRequest.Search -> null
             is LaunchRequest.Write -> null // written from the account on screen (or the default one)
         }
@@ -186,6 +187,12 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
             is LaunchRequest.OpenBox -> { vm.closeMail(); vm.selectBox(r.box) }
             LaunchRequest.Search -> { vm.closeMail(); vm.setSearching(true) }
             is LaunchRequest.OpenMail -> vm.open(r.localId)
+            is LaunchRequest.Snooze -> {
+                // From the notification: the app's own snooze choices; the notification has done its job.
+                androidx.core.app.NotificationManagerCompat.from(context).cancel(r.accountId.hashCode())
+                vm.closeMail()
+                vm.askSnooze(r.localIds.toSet())
+            }
             is LaunchRequest.Write -> {
                 // A message being written is kept in Drafts first, never lost.
                 if (state.draft != null) vm.closeCompose(me)

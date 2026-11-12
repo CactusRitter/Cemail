@@ -85,3 +85,15 @@ data class MailboxChanges(
     val deleted: Set<String>,
     val historyId: String,
 )
+
+@Serializable
+data class DraftRequest(val message: SendRequest)
+
+@Serializable
+data class GmailDraftMessage(val id: String, val threadId: String? = null)
+
+@Serializable
+data class GmailDraft(val id: String, val message: GmailDraftMessage)
+
+@Serializable
+data class GmailDraftList(val drafts: List<GmailDraft> = emptyList(), val nextPageToken: String? = null)

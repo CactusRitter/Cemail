@@ -70,6 +70,9 @@ data class Draft(
     /** A reopened draft that answers a message: its original is being looked up (quotePending) or no longer exists (quoteMissing). */
     val quotePending: Boolean = false,
     val quoteMissing: Boolean = false,
+    /** The saved draft this text was reopened from (and its account): saving again replaces it, sending deletes it. */
+    val savedId: Long? = null,
+    val savedAccountId: String? = null,
     /** The account (id) the message is sent from; null until the compose screen picks the default one. */
     val fromAccountId: String? = null,
     val threadId: String? = null,
@@ -325,20 +328,29 @@ class MailViewModel(
             }
         }
     }
-    fun discardDraft() = ui.update { it.copy(draft = null) }
+
+    /** The bin while writing: the text goes away, and so does the draft it was reopened from (here and on the server). */
+    fun discardDraft() {
+        val d = ui.value.draft ?: return
+        ui.update { it.copy(draft = null) }
+        dropSavedDraft(d)
+    }
 
     /** Changes the draft being written from its latest state (several fields can be edited at the same time). */
     fun editDraft(transform: (Draft) -> Draft) = ui.update { s -> s.draft?.let { s.copy(draft = transform(it)) } ?: s }
 
-    /** Re-opens a saved draft for editing (the stored copy is removed; it is saved again on close). */
+    /**
+     * Re-opens a saved draft for editing. The stored copy stays (here and on the server) while it is edited; closing
+     * replaces it with the new text and sending deletes it, so there is never more than one copy of a draft.
+     */
     fun editDraft(mail: Mail) {
         val savedHtml = mail.bodyHtml?.takeIf { h -> h.isNotBlank() }
         val quotedId = savedHtml?.let { h -> QUOTE_MARK.find(h)?.groupValues?.get(1)?.toLongOrNull() }
         // A scheduled message is taken out of the Outbox; its attachments come back into the editor.
-        val attachments = if (mail.folder == Folder.OUTBOX) {
+        val fromOutbox = mail.folder == Folder.OUTBOX
+        val attachments = if (fromOutbox) {
             com.cemail.app.data.mail.Outbox.load(mail.id).first.also { repo.cancelScheduled(mail.id) }
         } else {
-            repo.remove(mail.id)
             emptyList()
         }
         ui.update {
@@ -347,6 +359,7 @@ class MailViewModel(
                     to = mail.senderName, subject = mail.subject, body = mail.body,
                     cc = mail.cc, bcc = mail.bcc, html = savedHtml?.replace(QUOTE_MARK, ""), attachments = attachments,
                     replyToId = quotedId, quotePending = quotedId != null,
+                    savedId = mail.id.takeIf { !fromOutbox }, savedAccountId = mail.accountId.takeIf { !fromOutbox },
                     signed = true, fromAccountId = mail.accountId.takeIf { id -> id.isNotBlank() }, threadId = mail.threadId, inReplyTo = mail.inReplyTo, references = mail.references,
                 ),
             )
@@ -359,9 +372,20 @@ class MailViewModel(
         ui.update { it.copy(draft = null) }
         if (d.to.isNotBlank() || d.subject.isNotBlank() || d.body.isNotBlank()) {
             val store = sender(d.fromAccountId)
-            store.add(d.toMail(store.nextId(), me, Folder.DRAFTS))
+            // Saved once, on leaving (never while typing), in place of the copy it was reopened from: one draft only.
+            val sameAccount = d.savedId != null && d.savedAccountId.orEmpty() == d.fromAccountId.orEmpty()
+            if (d.savedId != null && !sameAccount) sender(d.savedAccountId).discardDraft(d.savedId)
+            store.saveDraft(d.toMail(store.nextId(), me, Folder.DRAFTS), replacing = d.savedId.takeIf { sameAccount })
             ui.update { it.copy(undo = UndoEvent(++undoCounter, R.string.done_draft_saved, emptyList())) }
+        } else if (d.savedId != null) {
+            // Everything was erased: the draft goes away instead of staying empty.
+            sender(d.savedAccountId).discardDraft(d.savedId)
         }
+    }
+
+    /** After sending (or scheduling) a reopened draft, its saved copy is no longer needed, here or on the server. */
+    private fun dropSavedDraft(d: Draft) {
+        d.savedId?.let { sender(d.savedAccountId).discardDraft(it) }
     }
 
     /**
@@ -374,6 +398,9 @@ class MailViewModel(
         val store = sender(d.fromAccountId)
         val mail = d.toMail(store.nextId(), me, Folder.SENT)
         val sendAt = at ?: undoMillis.takeIf { it > 0 }?.let { System.currentTimeMillis() + it }
+        dropSavedDraft(d)
+        // Undo brings the text back as a new draft-to-be (its old saved copy is gone).
+        val restoreDraft = d.copy(savedId = null, savedAccountId = null)
         if (sendAt == null) {
             // send() puts it in Sent at once and delivers it (a failure leaves it in Drafts).
             store.send(mail)
@@ -386,7 +413,7 @@ class MailViewModel(
                 it.copy(
                     undo = UndoEvent(
                         ++undoCounter, if (at != null) R.string.done_scheduled else R.string.done_sent, emptyList(),
-                        cancelSend = id, restore = d, durationMillis = if (at != null) 8_000 else maxOf(5_000, undoMillis),
+                        cancelSend = id, restore = restoreDraft, durationMillis = if (at != null) 8_000 else maxOf(5_000, undoMillis),
                     ),
                 )
             }

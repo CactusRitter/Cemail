@@ -49,6 +49,10 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -137,8 +141,21 @@ fun MailRow(
         },
     ) {
         val kind = if (selected || current || (!mail.read && !inGroup)) GlassKind.Pinned else GlassKind.Card
+        // TalkBack: whether it is unread or starred, and the two swipe actions (which cannot be done by swiping there).
+        val unreadText = stringResource(R.string.a11y_unread)
+        val starredText = stringResource(R.string.a11y_starred)
+        val rightLabel = stringResource(swipeLabel(swipe.right, startIsArchive, mail.read, mail.starred))
+        val leftLabel = stringResource(swipeLabel(swipe.left, startIsArchive, mail.read, mail.starred))
+        val a11y = Modifier.semantics {
+            stateDescription = listOfNotNull(unreadText.takeIf { !mail.read }, starredText.takeIf { mail.starred }).joinToString(", ")
+            customActions = listOfNotNull(
+                CustomAccessibilityAction(rightLabel) { onSwipe(swipe.right); true }.takeIf { swipe.right != SwipeAction.NONE },
+                CustomAccessibilityAction(leftLabel) { onSwipe(swipe.left); true }.takeIf { swipe.left != SwipeAction.NONE },
+            )
+        }
         Row(
             Modifier
+                .then(a11y)
                 .glassSegment(pos, 20.dp, kind)
                 .then(if (stripe != null) Modifier.accountCorner(stripe, if (pos.hasTop) radius else 0.dp) else Modifier)
                 .combinedClickable(role = Role.Button, onClick = onClick, onLongClick = onLongClick)

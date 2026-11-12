@@ -37,6 +37,7 @@ class UnifiedMailRepository(private val accounts: List<MailRepository>, scope: C
     override fun send(mail: Mail) = accounts.first().send(mail)
     override fun nextId(): Long = accounts.first().nextId()
     override fun remove(id: Long) = accounts.forEach { it.remove(id) }
+    override fun discardDraft(id: Long) = accounts.forEach { it.discardDraft(id) }
 
     override suspend fun refresh(quick: Boolean): Boolean = coroutineScope {
         accounts.map { async { it.refresh(quick) } }.awaitAll().all { it }

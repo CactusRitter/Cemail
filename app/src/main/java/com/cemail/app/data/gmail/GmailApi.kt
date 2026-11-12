@@ -42,6 +42,15 @@ interface GmailApi {
     suspend fun getRaw(id: String): ByteArray
     suspend fun send(raw: ByteArray, threadId: String? = null)
 
+    /**
+     * Saves a draft on the server and returns the id of its message there. With [replacingMessageId] (the message of a
+     * draft saved before) that same draft is updated in place, so the server never holds more than one copy of it.
+     */
+    suspend fun saveDraft(raw: ByteArray, threadId: String?, replacingMessageId: String?): String? = null
+
+    /** Deletes for good the draft whose message is [messageId] (after sending it, or when it is thrown away). */
+    suspend fun deleteDraft(messageId: String) {}
+
     /** Deletes messages for good (needs Gmail's full-access scope, not just "modify"). */
     suspend fun batchDelete(ids: List<String>)
 
@@ -146,6 +155,37 @@ class HttpGmailApi(
         val encoded = Base64.getUrlEncoder().withoutPadding().encodeToString(raw)
         val body = json.encodeToString(SendRequest(encoded, threadId)).toRequestBody(jsonType)
         call(Request.Builder().url(url).post(body).build())
+    }
+
+    override suspend fun saveDraft(raw: ByteArray, threadId: String?, replacingMessageId: String?): String? {
+        val encoded = Base64.getUrlEncoder().withoutPadding().encodeToString(raw)
+        val body = json.encodeToString(DraftRequest(SendRequest(encoded, threadId))).toRequestBody(jsonType)
+        val draftId = replacingMessageId?.let { draftIdOf(it) }
+        val drafts = BASE.newBuilder().addPathSegment("drafts")
+        val response = if (draftId != null) {
+            call(Request.Builder().url(drafts.addPathSegment(draftId).build()).put(body).build())
+        } else {
+            call(Request.Builder().url(drafts.build()).post(body).build())
+        }
+        return json.decodeFromString<GmailDraft>(response).message.id
+    }
+
+    override suspend fun deleteDraft(messageId: String) {
+        val draftId = draftIdOf(messageId) ?: return
+        call(Request.Builder().url(BASE.newBuilder().addPathSegment("drafts").addPathSegment(draftId).build()).delete().build())
+    }
+
+    /** Gmail addresses drafts by their own id, not by their message's: it is looked up in the list of drafts. */
+    private suspend fun draftIdOf(messageId: String): String? {
+        var page: String? = null
+        do {
+            val url = BASE.newBuilder().addPathSegment("drafts").addQueryParameter("maxResults", "500")
+                .apply { page?.let { addQueryParameter("pageToken", it) } }.build()
+            val list = json.decodeFromString<GmailDraftList>(call(Request.Builder().url(url).build()))
+            list.drafts.firstOrNull { it.message.id == messageId }?.let { return it.id }
+            page = list.nextPageToken
+        } while (page != null)
+        return null
     }
 
     override suspend fun batchDelete(ids: List<String>) {

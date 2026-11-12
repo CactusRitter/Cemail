@@ -125,6 +125,18 @@ class GraphApi(
         send(Request.Builder().url("$BASE/messages/$id").delete())
     }
 
+    /** Saves a complete MIME message as a new draft in Drafts and returns its id. */
+    suspend fun createDraft(raw: ByteArray): String {
+        val encoded = Base64.getEncoder().encodeToString(raw)
+        val reply = execute(Request.Builder().url("$BASE/messages").post(encoded.toRequestBody(textType))) { it.body.string() }
+        return json.decodeFromString(GraphMessage.serializer(), reply).id
+    }
+
+    /** Deletes a message for good (not into Deleted Items): an old copy of a draft that was saved again. */
+    suspend fun permanentDelete(id: String) {
+        send(Request.Builder().url("$BASE/messages/$id/permanentDelete").post(ByteArray(0).toRequestBody(null)))
+    }
+
     /** Sends a complete MIME message; Microsoft keeps the copy in Sent Items by itself. */
     suspend fun sendMime(raw: ByteArray) {
         val encoded = Base64.getEncoder().encodeToString(raw)

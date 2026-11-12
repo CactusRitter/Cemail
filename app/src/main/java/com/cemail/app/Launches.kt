@@ -14,6 +14,9 @@ sealed interface LaunchRequest {
     data object Search : LaunchRequest
     data class OpenMail(val accountId: String, val localId: Long) : LaunchRequest
 
+    /** "Snooze" on a notification: the snooze choices for those messages, in the app. */
+    data class Snooze(val accountId: String, val localIds: List<Long>) : LaunchRequest
+
     /** A message started by another app: a mailto: link, "Send email" or "Share" (with files to attach). */
     data class Write(
         val to: String = "",
@@ -34,6 +37,8 @@ object Launches {
     const val ACTION_OPEN_BOX = "com.cemail.app.action.OPEN_BOX"
     const val ACTION_SEARCH = "com.cemail.app.action.SEARCH"
     const val ACTION_OPEN_MAIL = "com.cemail.app.action.OPEN_MAIL"
+    const val ACTION_SNOOZE = "com.cemail.app.action.SNOOZE"
+    private const val EXTRA_IDS = "ids"
     private const val EXTRA_ACCOUNT = "account"
     private const val EXTRA_BOX = "box"
     private const val EXTRA_MAIL = "mail"
@@ -52,6 +57,11 @@ object Launches {
                 val account = intent.getStringExtra(EXTRA_ACCOUNT)
                 val mail = intent.getLongExtra(EXTRA_MAIL, -1L)
                 if (account != null && mail >= 0) LaunchRequest.OpenMail(account, mail) else null
+            }
+            ACTION_SNOOZE -> {
+                val account = intent.getStringExtra(EXTRA_ACCOUNT)
+                val ids = intent.getLongArrayExtra(EXTRA_IDS)?.toList().orEmpty()
+                if (account != null && ids.isNotEmpty()) LaunchRequest.Snooze(account, ids) else null
             }
             Intent.ACTION_SENDTO, Intent.ACTION_VIEW, Intent.ACTION_SEND, Intent.ACTION_SEND_MULTIPLE -> write(intent)
             else -> null
@@ -98,6 +108,9 @@ object Launches {
             LaunchRequest.Search -> intent.setAction(ACTION_SEARCH).setData(Uri.parse("cemail://search"))
             is LaunchRequest.OpenMail -> intent.setAction(ACTION_OPEN_MAIL).putExtra(EXTRA_ACCOUNT, request.accountId)
                 .putExtra(EXTRA_MAIL, request.localId).setData(Uri.parse("cemail://mail/${request.localId}"))
+            is LaunchRequest.Snooze -> intent.setAction(ACTION_SNOOZE).putExtra(EXTRA_ACCOUNT, request.accountId)
+                .putExtra(EXTRA_IDS, request.localIds.toLongArray())
+                .setData(Uri.parse("cemail://snooze/${request.accountId}/${request.localIds.joinToString("-")}"))
             // Only ever built by other apps; kept so this function covers every request.
             is LaunchRequest.Write -> intent.setAction(Intent.ACTION_SENDTO)
                 .setData(Uri.parse("mailto:" + Uri.encode(request.to)))

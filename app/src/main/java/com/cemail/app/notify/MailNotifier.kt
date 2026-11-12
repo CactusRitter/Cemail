@@ -58,6 +58,15 @@ class MailNotifier(private val context: Context) {
             .setSubText(accountLabel)
             .addAction(0, context.getString(R.string.notif_action_read), action(MailActionReceiver.ACTION_READ, accountId, mails, 1))
             .addAction(0, context.getString(R.string.notif_action_delete), action(MailActionReceiver.ACTION_DELETE, accountId, mails, 2))
+            // Snooze opens the app's own snooze choices (not Android's, which only hides the notification for a while).
+            .addAction(
+                0, context.getString(R.string.action_snooze),
+                PendingIntent.getActivity(
+                    context, accountId.hashCode() * 10 + 3,
+                    com.cemail.app.Launches.intent(context, com.cemail.app.LaunchRequest.Snooze(accountId, mails.map { it.id })),
+                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+                ),
+            )
         val first = mails.first()
         if (mails.size == 1) {
             builder.setContentTitle(first.senderName)

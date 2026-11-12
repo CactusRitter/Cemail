@@ -44,6 +44,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.stringResource
+import com.cemail.app.R
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -139,7 +140,7 @@ fun RecipientField(
                             emit(build(chips.filterIndexed { i, _ -> i != index }, typing))
                         },
                         contentAlignment = Alignment.Center,
-                    ) { Icon(Icons.Filled.Close, null, Modifier.size(16.dp)) }
+                    ) { Icon(Icons.Filled.Close, stringResource(R.string.recipient_remove, address), Modifier.size(16.dp)) }
                 }
             }
             BasicTextField(

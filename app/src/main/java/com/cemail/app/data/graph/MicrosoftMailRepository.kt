@@ -113,6 +113,39 @@ class MicrosoftMailRepository(
         scope.launch(Dispatchers.IO) { dao.insert(mail.toEntity(accountId, remoteId = null).copy(localId = 0)) }
     }
 
+    override fun saveDraft(mail: Mail, replacing: Long?) {
+        scope.launch(Dispatchers.IO) {
+            val before = replacing?.let { dao.remoteIdOf(it, accountId) }
+            replacing?.let { dao.delete(it) }
+            val localId = dao.insert(mail.toEntity(accountId, remoteId = null).copy(localId = 0, folder = Folder.DRAFTS.name))
+            try {
+                // Microsoft cannot replace a draft's MIME in place: the new copy is saved and the old one deleted for
+                // good, so Drafts still holds just one.
+                val remote = api.createDraft(
+                    MimeBuilder.build(
+                        mail.senderName, mail.subject, mail.body, mail.outgoing, mail.cc, mail.bcc, mail.outgoingHtml,
+                        mail.inReplyTo, mail.references, mail.outgoingImages,
+                    ),
+                )
+                dao.linkDraft(localId, accountId, remote)
+                if (before != null) api.permanentDelete(before)
+                AppLog.i("draft", "saved on Microsoft${if (before != null) " (old copy removed)" else ""}")
+            } catch (e: Exception) {
+                AppLog.e("draft", "could not save on Microsoft, kept on the phone", e)
+            }
+        }
+    }
+
+    override fun discardDraft(id: Long) {
+        scope.launch(Dispatchers.IO) {
+            val remote = dao.remoteIdOf(id, accountId)
+            dao.delete(id)
+            if (remote != null) {
+                try { api.permanentDelete(remote) } catch (e: Exception) { AppLog.e("draft", "could not delete on Microsoft", e) }
+            }
+        }
+    }
+
     override fun send(mail: Mail) {
         scope.launch(Dispatchers.IO) {
             val localId = dao.insert(mail.toEntity(accountId, remoteId = null).copy(localId = 0, folder = Folder.SENT.name))

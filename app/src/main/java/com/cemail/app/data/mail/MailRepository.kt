@@ -37,6 +37,18 @@ interface MailRepository {
     fun nextId(): Long
     fun remove(id: Long)
 
+    /**
+     * Saves [mail] as a draft in place of the draft [replacing] (if any): one copy only, here and, for accounts that
+     * keep drafts on the server, there too. It is only called when the compose screen closes, never while typing.
+     */
+    fun saveDraft(mail: Mail, replacing: Long?) {
+        replacing?.let(::remove)
+        add(mail)
+    }
+
+    /** Throws a saved draft away for good, here and on the server (after sending it, or when it was emptied). */
+    fun discardDraft(id: Long) = remove(id)
+
     /** Brings the local copy up to date with the server. Returns false if it failed. */
     suspend fun refresh(quick: Boolean = false): Boolean
 

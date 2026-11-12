@@ -5,6 +5,19 @@ import com.cemail.app.ui.theme.Accent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.floatOrNull
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.longOrNull
+import kotlinx.serialization.json.put
 
 data class AppSettings(
     val accent: Accent = Accent.INDIGO,
@@ -166,6 +179,60 @@ class SettingsRepository(context: Context) {
     fun setThemeStyle(style: com.cemail.app.ui.theme.ThemeStyle) {
         prefs.edit().putString(KEY_STYLE, style.name).apply()
         _state.value = _state.value.copy(themeStyle = style)
+    }
+
+    /**
+     * Every setting as a small JSON text, to carry them to another phone or tablet (Settings → Backup of settings):
+     * appearance, gestures, notifications, the per-account names, colours, intervals and folders, and the signatures
+     * (text and HTML). Never any password or access token: those live elsewhere and are not part of it.
+     */
+    fun exportJson(): String {
+        val values = buildJsonObject {
+            prefs.all.forEach { (key, value) ->
+                if (key == KEY_ASKED || key.startsWith(KEY_LAST_BG)) return@forEach // this device's own bookkeeping
+                when (value) {
+                    is Boolean -> put(key, buildJsonObject { put("b", value) })
+                    is Int -> put(key, buildJsonObject { put("i", value) })
+                    is Long -> put(key, buildJsonObject { put("l", value) })
+                    is Float -> put(key, buildJsonObject { put("f", value) })
+                    is String -> put(key, buildJsonObject { put("s", value) })
+                    is Set<*> -> put(key, buildJsonObject { put("set", JsonArray(value.filterIsInstance<String>().map(::JsonPrimitive))) })
+                }
+            }
+        }
+        val signatures = buildJsonObject {
+            signatureDir.listFiles()?.filter { it.extension == "html" }?.forEach { put(it.nameWithoutExtension, it.readText()) }
+        }
+        return buildJsonObject {
+            put("app", "cemail")
+            put("format", 1)
+            put("settings", values)
+            put("signatures", signatures)
+        }.toString()
+    }
+
+    /** Applies a backup made by [exportJson]; returns false (and changes nothing) if [text] is not one. */
+    fun importJson(text: String): Boolean {
+        val root = runCatching { Json.parseToJsonElement(text).jsonObject }.getOrNull() ?: return false
+        if (root["app"]?.jsonPrimitive?.contentOrNull != "cemail") return false
+        val values = root["settings"] as? JsonObject ?: return false
+        val edit = prefs.edit()
+        values.forEach { (key, entry) ->
+            val typed = entry as? JsonObject ?: return@forEach
+            typed["b"]?.jsonPrimitive?.booleanOrNull?.let { edit.putBoolean(key, it) }
+            typed["i"]?.jsonPrimitive?.intOrNull?.let { edit.putInt(key, it) }
+            typed["l"]?.jsonPrimitive?.longOrNull?.let { edit.putLong(key, it) }
+            typed["f"]?.jsonPrimitive?.floatOrNull?.let { edit.putFloat(key, it) }
+            typed["s"]?.jsonPrimitive?.contentOrNull?.let { edit.putString(key, it) }
+            (typed["set"] as? JsonArray)?.let { list -> edit.putStringSet(key, list.mapNotNull { it.jsonPrimitive.contentOrNull }.toSet()) }
+        }
+        edit.apply()
+        (root["signatures"] as? JsonObject)?.forEach { (name, html) ->
+            val safe = name.filter { it.isLetterOrDigit() || it == '@' || it == '.' }
+            html.jsonPrimitive.contentOrNull?.let { signatureDir.mkdirs(); java.io.File(signatureDir, "$safe.html").writeText(it) }
+        }
+        _state.value = read()
+        return true
     }
 
     fun setSkin(skin: com.cemail.app.ui.theme.Skin) {

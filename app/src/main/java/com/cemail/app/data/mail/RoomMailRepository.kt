@@ -192,6 +192,37 @@ class RoomMailRepository(
         scope.launch(Dispatchers.IO) { dao.insert(mail.toEntity(accountId, remoteId = null).copy(localId = 0)) }
     }
 
+    override fun saveDraft(mail: Mail, replacing: Long?) {
+        scope.launch(Dispatchers.IO) {
+            val before = replacing?.let { dao.remoteIdOf(it, accountId) }
+            replacing?.let { dao.delete(it) }
+            val localId = dao.insert(mail.toEntity(accountId, remoteId = null).copy(localId = 0, folder = Folder.DRAFTS.name))
+            try {
+                // The same draft on Gmail is updated (not a new one each time), so there is only ever one copy.
+                val remote = api.saveDraft(mimeOf(mail), mail.threadId, before) ?: return@launch
+                dao.linkDraft(localId, accountId, remote)
+                AppLog.i("draft", "saved on the server${if (before != null) " (updated)" else ""}")
+            } catch (e: Exception) {
+                AppLog.e("draft", "could not save on the server, kept on the phone", e)
+            }
+        }
+    }
+
+    override fun discardDraft(id: Long) {
+        scope.launch(Dispatchers.IO) {
+            val remote = dao.remoteIdOf(id, accountId)
+            dao.delete(id)
+            if (remote != null) {
+                try { api.deleteDraft(remote) } catch (e: Exception) { AppLog.e("draft", "could not delete on the server", e) }
+            }
+        }
+    }
+
+    private suspend fun mimeOf(mail: Mail) = MimeBuilder.build(
+        mail.senderName, mail.subject, mail.body, mail.outgoing, mail.cc, mail.bcc, mail.outgoingHtml,
+        mail.inReplyTo, mail.references, mail.outgoingImages, from = MimeBuilder.fromHeader(senderName(), selfEmail()),
+    )
+
     override fun send(mail: Mail) {
         scope.launch(Dispatchers.IO) {
             val localId = dao.insert(mail.toEntity(accountId, remoteId = null).copy(localId = 0, folder = Folder.SENT.name))
