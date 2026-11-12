@@ -250,6 +250,7 @@ private fun MainPage(settings: AppSettings, accountCount: Int, onRoute: (String)
 @Composable
 private fun MessagesPage(settings: AppSettings, repo: SettingsRepository) {
     SwitchRow(R.string.settings_images_title, R.string.settings_images_body, settings.alwaysShowImages, repo::setAlwaysShowImages)
+    SwitchRow(R.string.settings_dark_mail_title, R.string.settings_dark_mail_body, settings.darkMail, repo::setDarkMail)
     SwitchRow(R.string.settings_group_title, R.string.settings_group_body, settings.groupByDate, repo::setGroupByDate)
     SwitchRow(R.string.settings_circle_title, R.string.settings_circle_body, settings.showSenderCircle, repo::setShowSenderCircle)
     SettingsCard {

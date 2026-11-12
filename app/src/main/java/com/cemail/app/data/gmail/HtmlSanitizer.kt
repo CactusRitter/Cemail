@@ -98,4 +98,17 @@ object HtmlSanitizer {
             "<style>body{margin:12px;font-family:sans-serif;overflow-wrap:break-word}" +
             "img{max-width:100%;height:auto}</style><style>$css</style></head>" +
             "<body>$cleanHtml<div style=\"height:${bottomSpacePx}px\"></div></body></html>"
+
+    // "Light only" declarations: `color-scheme: light [only] [!important]` (also supported-color-schemes, but never the
+    // `prefers-color-scheme: light` of a media query) and the matching <meta> tags.
+    private val ANY_SCHEME = Regex("""(?<![\w-])(supported-)?color-schemes?\s*:\s*[^;}"'<]*""", RegexOption.IGNORE_CASE)
+    private val SCHEME_META = Regex("""<meta[^>]*name\s*=\s*["']?(supported-)?color-schemes?["']?[^>]*>""", RegexOption.IGNORE_CASE)
+
+    /**
+     * The [page] ready for the WebView to darken it (Settings → Dark messages): every colour-scheme request is left out,
+     * because the WebView never darkens a page that claims to handle dark itself, and many claim it ("light dark", or
+     * dark rules that keep the page white) while counting on the mail app to darken them. The page's own
+     * `prefers-color-scheme: dark` rules still apply; the WebView leaves what is already dark as it is.
+     */
+    fun allowDark(page: String): String = page.replace(SCHEME_META, "").replace(ANY_SCHEME, "color-scheme: normal")
 }

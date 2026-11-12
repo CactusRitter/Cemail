@@ -39,6 +39,8 @@ data class AppSettings(
     val transparency: Int = 65,
     /** Load remote images in messages without asking (off by default: they can be tracking pixels). */
     val alwaysShowImages: Boolean = false,
+    // In a dark theme, messages are shown with dark colours (the WebView darkens them) instead of on a white page.
+    val darkMail: Boolean = true,
     /** Split the message list into Today, Yesterday, Last week and Older sections. */
     val groupByDate: Boolean = true,
     val groupCards: Boolean = true,
@@ -111,6 +113,7 @@ class SettingsRepository(context: Context) {
         settingsDock = prefs.getInt(KEY_SETTINGS_DOCK, 0).coerceIn(-1, 1),
         transparency = prefs.getInt(KEY_TRANSPARENCY, 65),
         alwaysShowImages = prefs.getBoolean(KEY_IMAGES, false),
+        darkMail = prefs.getBoolean(KEY_DARK_MAIL, true),
         groupByDate = prefs.getBoolean(KEY_GROUP, true),
         groupCards = prefs.getBoolean(KEY_GROUP_CARDS, true),
         syncMinutes = prefs.getInt(KEY_SYNC, 15),
@@ -265,6 +268,11 @@ class SettingsRepository(context: Context) {
         _state.value = _state.value.copy(transparency = value)
     }
 
+    fun setDarkMail(value: Boolean) {
+        prefs.edit().putBoolean(KEY_DARK_MAIL, value).apply()
+        _state.value = _state.value.copy(darkMail = value)
+    }
+
     fun setAlwaysShowImages(value: Boolean) {
         prefs.edit().putBoolean(KEY_IMAGES, value).apply()
         _state.value = _state.value.copy(alwaysShowImages = value)
@@ -403,6 +411,7 @@ class SettingsRepository(context: Context) {
         const val KEY_ASKED = "asked_notification_permission"
         const val KEY_SYNC = "sync_minutes"
         const val KEY_IMAGES = "always_show_images"
+        const val KEY_DARK_MAIL = "dark_mail"
         const val KEY_GROUP = "group_by_date"
         const val KEY_GROUP_CARDS = "group_cards"
         const val KEY_ACCENT = "accent"

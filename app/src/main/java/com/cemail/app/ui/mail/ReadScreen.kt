@@ -53,6 +53,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import kotlin.math.roundToInt
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.key
+import androidx.compose.ui.graphics.toArgb
+import androidx.webkit.WebSettingsCompat
+import androidx.webkit.WebViewFeature
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -98,6 +102,7 @@ fun ReadScreen(
     alwaysShowImages: Boolean,
     labels: List<Label> = emptyList(),
     thread: List<Mail> = emptyList(),
+    darkMail: Boolean = true,
 ) {
     // The list only holds the start of each text: the whole message is read when it is opened. Flags
     // (read, star...) keep coming from the list so they stay current.
@@ -127,6 +132,12 @@ fun ReadScreen(
     }
     val hasRemoteImages = remember(mail.id, html) { html.isNotBlank() && HtmlSanitizer.hasRemoteImages(html) }
     var showImages by remember(mail.id, alwaysShowImages) { mutableStateOf(alwaysShowImages) }
+    // With a dark theme the message is darkened too (Settings → Messages), unless it is switched to its original colours
+    // from the menu (only for this message). Needs a WebView that can darken pages (any recent one).
+    val darkTheme = com.cemail.app.ui.theme.LocalGlass.current.dark
+    val canDarken = remember { WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING) }
+    var darkChoice by remember(mail.id) { mutableStateOf<Boolean?>(null) }
+    val darken = darkTheme && canDarken && (darkChoice ?: darkMail)
 
     // Starts a reply, reply all or forward: quoted text and subject here, recipients and thread ids in the ViewModel.
     fun reply(all: Boolean = false, forward: Boolean = false) {
@@ -239,7 +250,7 @@ fun ReadScreen(
                         )
                         Box(Modifier.fillMaxSize().glass(RoundedCornerShape(24.dp), GlassKind.Card))
                         if (page != null && settled) {
-                            HtmlBody(page, showImages, Modifier.fillMaxSize().graphicsLayer { this.alpha = alpha }, onShown = { shown = true }) { }
+                            HtmlBody(page, showImages, Modifier.fillMaxSize().graphicsLayer { this.alpha = alpha }, darken = darken, onShown = { shown = true }) { }
                         }
                     }
                     else -> Box(
@@ -374,6 +385,11 @@ fun ReadScreen(
                         PanelItem(Icons.Filled.Notifications, if (muted) R.string.action_unmute else R.string.action_mute, selected = muted) {
                             vm.setMuted(mail.id, !muted)
                         }
+                    } else {
+                        null
+                    },
+                    if (darkTheme && canDarken && html.isNotBlank()) {
+                        PanelItem(CemailIcons.Contrast, if (darken) R.string.action_show_original else R.string.action_darken, selected = darken) { darkChoice = !darken }
                     } else {
                         null
                     },
@@ -583,13 +599,18 @@ private fun AttachmentsPopup(messageId: Long, attachments: List<com.cemail.app.d
  */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier, onShown: () -> Unit = {}, onScroll: (Int) -> Unit) {
+fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier, darken: Boolean = false, onShown: () -> Unit = {}, onScroll: (Int) -> Unit) {
     val currentOnScroll by rememberUpdatedState(onScroll)
     val currentOnShown by rememberUpdatedState(onShown)
+    val darkPage = MaterialTheme.colorScheme.surface.toArgb()
+    // The WebView only darkens a page when its own theme is a dark one, so it gets one that says so (whatever the
+    // system is set to), and is made again when this changes.
+    key(darken) {
     AndroidView(
         modifier = modifier,
         factory = { ctx ->
-            WebView(ctx).apply {
+            val theme = if (darken) android.R.style.Theme_Material_NoActionBar else android.R.style.Theme_Material_Light_NoActionBar
+            WebView(android.view.ContextThemeWrapper(ctx, theme)).apply {
                 settings.javaScriptEnabled = false
                 settings.allowFileAccess = false
                 settings.allowContentAccess = false
@@ -598,8 +619,12 @@ fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier, onShown: () 
                 settings.setSupportZoom(true)
                 settings.builtInZoomControls = true
                 settings.displayZoomControls = false
-                // Emails are written for a white page, whatever the app theme is.
-                setBackgroundColor(android.graphics.Color.WHITE)
+                // Emails are written for a white page; with [darken] the WebView turns them dark (and the messages that
+                // have their own dark version use it).
+                if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {
+                    WebSettingsCompat.setAlgorithmicDarkeningAllowed(settings, darken)
+                }
+                setBackgroundColor(if (darken) darkPage else android.graphics.Color.WHITE)
                 setOnScrollChangeListener { _, _, y, _, _ -> currentOnScroll(y) }
                 webViewClient = object : WebViewClient() {
                     // The page is about to be on screen (drawn, with its embedded pictures): time to show it.
@@ -625,11 +650,13 @@ fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier, onShown: () 
             val key = "$showImages|$page"
             if (web.tag != key) {
                 web.tag = key
-                web.loadDataWithBaseURL(null, page, "text/html", "utf-8", null)
+                // Darkened on request: the "light only" a message may ask for is left out.
+                web.loadDataWithBaseURL(null, if (darken) HtmlSanitizer.allowDark(page) else page, "text/html", "utf-8", null)
             }
         },
         onRelease = { it.destroy() },
     )
+    }
 }
 
 

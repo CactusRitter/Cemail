@@ -181,6 +181,10 @@
     <string name="settings_section_messages">Mensajes</string>
     <string name="settings_images_title">Mostrar siempre las imágenes externas</string>
     <string name="settings_images_body">Carga las imágenes de internet en todos los mensajes. Los remitentes pueden usarlas para saber que abriste el correo.</string>
+    <string name="settings_dark_mail_title">Correos en modo oscuro</string>
+    <string name="settings_dark_mail_body">Con un tema oscuro, Cemail cambia los colores de dentro de cada correo para que vayan a juego. Desactívalo para ver los correos tal como se escribieron, en una página blanca.</string>
+    <string name="action_darken">Colores oscuros</string>
+    <string name="action_show_original">Colores originales</string>
     <string name="cards_title">Tarjetas de mensajes</string>
     <string name="cards_body">Una tarjeta por cada grupo, o una tarjeta por cada mensaje.</string>
     <string name="cards_grouped">Por grupo</string>

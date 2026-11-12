@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 1.9.0 — 2026-11-13
+- Correos en modo oscuro: con un tema oscuro (del sistema, elegido o de un diseño solo oscuro), Cemail cambia también los colores de dentro de cada correo para que no se abran en una página blanca. Se desactiva en Ajustes → Mensajes → «Correos en modo oscuro», y cada correo se puede ver con sus colores originales desde «Más» (botón de contraste). Los correos que ya traen su propio diseño oscuro lo conservan; las fotos no se tocan.
+
 ## 1.8.2 — 2026-11-13
 - Sombra 3D: los botones flotantes dentro de un correo («Responder» y «Más») ya tienen la sombra, como el resto.
 

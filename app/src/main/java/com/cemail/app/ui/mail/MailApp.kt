@@ -362,7 +362,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                         Screen.LIST -> if (twoPane) TwoPane(
                             list = { listScreen() },
                             open = open,
-                            reading = { ReadScreen(it, vm, settings.alwaysShowImages, state.labels, state.thread) },
+                            reading = { ReadScreen(it, vm, settings.alwaysShowImages, state.labels, state.thread, darkMail = settings.darkMail) },
                         ) else Centered { listScreen() }
                         Screen.READ -> Centered { lastOpen?.let {
                             // Taken once per opening: the card that was tapped is where the mail grows from.
@@ -370,7 +370,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                             // Leaving towards the list: the mail folds back into its card.
                             val closing = transition.targetState == EnterExitState.PostExit && screen == Screen.LIST
                             Box(Modifier.fillMaxSize().expandFrom(origin, it.id, closing)) {
-                                ReadScreen(it, vm, settings.alwaysShowImages, state.labels, state.thread)
+                                ReadScreen(it, vm, settings.alwaysShowImages, state.labels, state.thread, darkMail = settings.darkMail)
                             }
                         } }
                     }
