@@ -14,6 +14,10 @@ data class AppSettings(
     val themeMode: com.cemail.app.ui.theme.ThemeMode = com.cemail.app.ui.theme.ThemeMode.SYSTEM,
     /** Background and glass look (Classic, Neutral, Aurora). */
     val themeStyle: com.cemail.app.ui.theme.ThemeStyle = com.cemail.app.ui.theme.ThemeStyle.AURORA,
+    /** The whole look of the app (glass, or one of the looks being tried out). */
+    val skin: com.cemail.app.ui.theme.Skin = com.cemail.app.ui.theme.Skin.GLASS,
+    /** Glass with a solid, unblurred shadow under every surface (the 3D look of Brutalist). */
+    val depth3d: Boolean = false,
     /** 0 = solid glass, 100 = fully see-through. */
     val transparency: Int = 65,
     /** Load remote images in messages without asking (off by default: they can be tracking pixels). */
@@ -66,7 +70,7 @@ enum class QuickAction { UNREAD, STARRED, ACCOUNT, SEARCH, NONE }
 fun <T> List<T>.orderedBy(order: List<String>, id: (T) -> String): List<T> =
     if (order.isEmpty()) this else sortedBy { a -> order.indexOf(id(a)).let { if (it < 0) Int.MAX_VALUE else it } }
 
-data class AccountLook(val label: String? = null, val senderName: String? = null, val color: Accent? = null)
+data class AccountLook(val label: String? = null, val senderName: String? = null, val color: com.cemail.app.ui.theme.AccountColor? = null)
 
 /** Small app preferences, kept in SharedPreferences and exposed as a StateFlow (same approach as Cenotes). */
 class SettingsRepository(context: Context) {
@@ -84,6 +88,8 @@ class SettingsRepository(context: Context) {
             ?.let { n -> com.cemail.app.ui.theme.ThemeStyle.entries.firstOrNull { it.name == n } } ?: com.cemail.app.ui.theme.ThemeStyle.AURORA,
         themeMode = prefs.getString(KEY_THEME, null)
             ?.let { n -> com.cemail.app.ui.theme.ThemeMode.entries.firstOrNull { it.name == n } } ?: com.cemail.app.ui.theme.ThemeMode.SYSTEM,
+        skin = prefs.getString(KEY_SKIN, null)?.let { n -> com.cemail.app.ui.theme.Skin.entries.firstOrNull { it.name == n } } ?: com.cemail.app.ui.theme.Skin.GLASS,
+        depth3d = prefs.getBoolean(KEY_DEPTH, false),
         transparency = prefs.getInt(KEY_TRANSPARENCY, 65),
         alwaysShowImages = prefs.getBoolean(KEY_IMAGES, false),
         groupByDate = prefs.getBoolean(KEY_GROUP, true),
@@ -156,6 +162,16 @@ class SettingsRepository(context: Context) {
         _state.value = _state.value.copy(themeStyle = style)
     }
 
+    fun setSkin(skin: com.cemail.app.ui.theme.Skin) {
+        prefs.edit().putString(KEY_SKIN, skin.name).apply()
+        _state.value = _state.value.copy(skin = skin)
+    }
+
+    fun setDepth3d(value: Boolean) {
+        prefs.edit().putBoolean(KEY_DEPTH, value).apply()
+        _state.value = _state.value.copy(depth3d = value)
+    }
+
     fun setThemeMode(mode: com.cemail.app.ui.theme.ThemeMode) {
         prefs.edit().putString(KEY_THEME, mode.name).apply()
         _state.value = _state.value.copy(themeMode = mode)
@@ -206,7 +222,7 @@ class SettingsRepository(context: Context) {
     private fun readLook(id: String) = AccountLook(
         label = prefs.getString(KEY_ACCOUNT_LABEL + id, null),
         senderName = prefs.getString(KEY_SENDER_NAME + id, null),
-        color = prefs.getString(KEY_ACCOUNT_COLOR + id, null)?.let { n -> Accent.entries.firstOrNull { it.name == n } },
+        color = prefs.getString(KEY_ACCOUNT_COLOR + id, null)?.let { com.cemail.app.ui.theme.AccountColor.fromStored(it) },
     )
 
     /** Saves how an account looks; blank texts and a null colour go back to the defaults. */
@@ -283,6 +299,8 @@ class SettingsRepository(context: Context) {
         const val KEY_HUE = "accent_hue"
         const val KEY_THEME = "theme_mode"
         const val KEY_STYLE = "theme_style"
+        const val KEY_SKIN = "skin"
+        const val KEY_DEPTH = "depth_3d"
         const val KEY_ACCOUNT_LABEL = "account_label_"
         const val KEY_SENDER_NAME = "account_sender_"
         const val KEY_ACCOUNT_COLOR = "account_color_"

@@ -11,6 +11,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.cemail.app.R
 import com.cemail.app.data.AppSettings
 
@@ -37,7 +38,7 @@ fun paletteFrom(base: Color): AccentPalette {
 }
 
 /** Hue (0–360), saturation and lightness (0–1) of [color]; plain maths, so it also runs in unit tests. */
-private fun hslOf(color: Color): FloatArray {
+internal fun hslOf(color: Color): FloatArray {
     val r = color.red
     val g = color.green
     val b = color.blue
@@ -257,10 +258,33 @@ fun glassColors(
 
 val LocalGlass = staticCompositionLocalOf { glassColors(dark = false, transparency = 65, accent = Accent.INDIGO.palette) }
 
+/** Whether the app is dark now: the look may force it (AMOLED), otherwise the light/dark setting. */
+@Composable
+fun AppSettings.isDarkNow(): Boolean = skin.forcedDark ?: themeMode.isDark()
+
 @Composable
 fun CemailTheme(settings: AppSettings = AppSettings(), content: @Composable () -> Unit) {
-    val dark = settings.themeMode.isDark()
+    val dark = settings.isDarkNow()
     val accent = settings.accentPalette
+    val theme = if (settings.skin == Skin.GLASS) {
+        glassTheme(settings, dark, accent)
+    } else {
+        androidx.compose.runtime.remember(settings.skin, dark, accent) { skinTheme(settings.skin, dark, accent) }
+    }
+    // One single place where the app is placed, whatever the design: changing it then only changes colours and
+    // shapes, and the screen on view (Settings, a message…) stays where it is.
+    MaterialTheme(colorScheme = theme.scheme, typography = theme.typography, shapes = theme.shapes) {
+        CompositionLocalProvider(
+            LocalGlass provides theme.glass,
+            LocalSkin provides theme.look,
+            LocalContentColor provides theme.scheme.onSurface,
+            content = content,
+        )
+    }
+}
+
+/** The glass design (the one shared with Celander and Cenotes) as a [SkinTheme]. */
+private fun glassTheme(settings: AppSettings, dark: Boolean, accent: AccentPalette): SkinTheme {
     val glass = glassColors(dark, settings.transparency, accent, settings.themeStyle)
     val colors = if (dark) {
         darkColorScheme(
@@ -287,11 +311,10 @@ fun CemailTheme(settings: AppSettings = AppSettings(), content: @Composable () -
             error = Color(0xFFC62828),
         )
     }
-    MaterialTheme(colorScheme = colors) {
-        CompositionLocalProvider(
-            LocalGlass provides glass,
-            LocalContentColor provides colors.onSurface,
-            content = content,
-        )
+    val look = if (settings.depth3d) {
+        SkinLook(Skin.GLASS, dark, hardShadow = 4.dp, hardShadowColor = glassDepthColor(accent, dark))
+    } else {
+        SkinLook(Skin.GLASS, dark)
     }
+    return SkinTheme(look, glass, colors, androidx.compose.material3.Typography(), androidx.compose.material3.Shapes())
 }

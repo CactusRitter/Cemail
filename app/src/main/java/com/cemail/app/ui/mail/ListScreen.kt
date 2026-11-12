@@ -319,6 +319,7 @@ fun ListScreen(
                                 ?: stringResource(state.box.labelRes()),
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
+                            color = com.cemail.app.ui.glass.onBackdrop(MaterialTheme.colorScheme.onSurface),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -346,7 +347,7 @@ fun ListScreen(
                     .popIn(delayMillis = 220, initialScale = 0.3f)
                     .pressScale(0.88f)
                     .size(60.dp)
-                    .glass(CircleShape, GlassKind.Pinned, elevation = 10.dp, hazeState = haze)
+                    .glass(com.cemail.app.ui.theme.LocalSkin.current.fabCorner?.let { RoundedCornerShape(it) } ?: CircleShape, GlassKind.Pinned, elevation = 10.dp, hazeState = haze)
                     .clickable(role = Role.Button, onClickLabel = stringResource(R.string.compose)) { vm.newDraft() },
                 contentAlignment = Alignment.Center,
             ) {
@@ -438,7 +439,7 @@ private fun SectionHeader(text: String) {
         text,
         Modifier.padding(start = 8.dp, top = 8.dp, bottom = 8.dp),
         style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.primary,
+        color = com.cemail.app.ui.glass.onBackdrop(MaterialTheme.colorScheme.primary),
     )
 }
 
@@ -506,14 +507,14 @@ private fun DateHeader(section: DateSection, count: Int, collapsed: Boolean, onC
             stringResource(label),
             Modifier.weight(1f),
             style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary,
+            color = com.cemail.app.ui.glass.onBackdrop(MaterialTheme.colorScheme.primary),
         )
-        Text(count.toString(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(count.toString(), style = MaterialTheme.typography.labelMedium, color = com.cemail.app.ui.glass.onBackdrop(MaterialTheme.colorScheme.onSurfaceVariant))
         Icon(
             if (collapsed) Icons.Filled.KeyboardArrowDown else Icons.Filled.KeyboardArrowUp,
             stringResource(if (collapsed) R.string.label_expand else R.string.label_collapse),
             Modifier.padding(horizontal = 8.dp),
-            tint = MaterialTheme.colorScheme.primary,
+            tint = com.cemail.app.ui.glass.onBackdrop(MaterialTheme.colorScheme.primary),
         )
     }
 }

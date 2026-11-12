@@ -33,13 +33,6 @@ import com.cemail.app.ui.glass.glass
 import com.cemail.app.ui.glass.popIn
 import com.cemail.app.ui.glass.pressScale
 
-/** The colours that tell accounts apart in the unified inbox, taken from the theme (they follow the accent). */
-@Composable
-fun accountPalette(): List<Color> {
-    val c = MaterialTheme.colorScheme
-    return listOf(c.primary, c.tertiary, c.secondary, c.error)
-}
-
 /**
  * Top of the drawer: every account is always in sight, one row each with its colour, and "All accounts" (the unified
  * inbox) closes the list. Tapping a row switches to that account and keeps the menu open, so its folders and labels

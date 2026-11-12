@@ -78,7 +78,7 @@ Reglas: las ventanas y menús salen de su botón (`origin`); lo que está en el 
 - **Cabecera** (0.33.1): el título va en el centro de la pantalla (`CenteredHeader`), no en el hueco que dejan los extremos.
 
 ## Cuentas: foto, nombre y color (añadido en Cemail 1.0.0)
-- **Color de cada cuenta**: se elige entre los colores de acento del sistema (`Accent`, el mismo juego que Celander usa para sus calendarios), con su tono claro u oscuro según el tema; «Automático» usa `accountPalette()` por posición. No hay colores libres.
+- **Color de cada cuenta** (cambiado en la rama `styles-lab`): ocho colores vivos propios de las cuentas (`AccountColor`: rojo, naranja, amarillo, verde, cian, azul, morado y magenta), aparte de los colores de acento de la app, para que cada cuenta destaque de un vistazo; cada uno tiene un tono para tema claro y otro más luminoso para oscuro. «Automático» los reparte por posición empezando por los cuatro más distintos (rojo, azul, verde, amarillo). Los colores guardados por versiones anteriores (acentos) pasan al vivo más parecido. No hay colores libres.
 - **Foto de cuenta** (`AccountAvatar`): la del proveedor (Google o Microsoft) o una de la galería, recortada en círculo; sin foto, la inicial sobre el contenedor del color de la cuenta. En listas de cuentas lleva un **aro de 2 dp** en el color de la cuenta.
 - **Campo «De»** al redactar: misma tipografía que «Para» (etiqueta `bodyMedium`, dirección `labelLarge`); el desplegable lista las cuentas con su foto.
 - **Barra de formato** al redactar: solo aparece mientras se escribe el texto del mensaje (entra con muelle `bounceSpring`), para no tapar las sugerencias de destinatarios.
@@ -106,3 +106,14 @@ Cada grupo de la lista (Fijados, Hoy, Ayer, Semana pasada, Anteriores, o todo si
 
 ## Botón rápido (1.4.9)
 Botón redondo de 48 dp (cristal `Chrome`; `Pinned` y acento mientras su filtro está activo) justo encima del de redactar. Acciones (Ajustes → Mensajes): filtro de no leídos, filtro de destacados, cambio de cuenta (ciclo Todas → cuentas en el orden de Ajustes; con una cuenta, su foto con anillo), búsqueda o ninguno. Ajustes → Cuentas tiene «Orden de las cuentas» (flechas subir/bajar).
+
+## Diseños en pruebas (rama `styles-lab`)
+Además del cristal, Ajustes → Apariencia → Diseño ofrece cinco aspectos completos, cada uno inspirado en clientes de correo conocidos. Están en `ui/theme/Skin.kt` (`Skin`, `SkinLook`, `skinTheme`) y cambian toda la app sin tocar las pantallas: `Modifier.glass`, `glassSegment`, `GlassBackground`, `PillIcon`, `GlassSwitch` e `IconBubble` leen `LocalSkin` y dibujan el relleno, el borde, las esquinas y la sombra de cada aspecto; el tema de Material (colores, tipografía, formas) sale del mismo sitio. Con el cristal todo sigue exactamente igual.
+- **Moderno** (Gmail, Material 3 Expressive): superficies opacas teñidas con el acento, filas como baldosas separadas 2 dp (esquinas de 20 dp fuera del grupo y 6 dp dentro), sin bordes salvo un contorno fino en los controles pequeños, botón de redactar cuadrado-redondeado.
+- **AMOLED** (Spark o Superhuman de noche): negro puro, bordes de un pelo, sin sombras ni desenfoque. Siempre oscuro.
+- **Retro 98** (Outlook Express): escritorio verde azulado, ventanas grises con bisel, esquinas rectas, lista blanca hundida, barra de título en los menús. Lo seleccionado se ve pulsado.
+- **Papel** (Hey, boletines): crema y tinta, letra con serifa, remitentes en versalitas, reglas finas.
+- **Brutalista** (Gumroad): colores planos, bordes negros de 2 dp y sombras duras desplazadas (en oscuro, del color de acento).
+Las opciones propias del cristal (estilo de fondo y transparencia) se ocultan con los otros diseños, y «Claro u oscuro» con los que solo tienen un modo (AMOLED). Terminal (mutt, Pine) se probó y se quitó. Falta decidir cuáles se quedan y llevarlos a Celander y Cenotes.
+
+**Sombra 3D del cristal** (Apariencia → Sombra 3D, solo con el cristal): la sombra dura de Brutalista aplicada al cristal. Cada superficie lleva debajo su propia forma desplazada 4 dp hacia abajo y hacia el final (5 dp los botones flotantes, 6 dp los menús), sin desenfoque; en claro es un tono profundo del acento al 50 %, en oscuro un brillo del acento al 38 %. Solo se dibuja la parte que asoma, para que no se vea a través del cristal, y en las tarjetas por grupo la sombra corre seguida por todas las filas.

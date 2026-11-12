@@ -18,7 +18,7 @@ import com.cemail.app.ui.account.AccountViewModel
 import com.cemail.app.ui.mail.MailApp
 import com.cemail.app.ui.mail.MailViewModel
 import com.cemail.app.ui.theme.CemailTheme
-import com.cemail.app.ui.theme.isDark
+import com.cemail.app.ui.theme.isDarkNow
 
 class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val settings by app.settings.state.collectAsStateWithLifecycle()
             // Light or dark chosen in Settings (not the phone's): the clock and icons of the system bars follow it.
-            val dark = settings.themeMode.isDark()
+            val dark = settings.skin.darkBars(settings.isDarkNow())
             androidx.compose.runtime.LaunchedEffect(dark) {
                 val transparent = android.graphics.Color.TRANSPARENT
                 val style = if (dark) {

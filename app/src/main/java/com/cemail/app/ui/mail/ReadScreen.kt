@@ -307,7 +307,7 @@ fun ReadScreen(
                     .popIn(delayMillis = 140, initialScale = 0.3f)
                     .pressScale(0.88f)
                     .size(52.dp)
-                    .clip(CircleShape)
+                    .clip(com.cemail.app.ui.theme.LocalSkin.current.shape(CircleShape))
                     .background(MaterialTheme.colorScheme.surface)
                     .glass(CircleShape, GlassKind.Chrome)
                     .clickable(role = Role.Button) { panel = true },
@@ -320,7 +320,7 @@ fun ReadScreen(
                     .popIn(delayMillis = 60, initialScale = 0.3f)
                     .pressScale(0.88f)
                     .size(60.dp)
-                    .clip(CircleShape)
+                    .clip(com.cemail.app.ui.theme.LocalSkin.current.shape(CircleShape))
                     .background(MaterialTheme.colorScheme.surface)
                     .glass(CircleShape, GlassKind.Pinned)
                     .clickable(role = Role.Button) { reply() },

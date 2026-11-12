@@ -27,6 +27,7 @@ import com.cemail.app.data.AccountLook
 import com.cemail.app.data.auth.AccountPhotos
 import com.cemail.app.data.db.AccountEntity
 import com.cemail.app.ui.theme.Accent
+import com.cemail.app.ui.theme.AccountColor
 import com.cemail.app.ui.theme.LocalGlass
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -42,12 +43,16 @@ fun AccountEntity.shownName(): String = LocalAccountLooks.current[id]?.label ?: 
 @Composable
 fun Accent.shade(): Color = if (LocalGlass.current.dark) dark else light
 
-/** The account's colour: the one chosen in Settings, or one of the theme's by its place in the list. */
+/** An account colour for the light or dark theme. */
+@Composable
+fun AccountColor.shade(): Color = if (LocalGlass.current.dark) dark else light
+
+/** The account's colour: the one chosen in Settings, or a vivid one by its place in the list. */
 @Composable
 fun accountColor(account: AccountEntity, accounts: List<AccountEntity>): Color {
     LocalAccountLooks.current[account.id]?.color?.let { return it.shade() }
-    val palette = accountPalette()
-    return palette[accounts.indexOfFirst { it.id == account.id }.coerceAtLeast(0) % palette.size]
+    val palette = AccountColor.automatic
+    return palette[accounts.indexOfFirst { it.id == account.id }.coerceAtLeast(0) % palette.size].shade()
 }
 
 /**
