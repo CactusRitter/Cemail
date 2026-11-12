@@ -215,7 +215,15 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
     // The quick button's filter lasts while the folder stays the same, also across an account switch.
     var listFilter by remember { mutableStateOf(ListFilter.NONE) }
     LaunchedEffect(state.box, state.labelId) { listFilter = ListFilter.NONE }
-    LaunchedEffect(state.box, state.labelId, acc.selectedId, state.query) { listState.scrollToItem(0) }
+    // After a switch the new list arrives a moment later and the lazy list would follow the old first item: keep it at the top meanwhile.
+    var pendingTop by remember { mutableStateOf(false) }
+    LaunchedEffect(state.box, state.labelId, acc.selectedId, state.query) {
+        pendingTop = true
+        listState.scrollToItem(0)
+        kotlinx.coroutines.delay(1500)
+        pendingTop = false
+    }
+    LaunchedEffect(state.pinned, state.others) { if (pendingTop) listState.scrollToItem(0) }
 
     // How long the "Undo" bar stays after an action follows Settings.
     LaunchedEffect(vm, settings.swipe.undoSeconds) { vm.actionUndoMillis = settings.swipe.undoSeconds * 1000L }

@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 1.5.3 — 2026-11-12
+- Al cambiar de cuenta, de carpeta o de búsqueda la lista vuelve siempre arriba del todo (antes a veces se quedaba a medias). Al leer un correo y volver, sigue en su sitio como siempre.
+
 ## 1.5.2 — 2026-11-12
 - La esquina de color de cuenta en los correos que no son el primero de su grupo es ahora más sutil y uniforme.
 - Con el filtro de no leídos o destacados activo y sin resultados, el texto lo dice con claridad.
