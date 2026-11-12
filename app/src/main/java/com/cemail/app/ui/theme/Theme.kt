@@ -11,6 +11,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.cemail.app.R
 import com.cemail.app.data.AppSettings
 
@@ -306,7 +307,11 @@ fun CemailTheme(settings: AppSettings = AppSettings(), content: @Composable () -
     MaterialTheme(colorScheme = colors) {
         CompositionLocalProvider(
             LocalGlass provides glass,
-            LocalSkin provides SkinLook(Skin.GLASS, dark),
+            LocalSkin provides if (settings.depth3d) {
+                SkinLook(Skin.GLASS, dark, hardShadow = 4.dp, hardShadowColor = glassDepthColor(accent, dark))
+            } else {
+                SkinLook(Skin.GLASS, dark)
+            },
             LocalContentColor provides colors.onSurface,
             content = content,
         )

@@ -15,11 +15,12 @@
     <string name="skin_title">Diseño</string>
     <string name="skin_body">El aspecto de toda la app. Cristal es el que comparte con Celander y Cenotes; los demás están en pruebas.</string>
     <string name="skin_always_dark">Este diseño siempre es oscuro.</string>
+    <string name="depth_title">Sombra 3D</string>
+    <string name="depth_body">Una sombra sólida bajo tarjetas y botones, como la de Brutalista.</string>
     <string name="skin_glass">Cristal</string>
     <string name="skin_modern">Moderno</string>
     <string name="skin_amoled">AMOLED</string>
     <string name="skin_retro">Retro 98</string>
-    <string name="skin_terminal">Terminal</string>
     <string name="skin_paper">Papel</string>
     <string name="skin_brutal">Brutalista</string>
     <string name="style_classic">Clásico</string>

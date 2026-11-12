@@ -408,22 +408,25 @@ private fun AppearancePage(settings: AppSettings, repo: SettingsRepository) {
             }
         }
         if (settings.skin.forcedDark != null) {
+            // Only one mode exists for this design: no light/dark choice to offer.
             Text(stringResource(R.string.skin_always_dark), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-    SettingsCard {
-        Text(stringResource(R.string.theme_mode_title), style = MaterialTheme.typography.titleSmall)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf(
-                ThemeMode.SYSTEM to R.string.theme_system,
-                ThemeMode.LIGHT to R.string.theme_light,
-                ThemeMode.DARK to R.string.theme_dark,
-            ).forEach { (mode, label) ->
-                ChoiceChip(stringResource(label), settings.themeMode == mode) { repo.setThemeMode(mode) }
+        } else {
+            HorizontalDivider(Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)
+            Text(stringResource(R.string.theme_mode_title), style = MaterialTheme.typography.titleSmall)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(
+                    ThemeMode.SYSTEM to R.string.theme_system,
+                    ThemeMode.LIGHT to R.string.theme_light,
+                    ThemeMode.DARK to R.string.theme_dark,
+                ).forEach { (mode, label) ->
+                    ChoiceChip(stringResource(label), settings.themeMode == mode) { repo.setThemeMode(mode) }
+                }
             }
         }
+    }
+    if (glassLook) SwitchRow(R.string.depth_title, R.string.depth_body, settings.depth3d, repo::setDepth3d)
+    SettingsCard {
         if (glassLook) {
-            HorizontalDivider(Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)
             Text(stringResource(R.string.style_title), style = MaterialTheme.typography.titleSmall)
             Text(stringResource(R.string.style_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -431,8 +434,8 @@ private fun AppearancePage(settings: AppSettings, repo: SettingsRepository) {
                     ChoiceChip(stringResource(style.label), settings.themeStyle == style) { repo.setThemeStyle(style) }
                 }
             }
+            HorizontalDivider(Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)
         }
-        HorizontalDivider(Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)
         Text(stringResource(R.string.cards_title), style = MaterialTheme.typography.titleSmall)
         Text(stringResource(R.string.cards_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

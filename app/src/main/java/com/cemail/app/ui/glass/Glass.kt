@@ -37,7 +37,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.translate
-import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.addOutline
 import com.cemail.app.ui.theme.Edge
 import com.cemail.app.ui.theme.LocalGlass
 import com.cemail.app.ui.theme.LocalSkin
@@ -75,7 +77,12 @@ fun Modifier.glass(
     val skin = LocalSkin.current
     if (skin.skin != Skin.GLASS) return skinSurface(skin, skin.shape(shape), fill, kind, elevation, glass.shadow)
     var m = this
-    if (elevation > 0.dp) m = m.shadow(elevation, shape, ambientColor = glass.shadow, spotColor = glass.shadow)
+    if (skin.hardShadow > 0.dp) {
+        // "3D" glass: a solid shadow under every surface instead of the soft one (Appearance → 3D shadow).
+        m = m.hardShadow(shape, skin.hardShadowColor, depthOf(skin, kind, elevation))
+    } else if (elevation > 0.dp) {
+        m = m.shadow(elevation, shape, ambientColor = glass.shadow, spotColor = glass.shadow)
+    }
     m = m.clip(shape)
     m = if (hazeState != null) {
         m.hazeEffect(hazeState) {
@@ -95,7 +102,7 @@ private fun Modifier.skinSurface(skin: SkinLook, shape: Shape, fill: Color, kind
     var m = this
     val floating = kind != GlassKind.Card
     if (skin.hardShadow > 0.dp) {
-        m = m.hardShadow(shape, skin.hardShadowColor, if (kind == GlassKind.Menu) skin.hardShadow * 1.5f else skin.hardShadow)
+        m = m.hardShadow(shape, skin.hardShadowColor, depthOf(skin, kind, elevation))
     } else if (skin.softShadow && elevation > 0.dp) {
         m = m.shadow(elevation * 0.6f, shape, ambientColor = shadow, spotColor = shadow)
     }
@@ -110,18 +117,6 @@ private fun Modifier.skinSurface(skin: SkinLook, shape: Shape, fill: Color, kind
             }
         }
         Edge.LINE -> m.border(skin.edgeWidth, if (floating) skin.strongEdgeColor else skin.edgeColor, shape)
-        Edge.DOUBLE -> {
-            val lined = m.border(skin.edgeWidth, if (floating) skin.strongEdgeColor else skin.edgeColor, shape)
-            // Dialogs get a second line inside the first, like a box drawn with ═ in a terminal.
-            if (kind != GlassKind.Menu) lined else lined.drawBehind {
-                val w = skin.edgeWidth.toPx()
-                val inset = 4.dp.toPx()
-                drawRect(
-                    skin.strongEdgeColor, Offset(inset, inset), Size(size.width - 2 * inset, size.height - 2 * inset),
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(w),
-                )
-            }
-        }
         Edge.BEVEL -> m.drawBehind {
             // Selected things are pressed in (sunken); a raised button with a shadow (write) stays raised.
             bevel(skin.bevel, raised = kind != GlassKind.Pinned || elevation > 0.dp)
@@ -167,19 +162,35 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.bevel(c: List<Color
     }
 }
 
-/** A solid shadow without blur: the shape again, moved [offset] down and towards the end. */
-private fun Modifier.hardShadow(shape: Shape, color: Color, offset: Dp): Modifier = drawBehind {
+/** How far the solid shadow drops: dialogs and floating buttons stand higher than cards. */
+private fun depthOf(skin: SkinLook, kind: GlassKind, elevation: Dp): Dp = when {
+    kind == GlassKind.Menu -> skin.hardShadow * 1.5f
+    elevation > 0.dp -> skin.hardShadow * 1.25f
+    else -> skin.hardShadow
+}
+
+/**
+ * A solid shadow without blur: the shape again, moved [offset] down and towards the end, drawn only where it sticks out
+ * (so it never shows through a see-through surface). A row inside a group passes [top] or [bottom] false where the
+ * group goes on: the shadow then runs straight into the next row's instead of drawing its own end.
+ */
+private fun Modifier.hardShadow(shape: Shape, color: Color, offset: Dp, top: Boolean = true, bottom: Boolean = true): Modifier = drawBehind {
     val o = offset.toPx()
     val outline = shape.createOutline(size, layoutDirection, this)
     val dx = if (layoutDirection == androidx.compose.ui.unit.LayoutDirection.Rtl) -o else o
-    translate(dx, o) { drawOutline(outline, color) }
+    val own = androidx.compose.ui.graphics.Path().apply { addOutline(outline) }
+    clipPath(own, androidx.compose.ui.graphics.ClipOp.Difference) {
+        clipRect(-2 * o, -2 * o, size.width + 2 * o, if (bottom) size.height + 2 * o else size.height) {
+            translate(dx, o) { drawOutline(outline, color) }
+            if (!top) drawRect(color, Offset(dx, 0f), Size(size.width, o))
+        }
+    }
 }
 
 /** Soft gradient with blurred colour blobs that the glass surfaces float on. */
 @Composable
 fun GlassBackground(modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
     val glass = LocalGlass.current
-    val scanlines = LocalSkin.current.scanlines
     Box(
         modifier
             .fillMaxSize()
@@ -193,16 +204,6 @@ fun GlassBackground(modifier: Modifier = Modifier, content: @Composable BoxScope
                         radius = radius,
                         center = center,
                     )
-                }
-                if (scanlines != null) {
-                    // The lines of a CRT screen: one dark device-pixel row every 3 dp.
-                    val step = 3.dp.toPx()
-                    val h = kotlin.math.max(1f, kotlin.math.round(density))
-                    var y = 0f
-                    while (y < size.height) {
-                        drawRect(scanlines, Offset(0f, y), Size(size.width, h))
-                        y += step
-                    }
                 }
             },
         content = content,
@@ -322,6 +323,7 @@ fun Modifier.glassSegment(pos: GroupPos, radius: Dp = 20.dp, kind: GlassKind = G
     val divider = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
     val shape = pos.shape(radius)
     return this
+        .then(if (skin.hardShadow > 0.dp) Modifier.hardShadow(shape, skin.hardShadowColor, skin.hardShadow, pos.hasTop, pos.hasBottom) else Modifier)
         .clip(shape)
         .background(fill)
         .drawWithContent {
@@ -367,12 +369,12 @@ private fun Modifier.skinSegment(skin: SkinLook, pos: GroupPos, radius: Dp, fill
     }
     val shape = pos.shape(r)
     var m = this
-    if (skin.hardShadow > 0.dp) m = m.hardShadow(shape, skin.hardShadowColor, skin.hardShadow)
+    if (skin.hardShadow > 0.dp) m = m.hardShadow(shape, skin.hardShadowColor, skin.hardShadow, pos.hasTop, pos.hasBottom)
     return m.clip(shape).background(fill).drawWithContent {
         drawContent()
         when (skin.edge) {
             Edge.BEVEL -> bevel(skin.bevel, raised = false, top = pos.hasTop, bottom = pos.hasBottom)
-            Edge.LINE, Edge.DOUBLE -> {
+            Edge.LINE -> {
                 val stroke = skin.edgeWidth.toPx()
                 val half = stroke / 2f
                 val rr = r.toPx()
@@ -392,8 +394,8 @@ private fun Modifier.skinSegment(skin: SkinLook, pos: GroupPos, radius: Dp, fill
             val w = skin.dividerWidth.toPx()
             val inset = skin.dividerInset.toPx()
             val y = size.height - w / 2f
-            val dashes = if (skin.dashedDivider) PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 4.dp.toPx())) else null
-            drawLine(divider, Offset(inset, y), Offset(size.width - inset, y), w, pathEffect = dashes)
+
+            drawLine(divider, Offset(inset, y), Offset(size.width - inset, y), w)
         }
     }
 }

@@ -15,7 +15,6 @@ import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.TextStyle
@@ -44,8 +43,6 @@ enum class Skin(@StringRes val label: Int) {
     AMOLED(R.string.skin_amoled),
     /** Outlook Express on Windows 98: teal desktop, grey windows with bevelled edges, square corners. */
     RETRO(R.string.skin_retro),
-    /** mutt / Pine: green phosphor on black, monospaced type with a glow, boxes drawn with lines. */
-    TERMINAL(R.string.skin_terminal),
     /** Hey / newsletters: cream paper, ink, serif type, printed rules. */
     PAPER(R.string.skin_paper),
     /** Neo-brutalism (Gumroad): flat bold colours, thick black outlines and hard offset shadows. */
@@ -54,7 +51,7 @@ enum class Skin(@StringRes val label: Int) {
 
     /** Looks that only exist in one mode (true = always dark); null follows the light/dark setting. */
     val forcedDark: Boolean? get() = when (this) {
-        AMOLED, TERMINAL -> true
+        AMOLED -> true
         else -> null
     }
 
@@ -63,7 +60,7 @@ enum class Skin(@StringRes val label: Int) {
 }
 
 /** How the edge of a surface is drawn. */
-enum class Edge { GLASS, NONE, LINE, BEVEL, DOUBLE }
+enum class Edge { GLASS, NONE, LINE, BEVEL }
 
 /**
  * The shape and line rules of a look: corners, how rows of a group join, edges, dividers and shadows. Colours live in
@@ -85,11 +82,10 @@ data class SkinLook(
      *  outline of small controls only (null-like: transparent = none). */
     val edgeColor: Color = Color.Transparent,
     val strongEdgeColor: Color = Color.Transparent,
-    /** Line between two rows of a group (null = none), how thick, how far from the sides, and whether it is dashed. */
+    /** Line between two rows of a group (null = none), how thick and how far from the sides. */
     val divider: Color? = null,
     val dividerWidth: Dp = 1.dp,
     val dividerInset: Dp = 14.dp,
-    val dashedDivider: Boolean = false,
     /** A solid shadow without blur, moved down and to the end by [hardShadow] (0 = none). */
     val hardShadow: Dp = 0.dp,
     val hardShadowColor: Color = Color.Transparent,
@@ -100,8 +96,6 @@ data class SkinLook(
     /** Rows of the message list, when they differ from cards: their fill and the fill of a selected one. */
     val listFill: Color? = null,
     val listPinned: Color? = null,
-    /** Faint horizontal lines over the background (a CRT screen). */
-    val scanlines: Color? = null,
     /** Colours of the title bar of dialogs (Windows 98), start to end; empty = none. */
     val titleBar: List<Color> = emptyList(),
     /** Text and icons drawn straight on the background, when the usual colours would not read there (null = usual). */
@@ -215,7 +209,6 @@ fun skinTheme(skin: Skin, dark: Boolean, accent: AccentPalette): SkinTheme {
         Skin.MODERN -> modern(dark, accent, h, s)
         Skin.AMOLED -> amoled(accent, h, s)
         Skin.RETRO -> retro(dark, h)
-        Skin.TERMINAL -> terminal()
         Skin.PAPER -> paper(dark, h, s)
         Skin.GLASS, Skin.BRUTAL -> brutal(dark, h)
     }
@@ -321,35 +314,6 @@ private fun retro(dark: Boolean, h: Float): SkinTheme {
     return SkinTheme(look, glass, scheme, type, shapesOf(look))
 }
 
-private fun terminal(): SkinTheme {
-    val phosphor = Color(0xFF4CF57E)
-    val bg = Color(0xFF040805)
-    val look = SkinLook(
-        Skin.TERMINAL, true, cornerScale = 0f, edge = Edge.DOUBLE, softShadow = false,
-        edgeColor = phosphor.copy(alpha = 0.45f), strongEdgeColor = phosphor.copy(alpha = 0.8f),
-        divider = phosphor.copy(alpha = 0.3f), dashedDivider = true, dividerInset = 10.dp,
-        scanlines = Color.Black.copy(alpha = 0.35f),
-    )
-    val card = Color(0xFF06100A)
-    val glass = flat(
-        true, card = card, chrome = bg, pinned = lerp(card, phosphor, 0.13f), menu = Color(0xFF030604),
-        background = bg, surface = card, gradient = listOf(Color(0xFF07120B), Color(0xFF030604)),
-        blobs = listOf(Blob(phosphor.copy(alpha = 0.07f), 0.5f, 0.42f, 0.85f)),
-    )
-    // One colour like a real phosphor screen: brighter green for what stands out (the accent is not used here).
-    val primary = Color(0xFFB8FFCB)
-    val scheme = scheme(
-        true, primary = primary, onPrimary = Color.Black, primaryContainer = lerp(card, primary, 0.22f),
-        onPrimaryContainer = primary, background = bg, surface = card, onSurface = phosphor,
-        onSurfaceVariant = Color(0xFF2FA557), surfaceVariant = Color(0xFF0B1F12), outline = Color(0xFF1F7A3C),
-        outlineVariant = Color(0xFF14502A), tertiary = Color(0xFFFFC34D), error = Color(0xFFFF5F5F),
-        errorContainer = Color(0xFF3A0A0A), onErrorContainer = Color(0xFFFF9A9A), container = glass.menu,
-    )
-    val glow = Shadow(phosphor.copy(alpha = 0.55f), blurRadius = 9f)
-    val type = Typography().mapStyles { it.copy(fontFamily = FontFamily.Monospace, shadow = glow, letterSpacing = 0.sp) }
-    return SkinTheme(look, glass, scheme, type, shapesOf(look))
-}
-
 private fun paper(dark: Boolean, h: Float, s: Float): SkinTheme {
     val ink = if (dark) Color(0xFFECE4D6) else Color(0xFF26221C)
     val look = SkinLook(
@@ -434,4 +398,13 @@ private fun brutal(dark: Boolean, h: Float): SkinTheme {
         titleLarge = heavy.titleLarge.copy(fontWeight = FontWeight.Black, letterSpacing = (-0.3).sp),
     )
     return SkinTheme(look, glass, scheme, type, shapesOf(look))
+}
+
+/**
+ * The solid "3D" shadow of the glass (Appearance → 3D shadow): a deep, half see-through shade of the accent on light
+ * backgrounds, and a soft glow of it on dark ones, where a dark shadow would not show.
+ */
+fun glassDepthColor(accent: AccentPalette, dark: Boolean): Color {
+    val hsl = hslOf(accent.light)
+    return if (dark) accent.dark.copy(alpha = 0.38f) else tone(hsl[0], hsl[1] * 0.7f, 0.28f).copy(alpha = 0.5f)
 }
