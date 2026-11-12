@@ -13,7 +13,7 @@ data class AppSettings(
     /** Light or dark: following the phone, or always one of them. */
     val themeMode: com.cemail.app.ui.theme.ThemeMode = com.cemail.app.ui.theme.ThemeMode.SYSTEM,
     /** Background and glass look (Classic, Neutral, Aurora). */
-    val themeStyle: com.cemail.app.ui.theme.ThemeStyle = com.cemail.app.ui.theme.ThemeStyle.CLASSIC,
+    val themeStyle: com.cemail.app.ui.theme.ThemeStyle = com.cemail.app.ui.theme.ThemeStyle.AURORA,
     /** 0 = solid glass, 100 = fully see-through. */
     val transparency: Int = 65,
     /** Load remote images in messages without asking (off by default: they can be tracking pixels). */
@@ -69,7 +69,7 @@ class SettingsRepository(context: Context) {
             ?.let { name -> Accent.entries.firstOrNull { it.name == name } } ?: Accent.INDIGO,
         customHue = prefs.getFloat(KEY_HUE, -1f).takeIf { it >= 0f },
         themeStyle = prefs.getString(KEY_STYLE, null)
-            ?.let { n -> com.cemail.app.ui.theme.ThemeStyle.entries.firstOrNull { it.name == n } } ?: com.cemail.app.ui.theme.ThemeStyle.CLASSIC,
+            ?.let { n -> com.cemail.app.ui.theme.ThemeStyle.entries.firstOrNull { it.name == n } } ?: com.cemail.app.ui.theme.ThemeStyle.AURORA,
         themeMode = prefs.getString(KEY_THEME, null)
             ?.let { n -> com.cemail.app.ui.theme.ThemeMode.entries.firstOrNull { it.name == n } } ?: com.cemail.app.ui.theme.ThemeMode.SYSTEM,
         transparency = prefs.getInt(KEY_TRANSPARENCY, 65),

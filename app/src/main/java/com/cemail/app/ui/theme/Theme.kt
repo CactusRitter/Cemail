@@ -106,9 +106,9 @@ fun ThemeMode.isDark(): Boolean = when (this) {
  * big vivid lights behind the glass. Each has a light and a dark version.
  */
 enum class ThemeStyle(@StringRes val label: Int) {
+    AURORA(R.string.style_aurora),
     CLASSIC(R.string.style_classic),
     NEUTRAL(R.string.style_neutral),
-    AURORA(R.string.style_aurora),
     SUNSET(R.string.style_sunset),
     OCEAN(R.string.style_ocean),
     NEON(R.string.style_neon),
@@ -229,7 +229,7 @@ fun glassColors(
     dark: Boolean,
     transparency: Int,
     accent: AccentPalette,
-    style: ThemeStyle = ThemeStyle.CLASSIC,
+    style: ThemeStyle = ThemeStyle.AURORA,
 ): GlassColors {
     val t = transparency.coerceIn(0, 100) / 100f
     val cardAlpha = 0.12f + 0.8f * (1f - t) // 65 % → 0.40

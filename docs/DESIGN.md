@@ -97,5 +97,5 @@ Reglas: las ventanas y menús salen de su botón (`origin`); lo que está en el 
 
 ## Estilos de fondo (prueba en la rama `temas`)
 - **Estilo** (`ThemeStyle`, Ajustes → Apariencia): cambia el fondo y el tinte del cristal, aparte de claro/oscuro y del acento. Cada estilo tiene versión clara y oscura; el fondo (degradado + manchas de luz `Blob`) y los colores de página/superficie viven en `GlassColors` y los dibuja `GlassBackground`.
-- **Clásico**: el lavanda de siempre. **Neutro**: gris niebla (claro) o grafito (oscuro), casi sin color; el acento solo aparece en botones y selecciones. **Aurora**: cielo profundo con luces grandes (acento, verde, violeta; en claro, acento, rosa, menta) detrás del cristal.
+- Estilo por defecto: **Aurora**. **Clásico**: el lavanda de 1.3.0. **Neutro**: gris niebla (claro) o grafito (oscuro), casi sin color; el acento solo aparece en botones y selecciones. **Aurora**: cielo profundo con luces grandes (acento, verde, violeta; en claro, acento, rosa, menta) detrás del cristal.
 - **Atardecer** (coral y magenta), **Océano** (turquesa y azul) y **Neón** (magenta y cian sobre negro): mismas luces grandes que Aurora, con otra paleta. Cada estilo es una entrada de la tabla `look()` en `Theme.kt`; la luz sin color fijo toma el acento.
