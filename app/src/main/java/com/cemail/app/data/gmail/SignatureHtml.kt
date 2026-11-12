@@ -56,15 +56,33 @@ object SignatureHtml {
         val doc = Jsoup.parseBodyFragment(signatureHtml)
         doc.outputSettings().prettyPrint(false)
         val images = mutableListOf<InlineImage>()
+        cidify(doc, "sig", images)
+        return (userHtml + "<br><div>" + doc.body().html() + "</div>") to images
+    }
+
+    /** Turns the `data:` pictures of [doc] into `cid:` references (mail apps do not show `data:` pictures), adding their bytes to [images]. */
+    private fun cidify(doc: Document, prefix: String, images: MutableList<InlineImage>) {
         doc.select("img[src^=data:]").forEach { img ->
             val match = Regex("""^data:(image/[a-zA-Z0-9.+-]+);base64,(.*)$""", RegexOption.DOT_MATCHES_ALL).find(img.attr("src"))
             val bytes = match?.let { runCatching { Base64.getMimeDecoder().decode(it.groupValues[2]) }.getOrNull() }
             if (match != null && bytes != null) {
-                val cid = "sig${images.size + 1}@cemail"
+                val cid = "$prefix${images.size + 1}@cemail"
                 images += InlineImage(cid, match.groupValues[1], bytes)
                 img.attr("src", "cid:$cid")
             }
         }
-        return (userHtml + "<br><div>" + doc.body().html() + "</div>") to images
+    }
+
+    /**
+     * [html] followed by the quoted original message ([quoteHtml], already sanitized) under a [header] line, as mail
+     * apps do when answering; its embedded pictures become inline parts, the remote ones stay links.
+     */
+    fun appendQuote(html: String, header: String, quoteHtml: String): Pair<String, List<InlineImage>> {
+        val doc = Jsoup.parseBodyFragment(quoteHtml)
+        doc.outputSettings().prettyPrint(false)
+        val images = mutableListOf<InlineImage>()
+        cidify(doc, "quote", images)
+        val quote = "<br><div>" + escape(header) + "</div><blockquote style=\"margin:0 0 0 0.8ex;border-left:1px solid #ccc;padding-left:1ex\">" + doc.body().html() + "</blockquote>"
+        return (html + quote) to images
     }
 }

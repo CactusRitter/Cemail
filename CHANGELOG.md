@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 1.6.2 — 2026-11-12
+- **Responder y reenviar con el correo original tal cual**: el mensaje citado se ve con su diseño y sus imágenes (no en texto plano) debajo de tu texto, con una x para quitarlo; al enviar, el correo lleva el original en HTML (con sus imágenes incrustadas) y también en texto plano. Las imágenes remotas del original se muestran en la vista previa solo si las tenías activadas al leerlo.
+
 ## 1.6.1 — 2026-11-12
 - Al cambiar de cuenta, de carpeta o de filtro la lista vuelve arriba del todo (volver a la bandeja unificada ya no deja la lista en «Antiguos»). Al leer un correo y volver sigue donde estaba.
 - El asunto y el cuerpo del correo piden al teclado mayúscula al empezar frase y autocorrección; las direcciones siguen en modo correo.

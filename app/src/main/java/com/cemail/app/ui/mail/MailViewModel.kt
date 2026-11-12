@@ -58,6 +58,15 @@ data class Draft(
     val signed: Boolean = false,
     /** The account's HTML signature, added when the message is sent (null = none, or removed for this message). */
     val signatureHtml: String? = null,
+    /** The message being answered, as sanitized HTML with its pictures (shown below the text, appended when sending). */
+    val quoteHtml: String? = null,
+    /** The message's own style sheet, for showing [quoteHtml]. */
+    val quoteCss: String = "",
+    /** "On <date>, <name> wrote:" and the plain-text version of the original, for the plain half of the message. */
+    val quoteHeader: String = "",
+    val quoteText: String = "",
+    /** The original's remote pictures are shown in the preview only if the reader had them on. */
+    val quoteShowImages: Boolean = false,
     /** The account (id) the message is sent from; null until the compose screen picks the default one. */
     val fromAccountId: String? = null,
     val threadId: String? = null,
@@ -383,6 +392,12 @@ class MailViewModel(
             finalHtml = merged
             images = inline
             finalBody = body.trimEnd() + "\n\n-- \n" + SignatureHtml.toText(signature)
+        }
+        quoteHtml?.let { quote ->
+            val (merged, inline) = SignatureHtml.appendQuote(finalHtml ?: SignatureHtml.plainToHtml(finalBody), quoteHeader, quote)
+            finalHtml = merged
+            images = images + inline
+            finalBody = finalBody.trimEnd() + "\n\n" + quoteHeader + "\n" + quoteText
         }
         return Mail(
             id = id, accountId = fromAccountId.orEmpty(), senderName = cleanRecipients(to).joinToString(", "), senderEmail = me, subject = subject, body = finalBody,

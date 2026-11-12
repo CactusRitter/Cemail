@@ -316,6 +316,28 @@ fun ComposeScreen(
                     }
                 }
             }
+            draft.quoteHtml?.let { quote ->
+                // The message being answered, as the mail it is (layout and pictures); it is added below the text when sending.
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            draft.quoteHeader,
+                            Modifier.weight(1f),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Box(
+                            Modifier.size(40.dp)
+                                .glass(CircleShape, GlassKind.Chrome)
+                                .clickable(role = Role.Button) { vm.editDraft { d -> d.copy(quoteHtml = null) } },
+                            contentAlignment = Alignment.Center,
+                        ) { Icon(Icons.Filled.Close, stringResource(R.string.compose_quote_remove), Modifier.size(20.dp)) }
+                    }
+                    Box(Modifier.fillMaxWidth().height(320.dp).clip(RoundedCornerShape(24.dp))) {
+                        HtmlBody(HtmlSanitizer.page(quote, 0, draft.quoteCss), draft.quoteShowImages, Modifier.fillMaxSize()) { }
+                    }
+                }
+            }
             draft.attachments.forEach { file ->
                 Row(
                     Modifier.fillMaxWidth().glass(CircleShape, GlassKind.Card).padding(start = 16.dp, end = 4.dp),

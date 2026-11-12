@@ -273,6 +273,7 @@
     <string name="action_save_eml">Save as .eml</string>
     <string name="eml_failed">Could not download the message. Check your connection.</string>
     <string name="compose_signature_remove">Leave out the signature</string>
+    <string name="compose_quote_remove">Leave out the quoted message</string>
     <string name="settings_signature_import">Import from a message (.eml) or .html file</string>
     <string name="settings_signature_remove">Remove</string>
     <string name="settings_signature_import_failed">No signature could be read from that file.</string>

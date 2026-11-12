@@ -119,24 +119,6 @@ fun ReadScreen(
     val quoteWhen = DateUtils.formatDateTime(
         context, mail.timeMillis, DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_SHOW_TIME or DateUtils.FORMAT_ABBREV_MONTH,
     )
-    // Starts a reply, reply all or forward: quoted text and subject here, recipients and thread ids in the ViewModel.
-    fun reply(all: Boolean = false, forward: Boolean = false) {
-        val quoted = mail.body.lines().joinToString("\n") { "> $it" }
-        val prefixRes = if (forward) R.string.forward_prefix else R.string.reply_prefix
-        // "Re: Re: x" never happens: a subject that already starts with a reply/forward prefix is kept as it is.
-        val subject = if (SUBJECT_PREFIX.containsMatchIn(mail.subject)) mail.subject else resources.getString(prefixRes, mail.subject)
-        vm.startReply(
-            Draft(
-                to = if (forward) "" else mail.senderEmail,
-                subject = subject,
-                body = "\n\n" + resources.getString(R.string.quote_header, quoteWhen, mail.senderName) + "\n" + quoted,
-                // Answered from the account the message arrived at.
-                fromAccountId = mail.accountId.takeIf { it.isNotBlank() },
-            ),
-            mail.id, all, forward,
-        )
-    }
-
     // The sanitized page, computed once per message. Messages without an HTML part show their text.
     val html = mail.bodyHtml.orEmpty()
     // Pictures that travel inside the message (cid:) are not "remote": they are fetched from Gmail once and always shown.
@@ -145,6 +127,38 @@ fun ReadScreen(
     }
     val hasRemoteImages = remember(mail.id, html) { html.isNotBlank() && HtmlSanitizer.hasRemoteImages(html) }
     var showImages by remember(mail.id, alwaysShowImages) { mutableStateOf(alwaysShowImages) }
+
+    // Starts a reply, reply all or forward: quoted text and subject here, recipients and thread ids in the ViewModel.
+    fun reply(all: Boolean = false, forward: Boolean = false) {
+        val quoted = mail.body.lines().joinToString("\n") { "> $it" }
+        val header = resources.getString(R.string.quote_header, quoteWhen, mail.senderName)
+        val prefixRes = if (forward) R.string.forward_prefix else R.string.reply_prefix
+        // "Re: Re: x" never happens: a subject that already starts with a reply/forward prefix is kept as it is.
+        val subject = if (SUBJECT_PREFIX.containsMatchIn(mail.subject)) mail.subject else resources.getString(prefixRes, mail.subject)
+        fun open(quote: String?, css: String) = vm.startReply(
+            Draft(
+                to = if (forward) "" else mail.senderEmail,
+                subject = subject,
+                body = if (quote == null) "\n\n" + header + "\n" + quoted else "",
+                fromAccountId = mail.accountId.takeIf { it.isNotBlank() },
+                quoteHtml = quote, quoteCss = css, quoteHeader = header, quoteText = quoted, quoteShowImages = showImages,
+            ),
+            mail.id, all, forward,
+        )
+        // The original is quoted as the mail it is (pictures and layout), not as plain text.
+        if (html.isBlank()) {
+            open(null, "")
+        } else {
+            scope.launch {
+                val pictures = if (HtmlSanitizer.hasInlineImages(html)) inline.ifEmpty { vm.inlineImages(mail.id) } else emptyMap()
+                val (quote, css) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                    HtmlSanitizer.clean(html, pictures) to HtmlSanitizer.styles(html)
+                }
+                open(quote, css)
+            }
+        }
+    }
+
 
     // Extra room at the end of the message, so its last lines can be scrolled clear of the reply button. Cleaning a big
     // newsletter takes a while: it is done away from the main thread so the screen keeps opening smoothly meanwhile.
