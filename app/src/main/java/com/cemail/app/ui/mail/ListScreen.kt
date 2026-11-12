@@ -67,6 +67,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.SideEffect
+import com.cemail.app.ui.glass.listTransition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -127,7 +130,37 @@ fun ListScreen(
     /** Draws the quick button (it needs the list's haze state); drawn just above "write". */
     quickButton: @Composable (dev.chrisbanes.haze.HazeState) -> Unit = {},
 ) {
-    val state = remember(fullState, filter) { fullState.copy(pinned = fullState.pinned.filteredBy(filter), others = fullState.others.filteredBy(filter)) }
+    val live = remember(fullState, filter) { fullState.copy(pinned = fullState.pinned.filteredBy(filter), others = fullState.others.filteredBy(filter)) }
+    // Changing account, folder or filter swaps the list with an animation: the old rows leave one by one (the list is held
+    // meanwhile), then the new ones come in one by one.
+    val switchKey = listOf<Any?>(vm, fullState.box, fullState.labelId, filter)
+    var shownKey by remember { mutableStateOf(switchKey) }
+    var entering by remember { mutableStateOf(false) }
+    var epoch by remember { mutableIntStateOf(0) }
+    val leaving = switchKey != shownKey
+    val held = remember { arrayOf(live) }
+    val heldFilter = remember { arrayOf(filter) }
+    SideEffect {
+        if (!leaving) {
+            held[0] = live
+            heldFilter[0] = filter
+        }
+    }
+    val shownFilter = if (leaving) heldFilter[0] else filter
+    val state = if (leaving) live.copy(pinned = held[0].pinned, others = held[0].others, box = held[0].box, labelId = held[0].labelId) else live
+    LaunchedEffect(switchKey) {
+        if (switchKey != shownKey) {
+            delay(380)
+            shownKey = switchKey
+            entering = true
+            epoch++
+            listState.scrollToItem(0)
+            delay(1000)
+            entering = false
+        }
+    }
+    // The new rows can arrive a moment after the swap; the list stays at the top meanwhile.
+    LaunchedEffect(live.pinned, live.others) { if (entering) listState.scrollToItem(0) }
     val haze = rememberHazeState()
     val selecting = state.selection.isNotEmpty()
     val startIsArchive = state.box != MailBox.ARCHIVE && state.box != MailBox.TRASH && state.box != MailBox.SPAM
@@ -189,10 +222,11 @@ fun ListScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(0.dp), // rows of a group touch; the gap after a group is added to its last row
         ) {
+            var n = 0
             if (empty) {
                 item {
                     Column(
-                        Modifier.fillParentMaxWidth().padding(top = 96.dp),
+                        Modifier.fillParentMaxWidth().listTransition(0, leaving, entering, epoch).padding(top = 96.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Icon(CemailIcons.Inbox, null, Modifier.size(56.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -200,8 +234,8 @@ fun ListScreen(
                             stringResource(
                                 when {
                                     state.query.isNotBlank() -> R.string.no_results
-                                    filter == ListFilter.UNREAD -> R.string.filter_none_unread
-                                    filter == ListFilter.STARRED -> R.string.filter_none_starred
+                                    shownFilter == ListFilter.UNREAD -> R.string.filter_none_unread
+                                    shownFilter == ListFilter.STARRED -> R.string.filter_none_starred
                                     else -> R.string.empty_title
                                 },
                             ),
@@ -209,7 +243,7 @@ fun ListScreen(
                             style = MaterialTheme.typography.titleMedium,
                             textAlign = TextAlign.Center,
                         )
-                        if (state.query.isBlank() && filter == ListFilter.NONE) {
+                        if (state.query.isBlank() && shownFilter == ListFilter.NONE) {
                             Text(
                                 stringResource(R.string.empty_body),
                                 style = MaterialTheme.typography.bodyMedium,
@@ -224,8 +258,10 @@ fun ListScreen(
                 item(key = "empty-folder") { EmptyFolderButton(state.box, vm) }
             }
             if (state.pinned.isNotEmpty()) {
-                item(key = "h-pinned") { SectionHeader(stringResource(R.string.section_pinned)) }
-                itemsIndexed(state.pinned, key = { _, m -> m.id }) { i, mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, if (groupCards) GroupPos.of(i, state.pinned.size) else GroupPos.Single, groupCards, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
+                val pinBase = n
+                n += state.pinned.size
+                item(key = "h-pinned") { Box(Modifier.listTransition(pinBase, leaving, entering, epoch)) { SectionHeader(stringResource(R.string.section_pinned)) } }
+                itemsIndexed(state.pinned, key = { _, m -> m.id }) { i, mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, if (groupCards) GroupPos.of(i, state.pinned.size) else GroupPos.Single, groupCards, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring()).listTransition(pinBase + i, leaving, entering, epoch)) }
                 if (state.others.isNotEmpty() && !grouped) item(key = "h-mail") { SectionHeader(stringResource(R.string.section_mail)) }
             }
             if (grouped) {
@@ -234,11 +270,14 @@ fun ListScreen(
                 DateSection.entries.forEach { section ->
                     val list = groups[section] ?: return@forEach
                     val collapsed = section in state.collapsedSections
-                    item(key = "d-$section") { DateHeader(section, list.size, collapsed) { vm.toggleSection(section) } }
-                    if (!collapsed) itemsIndexed(list, key = { _, m -> m.id }) { i, mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, if (groupCards) GroupPos.of(i, list.size) else GroupPos.Single, groupCards, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
+                    val base = n
+                    n += list.size
+                    item(key = "d-$section") { Box(Modifier.listTransition(base, leaving, entering, epoch)) { DateHeader(section, list.size, collapsed) { vm.toggleSection(section) } } }
+                    if (!collapsed) itemsIndexed(list, key = { _, m -> m.id }) { i, mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, if (groupCards) GroupPos.of(i, list.size) else GroupPos.Single, groupCards, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring()).listTransition(base + i, leaving, entering, epoch)) }
                 }
             } else {
-                itemsIndexed(state.others, key = { _, m -> m.id }) { i, mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, if (groupCards) GroupPos.of(i, state.others.size) else GroupPos.Single, groupCards, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
+                val base = n
+                itemsIndexed(state.others, key = { _, m -> m.id }) { i, mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, if (groupCards) GroupPos.of(i, state.others.size) else GroupPos.Single, groupCards, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring()).listTransition(base + i, leaving, entering, epoch)) }
             }
         }
         }

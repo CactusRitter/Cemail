@@ -217,7 +217,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
     LaunchedEffect(state.box, state.labelId) { listFilter = ListFilter.NONE }
     // After a switch the new list arrives a moment later and the lazy list would follow the old first item: keep it at the top meanwhile.
     var pendingTop by remember { mutableStateOf(false) }
-    LaunchedEffect(state.box, state.labelId, acc.selectedId, state.query) {
+    LaunchedEffect(state.query) {
         pendingTop = true
         listState.scrollToItem(0)
         kotlinx.coroutines.delay(1500)

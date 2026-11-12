@@ -64,6 +64,7 @@ Efectos reutilizables (siempre los mismos, no se inventan otros):
 - `bumpOn(trigger)`: un «pop» cada vez que cambia algo (la estrella al marcarla).
 - Pantallas: la nueva crece desde un poco más pequeña (0,9) con `softBounceSpring` y la anterior se desvanece; al volver atrás, al revés (profundidad).
 - Listas: `animateItem` con `softBounceSpring` al reordenar y fundido al entrar y salir.
+- Cambio de lista (cuenta, carpeta, filtro): `listTransition(index, leaving, entering, epoch)`: las filas salen una a una (encogen y se desvanecen) y las nuevas entran una a una con rebote; entre medias la lista vieja se mantiene fija.
 - Avisos (barra de deshacer): suben desde abajo con rebote y bajan con `glassSpring`.
 
 Reglas: las ventanas y menús salen de su botón (`origin`); lo que está en el centro, del centro. Si Android tiene las animaciones desactivadas, Compose las salta solo.

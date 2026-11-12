@@ -176,3 +176,35 @@ fun Modifier.expandFrom(origin: Rect?, mailId: Long, closing: Boolean): Modifier
         transformOrigin = TransformOrigin(0.5f, if (size.height > 0f) card.center.y / size.height else 0.5f)
     }
 }
+
+/**
+ * One row of a list that is swapped for another (another account, folder or filter): rows leave one after another
+ * ([leaving]) and the new ones come in one after another with a bounce ([entering]); [index] sets the order.
+ * Rows that scroll into view later (neither flag set) just appear as usual.
+ */
+@Composable
+fun Modifier.listTransition(index: Int, leaving: Boolean, entering: Boolean, epoch: Int): Modifier {
+    val progress = remember { Animatable(if (entering) 0f else 1f) }
+    LaunchedEffect(leaving, entering, epoch) {
+        val step = index.coerceAtMost(10)
+        when {
+            leaving -> {
+                delay(step * 20L)
+                progress.animateTo(0f, spring(dampingRatio = 1f, stiffness = Spring.StiffnessMedium))
+            }
+            entering -> {
+                progress.snapTo(0f)
+                delay(step * 38L)
+                progress.animateTo(1f, bounceSpring())
+            }
+            progress.value != 1f -> progress.animateTo(1f, glassSpring())
+        }
+    }
+    return this.graphicsLayer {
+        val p = progress.value
+        val s = 0.8f + 0.2f * p
+        scaleX = s
+        scaleY = s
+        alpha = p.coerceIn(0f, 1f)
+    }
+}
