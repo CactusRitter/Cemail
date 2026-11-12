@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 1.5.1 — 2026-11-12
+- El indicador de cuenta (la esquina de color) se ve igual en todos los correos de un grupo, como en el primero.
+
 ## 1.5.0 — 2026-11-12
 Versión que reúne todo lo de la 1.4.0 y la 1.4.9, ya probado:
 - **Estilos de fondo** (Ajustes → Apariencia): Aurora (por defecto), Clásico, Neutro, Atardecer, Océano y Neón, cada uno claro y oscuro.

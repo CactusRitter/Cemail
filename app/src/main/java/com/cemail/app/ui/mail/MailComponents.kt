@@ -136,7 +136,7 @@ fun MailRow(
         Row(
             Modifier
                 .glassSegment(pos, 20.dp, kind)
-                .then(if (stripe != null) Modifier.accountCorner(stripe, pos.hasTop) else Modifier)
+                .then(if (stripe != null) Modifier.accountCorner(stripe, true) else Modifier)
                 .combinedClickable(role = Role.Button, onClick = onClick, onLongClick = onLongClick)
                 .padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.Top,
@@ -230,7 +230,7 @@ private fun Modifier.accountCorner(color: Color, rounded: Boolean): Modifier = t
     drawContent()
     val d = density
     val rtl = layoutDirection == LayoutDirection.Rtl
-    val r = if (rounded) 20f * d else 0f
+    val r = 20f * d
     val crescent = Path().apply {
         moveTo(0f, 34f * d)
         lineTo(0f, r)
