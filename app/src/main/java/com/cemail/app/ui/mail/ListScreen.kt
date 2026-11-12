@@ -337,7 +337,7 @@ fun ListScreen(
         // Compose button (Thunderbird has a floating "write" button).
         if (!selecting && !state.searching) {
           androidx.compose.foundation.layout.Column(
-            Modifier.align(Alignment.BottomEnd).windowInsetsPadding(WindowInsets.safeDrawing).padding(16.dp),
+            Modifier.align(com.cemail.app.ui.glass.handCorner()).windowInsetsPadding(WindowInsets.safeDrawing).padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
           ) {

@@ -403,3 +403,10 @@ private fun Modifier.skinSegment(skin: SkinLook, pos: GroupPos, radius: Dp, fill
 /** Colour for text and icons drawn straight on the background: [default], unless the look needs another (Retro's teal desktop). */
 @Composable
 fun onBackdrop(default: Color): Color = LocalSkin.current.backdropInk ?: default
+
+/** Left-handed mode (Settings → Appearance → Hand): the interface is mirrored for the left thumb. */
+val LocalLeftHanded = androidx.compose.runtime.staticCompositionLocalOf { false }
+
+/** Where floating buttons and their panels sit: the bottom corner on the side of the hand that holds the phone. */
+@Composable
+fun handCorner(): Alignment = if (LocalLeftHanded.current) Alignment.BottomStart else Alignment.BottomEnd

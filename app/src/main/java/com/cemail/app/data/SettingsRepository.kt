@@ -18,6 +18,8 @@ data class AppSettings(
     val skin: com.cemail.app.ui.theme.Skin = com.cemail.app.ui.theme.Skin.GLASS,
     /** Glass with a solid, unblurred shadow under every surface (the 3D look of Brutalist). */
     val depth3d: Boolean = false,
+    /** Left-handed: floating buttons on the left and, on tablets, the list on the right. */
+    val leftHanded: Boolean = false,
     /** 0 = solid glass, 100 = fully see-through. */
     val transparency: Int = 65,
     /** Load remote images in messages without asking (off by default: they can be tracking pixels). */
@@ -90,6 +92,7 @@ class SettingsRepository(context: Context) {
             ?.let { n -> com.cemail.app.ui.theme.ThemeMode.entries.firstOrNull { it.name == n } } ?: com.cemail.app.ui.theme.ThemeMode.SYSTEM,
         skin = prefs.getString(KEY_SKIN, null)?.let { n -> com.cemail.app.ui.theme.Skin.entries.firstOrNull { it.name == n } } ?: com.cemail.app.ui.theme.Skin.GLASS,
         depth3d = prefs.getBoolean(KEY_DEPTH, false),
+        leftHanded = prefs.getBoolean(KEY_LEFT_HANDED, false),
         transparency = prefs.getInt(KEY_TRANSPARENCY, 65),
         alwaysShowImages = prefs.getBoolean(KEY_IMAGES, false),
         groupByDate = prefs.getBoolean(KEY_GROUP, true),
@@ -170,6 +173,11 @@ class SettingsRepository(context: Context) {
     fun setDepth3d(value: Boolean) {
         prefs.edit().putBoolean(KEY_DEPTH, value).apply()
         _state.value = _state.value.copy(depth3d = value)
+    }
+
+    fun setLeftHanded(value: Boolean) {
+        prefs.edit().putBoolean(KEY_LEFT_HANDED, value).apply()
+        _state.value = _state.value.copy(leftHanded = value)
     }
 
     fun setThemeMode(mode: com.cemail.app.ui.theme.ThemeMode) {
@@ -301,6 +309,7 @@ class SettingsRepository(context: Context) {
         const val KEY_STYLE = "theme_style"
         const val KEY_SKIN = "skin"
         const val KEY_DEPTH = "depth_3d"
+        const val KEY_LEFT_HANDED = "left_handed"
         const val KEY_ACCOUNT_LABEL = "account_label_"
         const val KEY_SENDER_NAME = "account_sender_"
         const val KEY_ACCOUNT_COLOR = "account_color_"

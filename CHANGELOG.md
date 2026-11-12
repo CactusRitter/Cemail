@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 1.7.2 — 2026-11-12
+- Ajustes → Apariencia → Mano: «Diestro» o «Zurdo». Con zurdo, los botones flotantes (redactar, botón rápido, responder, «Más» y sus menús) pasan a la esquina izquierda y, en tabletas, la lista de mensajes se pone a la derecha y el mensaje a la izquierda.
+
 ## 1.7.1 — 2026-11-12
 - Tabletas y plegables abiertos: con la pantalla ancha (desde 840 dp, como una tableta en vertical u horizontal), la lista y el mensaje abierto se ven uno al lado del otro, como en Gmail; el mensaje abierto queda resaltado en la lista. Redactar, Ajustes, el inicio de sesión y la cuenta IMAP se centran con un ancho máximo en vez de estirarse.
 - Al girar la pantalla, plegar o desplegar el móvil, o cambiar el tamaño de la ventana, la app ya no se reinicia: sigue donde estabas.

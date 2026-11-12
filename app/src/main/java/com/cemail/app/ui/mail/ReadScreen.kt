@@ -298,7 +298,7 @@ fun ReadScreen(
 
         // Bottom corner: the menu button over the reply button.
         Column(
-            Modifier.align(Alignment.BottomEnd).windowInsetsPadding(WindowInsets.safeDrawing).padding(16.dp),
+            Modifier.align(com.cemail.app.ui.glass.handCorner()).windowInsetsPadding(WindowInsets.safeDrawing).padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -410,10 +410,10 @@ private fun ActionGrid(onDismiss: () -> Unit, items: List<PanelItem>) {
     ) {
         Column(
             Modifier
-                .align(Alignment.BottomEnd)
+                .align(com.cemail.app.ui.glass.handCorner())
                 .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(bottom = 156.dp, end = 16.dp)
-                .popIn(initialScale = 0.3f, origin = TransformOrigin(1f, 1f))
+                .padding(bottom = 156.dp, start = 16.dp, end = 16.dp)
+                .popIn(initialScale = 0.3f, origin = TransformOrigin(if (com.cemail.app.ui.glass.LocalLeftHanded.current) 0f else 1f, 1f))
                 // Swallows taps so only the area around the window closes it.
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
                 .glass(RoundedCornerShape(28.dp), GlassKind.Menu, elevation = 12.dp)
@@ -509,10 +509,10 @@ private fun LabelsPopup(mail: Mail, labels: List<Label>, vm: MailViewModel, onDi
     ) {
         Column(
             Modifier
-                .align(Alignment.BottomEnd)
+                .align(com.cemail.app.ui.glass.handCorner())
                 .windowInsetsPadding(WindowInsets.safeDrawing)
                 .padding(bottom = 156.dp, end = 16.dp, start = 16.dp)
-                .popIn(initialScale = 0.3f, origin = TransformOrigin(1f, 1f))
+                .popIn(initialScale = 0.3f, origin = TransformOrigin(if (com.cemail.app.ui.glass.LocalLeftHanded.current) 0f else 1f, 1f))
                 .widthIn(max = 320.dp)
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
                 .glass(RoundedCornerShape(28.dp), GlassKind.Menu, elevation = 12.dp)

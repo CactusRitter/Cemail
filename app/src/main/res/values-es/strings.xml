@@ -13,6 +13,10 @@
     <string name="style_title">Estilo</string>
     <string name="style_body">El fondo y el tinte del cristal.</string>
     <string name="pane_empty">Elige un mensaje para leerlo aquí.</string>
+    <string name="hand_title">Mano</string>
+    <string name="hand_body">Con zurdo, los botones flotantes pasan a la izquierda y, en tabletas, la lista de mensajes a la derecha.</string>
+    <string name="hand_right">Diestro</string>
+    <string name="hand_left">Zurdo</string>
     <string name="skin_title">Diseño</string>
     <string name="skin_body">El aspecto de toda la app. Cristal es el que comparte con Celander y Cenotes; los demás están en pruebas.</string>
     <string name="skin_always_dark">Este diseño siempre es oscuro.</string>
