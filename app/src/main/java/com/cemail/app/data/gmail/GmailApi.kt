@@ -1,6 +1,7 @@
 package com.cemail.app.data.gmail
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -200,17 +201,33 @@ class HttpGmailApi(
     }
 
     private suspend fun call(request: Request): String {
-        val token = tokens.accessToken() ?: throw GmailHttpException(401, "not signed in")
-        return withContext(Dispatchers.IO) {
-            client.newCall(request.newBuilder().header("Authorization", "Bearer $token").build()).execute().use { response ->
-                val text = response.body.string()
-                if (!response.isSuccessful) throw GmailHttpException(response.code, "Gmail API ${response.code}: ${text.replace(Regex("\\s+"), " ").take(240)}")
-                text
+        var attempt = 0
+        while (true) {
+            val token = tokens.accessToken() ?: throw GmailHttpException(401, "not signed in")
+            val reply = withContext(Dispatchers.IO) {
+                client.newCall(request.newBuilder().header("Authorization", "Bearer $token").build()).execute().use { response ->
+                    Triple(response.code, response.body.string(), response.header("Retry-After")?.toLongOrNull())
+                }
             }
+            val (code, text, retryAfter) = reply
+            if (code in 200..299) return text
+            // Google's per-minute quota (a new account's first sync asks for many messages at once) clears by itself:
+            // wait a little, with a random spread so the parallel requests do not all come back together, and ask again.
+            if (attempt < MAX_RETRIES && isRateLimited(code, text)) {
+                val wait = retryAfter?.times(1000) ?: minOf(30_000L, 4_000L shl attempt)
+                delay(wait + (0..1500).random())
+                attempt++
+                continue
+            }
+            throw GmailHttpException(code, "Gmail API $code: ${text.lines().joinToString(" ") { it.trim() }.take(240)}")
         }
     }
 
+    private fun isRateLimited(code: Int, body: String): Boolean =
+        code == 429 || (code == 403 && (body.contains("rateLimitExceeded", true) || body.contains("Quota exceeded", true)))
+
     private companion object {
         val BASE = "https://gmail.googleapis.com/gmail/v1/users/me".toHttpUrl()
+        const val MAX_RETRIES = 4
     }
 }

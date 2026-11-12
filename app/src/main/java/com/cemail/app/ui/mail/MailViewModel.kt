@@ -189,6 +189,11 @@ class MailViewModel(
     fun refresh() {
         viewModelScope.launch {
             var ok = repo.refresh()
+            // A failure right after adding an account or changing the network is often over in seconds: ask once more before warning.
+            if (!ok) {
+                kotlinx.coroutines.delay(4_000)
+                ok = repo.refresh()
+            }
             val label = ui.value.labelId
             if (label != null) {
                 ui.update { it.copy(labelSyncing = true) }

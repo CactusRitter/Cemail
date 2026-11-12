@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 1.6.4 — 2026-11-12
+- Al añadir una cuenta ya no sale el aviso «No se pudo sincronizar una de tus cuentas» por fallos pasajeros: si Google limita las peticiones por minuto (lo hacía al descargar de golpe los primeros correos de una cuenta nueva), la app espera y vuelve a pedir sola, y antes de avisar de cualquier fallo de sincronización lo intenta una segunda vez a los pocos segundos.
+
 ## 1.6.3 — 2026-11-12
 - Un borrador de respuesta guarda solo una marca del mensaje original; al reabrirlo, el original vuelve a citarse desde el teléfono (con su diseño e imágenes). Si el mensaje ya no existe, el borrador avisa «El mensaje al que respondes ya no existe».
 
