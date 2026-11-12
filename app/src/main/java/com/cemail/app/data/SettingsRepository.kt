@@ -41,6 +41,10 @@ data class AppSettings(
     val defaultAccountId: String? = null,
     /** Per account (by id): the name shown for it, the name it sends with and its colour. */
     val accountLooks: Map<String, AccountLook> = emptyMap(),
+    /** Account ids in the order the user wants them (menu, quick switch, Settings); accounts not listed go last. */
+    val accountOrder: List<String> = emptyList(),
+    /** What the small button above "write" does. */
+    val quickAction: QuickAction = QuickAction.UNREAD,
 ) {
     fun lookOf(accountId: String): AccountLook = accountLooks[accountId] ?: AccountLook()
 
@@ -55,6 +59,13 @@ data class AppSettings(
  * How one account looks and signs: [label] replaces its name in the lists ("Gmail", "Outlook"…), [senderName] is the
  * name recipients see (null = the server's own) and [color] its colour (null = one of the theme's, by position).
  */
+/** What the quick button above "write" does. */
+enum class QuickAction { UNREAD, STARRED, ACCOUNT, SEARCH, NONE }
+
+/** [this] sorted by the user's [order]; accounts the order does not know keep their own order after the others. */
+fun <T> List<T>.orderedBy(order: List<String>, id: (T) -> String): List<T> =
+    if (order.isEmpty()) this else sortedBy { a -> order.indexOf(id(a)).let { if (it < 0) Int.MAX_VALUE else it } }
+
 data class AccountLook(val label: String? = null, val senderName: String? = null, val color: Accent? = null)
 
 /** Small app preferences, kept in SharedPreferences and exposed as a StateFlow (same approach as Cenotes). */
@@ -84,6 +95,8 @@ class SettingsRepository(context: Context) {
         accountSync = prefs.all.filterKeys { it.startsWith(KEY_ACCOUNT_SYNC) }.mapNotNull { (k, v) -> (v as? Int)?.let { k.removePrefix(KEY_ACCOUNT_SYNC) to it } }.toMap(),
         pushEnabled = prefs.getBoolean(KEY_PUSH, true),
         defaultAccountId = prefs.getString(KEY_DEFAULT_ACCOUNT, null),
+        accountOrder = prefs.getString(KEY_ACCOUNT_ORDER, null)?.split(",")?.filter { it.isNotBlank() }.orEmpty(),
+        quickAction = prefs.getString(KEY_QUICK, null)?.let { n -> QuickAction.entries.firstOrNull { it.name == n } } ?: QuickAction.UNREAD,
         accountLooks = prefs.all.keys.mapNotNull { k ->
             listOf(KEY_ACCOUNT_LABEL, KEY_SENDER_NAME, KEY_ACCOUNT_COLOR).firstOrNull { k.startsWith(it) }?.let { k.removePrefix(it) }
         }.toSet().associateWith { id -> readLook(id) },
@@ -207,6 +220,16 @@ class SettingsRepository(context: Context) {
         _state.value = _state.value.copy(accountLooks = _state.value.accountLooks + (accountId to readLook(accountId)))
     }
 
+    fun setAccountOrder(ids: List<String>) {
+        prefs.edit().putString(KEY_ACCOUNT_ORDER, ids.joinToString(",")).apply()
+        _state.value = _state.value.copy(accountOrder = ids)
+    }
+
+    fun setQuickAction(action: QuickAction) {
+        prefs.edit().putString(KEY_QUICK, action.name).apply()
+        _state.value = _state.value.copy(quickAction = action)
+    }
+
     fun setDefaultAccount(accountId: String?) {
         prefs.edit().apply { if (accountId == null) remove(KEY_DEFAULT_ACCOUNT) else putString(KEY_DEFAULT_ACCOUNT, accountId) }.apply()
         _state.value = _state.value.copy(defaultAccountId = accountId)
@@ -255,6 +278,8 @@ class SettingsRepository(context: Context) {
     private companion object {
         const val KEY_PUSH = "push_enabled"
         const val KEY_DEFAULT_ACCOUNT = "default_account"
+        const val KEY_ACCOUNT_ORDER = "account_order"
+        const val KEY_QUICK = "quick_action"
         const val KEY_HUE = "accent_hue"
         const val KEY_THEME = "theme_mode"
         const val KEY_STYLE = "theme_style"

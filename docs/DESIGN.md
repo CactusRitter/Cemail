@@ -102,3 +102,6 @@ Reglas: las ventanas y menús salen de su botón (`origin`); lo que está en el 
 
 ## Mensajes agrupados en una tarjeta (prueba en la rama `tarjetas-por-grupo`)
 Cada grupo de la lista (Fijados, Hoy, Ayer, Semana pasada, Anteriores, o todo si no se agrupa por fecha) es **una sola tarjeta de cristal** con sus mensajes dentro, separados por una línea fina. Esquinas redondeadas, borde y hueco entre grupos son del grupo, no de cada mensaje. Implementado con `GroupPos` y `Modifier.glassSegment` (`ui/glass/Glass.kt`): la lista sigue siendo perezosa, cada fila dibuja su trozo de tarjeta. Opción en Ajustes → Apariencia → «Tarjetas de mensajes» (Por grupo / Individuales). Un mensaje sin leer va entero en negrita (remitente, asunto, vista previa y hora); en tarjeta individual conserva además el relleno más marcado.
+
+## Botón rápido (1.4.9)
+Botón redondo de 48 dp (cristal `Chrome`; `Pinned` y acento mientras su filtro está activo) justo encima del de redactar. Acciones (Ajustes → Mensajes): filtro de no leídos, filtro de destacados, cambio de cuenta (ciclo Todas → cuentas en el orden de Ajustes; con una cuenta, su foto con anillo), búsqueda o ninguno. Ajustes → Cuentas tiene «Orden de las cuentas» (flechas subir/bajar).

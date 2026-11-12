@@ -212,6 +212,9 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
 
     // The list keeps its place while a message is read; it goes back to the top only when what it shows changes.
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    // The quick button's filter lasts while the folder stays the same, also across an account switch.
+    var listFilter by remember { mutableStateOf(ListFilter.NONE) }
+    LaunchedEffect(state.box, state.labelId) { listFilter = ListFilter.NONE }
     LaunchedEffect(state.box, state.labelId, acc.selectedId, state.query) { listState.scrollToItem(0) }
 
     // How long the "Undo" bar stays after an action follows Settings.
@@ -324,7 +327,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                                 ReadScreen(it, vm, settings.alwaysShowImages, state.labels, state.thread)
                             }
                         }
-                        Screen.LIST -> ListScreen(state, vm, grouped = settings.groupByDate && state.query.isBlank(), groupCards = settings.groupCards, stripeOf = stripeOf, showSenderCircle = settings.showSenderCircle, swipe = settings.swipe, listState = listState, onOpenDrawer = { scope.launch { drawer.open() } })
+                        Screen.LIST -> ListScreen(state, vm, filter = listFilter, quickButton = { haze -> QuickButton(settings.quickAction, listFilter, { listFilter = it }, acc, { id -> accountVm.select(id) }, { vm.setSearching(true) }, haze) }, grouped = settings.groupByDate && state.query.isBlank(), groupCards = settings.groupCards, stripeOf = stripeOf, showSenderCircle = settings.showSenderCircle, swipe = settings.swipe, listState = listState, onOpenDrawer = { scope.launch { drawer.open() } })
                     }
                 }
                 UndoBar(state.undo, vm, Modifier.align(Alignment.BottomCenter))

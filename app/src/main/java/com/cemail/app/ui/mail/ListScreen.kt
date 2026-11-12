@@ -113,7 +113,7 @@ fun MailBox.labelRes(): Int = when (this) {
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun ListScreen(
-    state: MailUiState,
+    fullState: MailUiState,
     vm: MailViewModel,
     grouped: Boolean,
     groupCards: Boolean = true,
@@ -123,7 +123,11 @@ fun ListScreen(
     /** Kept by the caller, so the list is where it was left after reading a message. */
     listState: androidx.compose.foundation.lazy.LazyListState,
     onOpenDrawer: () -> Unit,
+    filter: ListFilter = ListFilter.NONE,
+    /** Draws the quick button (it needs the list's haze state); drawn just above "write". */
+    quickButton: @Composable (dev.chrisbanes.haze.HazeState) -> Unit = {},
 ) {
+    val state = remember(fullState, filter) { fullState.copy(pinned = fullState.pinned.filteredBy(filter), others = fullState.others.filteredBy(filter)) }
     val haze = rememberHazeState()
     val selecting = state.selection.isNotEmpty()
     val startIsArchive = state.box != MailBox.ARCHIVE && state.box != MailBox.TRASH && state.box != MailBox.SPAM
@@ -193,12 +197,12 @@ fun ListScreen(
                     ) {
                         Icon(CemailIcons.Inbox, null, Modifier.size(56.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(
-                            stringResource(if (state.query.isBlank()) R.string.empty_title else R.string.no_results),
+                            stringResource(if (state.query.isBlank() && filter == ListFilter.NONE) R.string.empty_title else R.string.no_results),
                             Modifier.padding(top = 12.dp),
                             style = MaterialTheme.typography.titleMedium,
                             textAlign = TextAlign.Center,
                         )
-                        if (state.query.isBlank()) {
+                        if (state.query.isBlank() && filter == ListFilter.NONE) {
                             Text(
                                 stringResource(R.string.empty_body),
                                 style = MaterialTheme.typography.bodyMedium,
@@ -285,11 +289,14 @@ fun ListScreen(
 
         // Compose button (Thunderbird has a floating "write" button).
         if (!selecting && !state.searching) {
+          androidx.compose.foundation.layout.Column(
+            Modifier.align(Alignment.BottomEnd).windowInsetsPadding(WindowInsets.safeDrawing).padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+          ) {
+            quickButton(haze)
             Box(
                 Modifier
-                    .align(Alignment.BottomEnd)
-                    .windowInsetsPadding(WindowInsets.safeDrawing)
-                    .padding(16.dp)
                     .popIn(delayMillis = 220, initialScale = 0.3f)
                     .pressScale(0.88f)
                     .size(60.dp)
@@ -299,6 +306,7 @@ fun ListScreen(
             ) {
                 Icon(Icons.Filled.Create, stringResource(R.string.compose), tint = MaterialTheme.colorScheme.primary)
             }
+          }
         }
     }
 }

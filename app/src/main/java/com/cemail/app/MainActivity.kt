@@ -1,5 +1,7 @@
 package com.cemail.app
 
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.distinctUntilChanged
 import android.Manifest
 import android.content.Intent
 import android.os.Build
@@ -52,7 +54,7 @@ class MainActivity : ComponentActivity() {
                 enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
             }
             CemailTheme(settings) {
-                val accountVm: AccountViewModel = viewModel(factory = AccountViewModel.Factory(app.accountRepository, app.googleAuth, app.microsoftAuth))
+                val accountVm: AccountViewModel = viewModel(factory = AccountViewModel.Factory(app.accountRepository, app.googleAuth, app.microsoftAuth, app.settings.state.map { it.accountOrder }.distinctUntilChanged()))
                 val accounts by accountVm.state.collectAsStateWithLifecycle()
                 // What is on screen: the demo store (no account), one account, or all of them together.
                 val ids = accounts.accounts.map { it.id }

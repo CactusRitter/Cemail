@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.cemail.app.R
+import com.cemail.app.data.orderedBy
 import com.cemail.app.data.auth.AccountRepository
 import com.cemail.app.data.auth.GoogleAuth
 import com.cemail.app.data.auth.SignInOutcome
@@ -41,10 +42,13 @@ class AccountViewModel(
     private val repo: AccountRepository,
     private val auth: GoogleAuth,
     private val microsoft: com.cemail.app.data.auth.MicrosoftAuth,
+    /** The order the user chose for the accounts (Settings → Accounts). */
+    private val order: kotlinx.coroutines.flow.Flow<List<String>> = kotlinx.coroutines.flow.flowOf(emptyList()),
 ) : ViewModel() {
     private val local = MutableStateFlow(Local())
 
-    val state: StateFlow<AccountUiState> = combine(repo.accounts, local) { accounts, l ->
+    val state: StateFlow<AccountUiState> = combine(repo.accounts, local, order) { rawAccounts, l, ord ->
+        val accounts = rawAccounts.orderedBy(ord) { it.id }
         // A removed account can no longer be the selected one.
         AccountUiState(true, accounts, l.signingIn, l.error, l.demo, l.selectedId?.takeIf { id -> accounts.any { it.id == id } })
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AccountUiState())
@@ -121,8 +125,9 @@ class AccountViewModel(
         private val repo: AccountRepository,
         private val auth: GoogleAuth,
         private val microsoft: com.cemail.app.data.auth.MicrosoftAuth,
+        private val order: kotlinx.coroutines.flow.Flow<List<String>> = kotlinx.coroutines.flow.flowOf(emptyList()),
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = AccountViewModel(repo, auth, microsoft) as T
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = AccountViewModel(repo, auth, microsoft, order) as T
     }
 }

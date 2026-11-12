@@ -3,6 +3,13 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 1.4.9 — 2026-11-12
+- **Tarjetas por grupo**: cada sección de la lista (Fijados, Hoy, Ayer, Semana pasada, Anteriores) es una sola tarjeta de cristal con sus mensajes dentro. En Ajustes → Apariencia → «Tarjetas de mensajes» se puede elegir entre «Por grupo» (por defecto) e «Individuales».
+- **Los mensajes sin leer van enteros en negrita** (remitente, asunto, vista previa y hora).
+- **Botón rápido** sobre el de redactar, con un solo toque. Se elige en Ajustes → Mensajes: filtro de no leídos, filtro de destacados, cambio rápido entre la bandeja unificada y cada cuenta, búsqueda, o ninguno. Los filtros se apagan al cambiar de carpeta.
+- **Orden de las cuentas** (Ajustes → Cuentas): subir y bajar cada cuenta. Vale para el menú, el cambio rápido y las listas de Ajustes.
+- Ajustes: Apariencia pasa a ser la segunda opción.
+
 ## 1.4.0 — 2026-11-12
 - **Estilos de fondo**: nuevo apartado «Estilo» en Ajustes → Apariencia. **Aurora** (cielo profundo con luces de color detrás del cristal) es ahora el estilo por defecto; además **Clásico** (el lavanda de antes), **Neutro**, **Atardecer**, **Océano** y **Neón**. Cada uno tiene versión clara y oscura y sigue el acento elegido.
 

@@ -22,6 +22,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -94,6 +96,33 @@ internal fun AccountsPage(accounts: List<AccountEntity>, settings: AppSettings, 
                     // A name the user gave says enough; otherwise the address (owners often share one name).
                     val label = if (settings.lookOf(account.id).label != null) name else account.email
                     ChoiceChip(label, account.id == current.id) { repo.setDefaultAccount(account.id) }
+                }
+            }
+        }
+    }
+    if (accounts.size > 1) {
+        SettingsCard {
+            Text(stringResource(R.string.account_order_title), style = MaterialTheme.typography.titleSmall)
+            Text(
+                stringResource(R.string.account_order_body),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            accounts.forEachIndexed { index, account ->
+                fun move(by: Int) {
+                    val ids = accounts.map { it.id }.toMutableList()
+                    ids.add(index + by, ids.removeAt(index))
+                    repo.setAccountOrder(ids)
+                }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    AccountAvatar(account, accounts, size = 34, ring = true)
+                    Text(account.shownName(), Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                    androidx.compose.material3.IconButton(onClick = { move(-1) }, enabled = index > 0) {
+                        Icon(Icons.Filled.KeyboardArrowUp, stringResource(R.string.move_up))
+                    }
+                    androidx.compose.material3.IconButton(onClick = { move(1) }, enabled = index < accounts.size - 1) {
+                        Icon(Icons.Filled.KeyboardArrowDown, stringResource(R.string.move_down))
+                    }
                 }
             }
         }
