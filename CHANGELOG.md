@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 1.4.0 — 2026-11-12
+- **Estilos de fondo**: nuevo apartado «Estilo» en Ajustes → Apariencia. **Aurora** (cielo profundo con luces de color detrás del cristal) es ahora el estilo por defecto; además **Clásico** (el lavanda de antes), **Neutro**, **Atardecer**, **Océano** y **Neón**. Cada uno tiene versión clara y oscura y sigue el acento elegido.
+
 ## 1.3.0 — 2026-11-11
 - **Apariencia como en Celander**: claro u oscuro (Sistema, Claro, Oscuro), **ocho colores de acento** (los de Celander) y un **color personalizado** con barra de tono. El color tiñe botones, selecciones, el cristal y el fondo.
 - La transparencia del cristal tiene ahora una vista previa y un deslizador con el estilo de la app (también la barra de tono).
