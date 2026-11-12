@@ -76,7 +76,7 @@ class MainActivity : ComponentActivity() {
                 val vm: MailViewModel = viewModel(key = scopeKey, factory = MailViewModel.Factory(repo) { id -> if (id in ids) app.mailRepositoryFor(id) else null })
                 androidx.compose.runtime.CompositionLocalProvider(
                     com.cemail.app.ui.mail.LocalAccountLooks provides settings.accountLooks,
-                    com.cemail.app.ui.glass.LocalLeftHanded provides settings.leftHanded,
+                    com.cemail.app.ui.glass.LocalListOnRight provides settings.listOnRight,
                 ) {
                     MailApp(vm, accountVm, settings, app.settings)
                 }

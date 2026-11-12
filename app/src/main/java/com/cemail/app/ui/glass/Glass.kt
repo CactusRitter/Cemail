@@ -404,9 +404,9 @@ private fun Modifier.skinSegment(skin: SkinLook, pos: GroupPos, radius: Dp, fill
 @Composable
 fun onBackdrop(default: Color): Color = LocalSkin.current.backdropInk ?: default
 
-/** Left-handed mode (Settings → Appearance → Hand): the interface is mirrored for the left thumb. */
-val LocalLeftHanded = androidx.compose.runtime.staticCompositionLocalOf { false }
+/** Settings → Appearance → Message list: on the right (tablets), with the floating buttons then on the left. */
+val LocalListOnRight = androidx.compose.runtime.staticCompositionLocalOf { false }
 
-/** Where floating buttons and their panels sit: the bottom corner on the side of the hand that holds the phone. */
+/** Where floating buttons and their panels sit: bottom right, or bottom left when the list is on the right. */
 @Composable
-fun handCorner(): Alignment = if (LocalLeftHanded.current) Alignment.BottomStart else Alignment.BottomEnd
+fun floatingCorner(): Alignment = if (LocalListOnRight.current) Alignment.BottomStart else Alignment.BottomEnd

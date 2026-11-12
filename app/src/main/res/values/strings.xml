@@ -15,10 +15,10 @@
     <string name="style_title">Style</string>
     <string name="style_body">The background and the tint of the glass.</string>
     <string name="pane_empty">Choose a message to read it here.</string>
-    <string name="hand_title">Hand</string>
-    <string name="hand_body">Left-handed moves the floating buttons to the left and, on tablets, the message list to the right.</string>
-    <string name="hand_right">Right-handed</string>
-    <string name="hand_left">Left-handed</string>
+    <string name="list_side_title">Message list</string>
+    <string name="list_side_body">On tablets, the side the list goes on. With the list on the right, the floating buttons move to the left (on phones too).</string>
+    <string name="list_side_left">Left</string>
+    <string name="list_side_right">Right</string>
     <string name="skin_title">Design</string>
     <string name="skin_body">The look of the whole app. Glass is the one shared with Celander and Cenotes; the others are being tried out.</string>
     <string name="skin_always_dark">This design is always dark.</string>

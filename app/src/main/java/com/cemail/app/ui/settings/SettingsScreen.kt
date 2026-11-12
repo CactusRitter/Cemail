@@ -425,13 +425,13 @@ private fun AppearancePage(settings: AppSettings, repo: SettingsRepository) {
         }
     }
     if (glassLook) SwitchRow(R.string.depth_title, R.string.depth_body, settings.depth3d, repo::setDepth3d)
-    // Right- or left-handed: which side the floating buttons (and, on tablets, the list) are on.
+    // Which side the message list goes on (tablets); with it on the right, the floating buttons go left.
     SettingsCard {
-        Text(stringResource(R.string.hand_title), style = MaterialTheme.typography.titleSmall)
-        Text(stringResource(R.string.hand_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.list_side_title), style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.list_side_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            ChoiceChip(stringResource(R.string.hand_right), !settings.leftHanded) { repo.setLeftHanded(false) }
-            ChoiceChip(stringResource(R.string.hand_left), settings.leftHanded) { repo.setLeftHanded(true) }
+            ChoiceChip(stringResource(R.string.list_side_left), !settings.listOnRight) { repo.setListOnRight(false) }
+            ChoiceChip(stringResource(R.string.list_side_right), settings.listOnRight) { repo.setListOnRight(true) }
         }
     }
     SettingsCard {

@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 1.7.3 — 2026-11-12
+- La opción de 1.7.2 se llama ahora Ajustes → Apariencia → «Lista de mensajes», con «Izquierda» o «Derecha» (antes «Diestro» o «Zurdo»). Funciona igual: con la lista a la derecha, los botones flotantes pasan a la izquierda.
+
 ## 1.7.2 — 2026-11-12
 - Ajustes → Apariencia → Mano: «Diestro» o «Zurdo». Con zurdo, los botones flotantes (redactar, botón rápido, responder, «Más» y sus menús) pasan a la esquina izquierda y, en tabletas, la lista de mensajes se pone a la derecha y el mensaje a la izquierda.
 

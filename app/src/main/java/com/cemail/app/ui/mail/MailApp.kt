@@ -531,7 +531,7 @@ internal fun Centered(content: @Composable () -> Unit) {
 }
 
 /**
- * The list on the start side (the end side, left-handed) and the open message beside it (wide windows). The list takes about a third of the
+ * The list on the start side (or the end side, as chosen in Settings) and the open message beside it (wide windows). The list takes about a third of the
  * width (between 360 and 480 dp); with no message open, the reading side says where to tap.
  */
 @Composable
@@ -540,10 +540,10 @@ private fun TwoPane(list: @Composable () -> Unit, open: Mail?, reading: @Composa
     LaunchedEffect(open?.id) { ReadTransition.consume() }
     androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
         val listWidth = (maxWidth * 0.36f).coerceIn(360.dp, 480.dp)
-        // Left-handed: mirrored, the list goes to the other side (its buttons follow the hand too).
-        val leftHanded = com.cemail.app.ui.glass.LocalLeftHanded.current
+        // "Message list: right" (Settings): mirrored, the list on the end side.
+        val listOnRight = com.cemail.app.ui.glass.LocalListOnRight.current
         Row(Modifier.fillMaxSize()) {
-            if (!leftHanded) Box(Modifier.width(listWidth).fillMaxHeight()) { list() }
+            if (!listOnRight) Box(Modifier.width(listWidth).fillMaxHeight()) { list() }
             Box(Modifier.weight(1f).fillMaxHeight()) {
                 AnimatedContent(
                     targetState = open,
@@ -569,7 +569,7 @@ private fun TwoPane(list: @Composable () -> Unit, open: Mail?, reading: @Composa
                     }
                 }
             }
-            if (leftHanded) Box(Modifier.width(listWidth).fillMaxHeight()) { list() }
+            if (listOnRight) Box(Modifier.width(listWidth).fillMaxHeight()) { list() }
         }
     }
 }
