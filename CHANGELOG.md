@@ -3,6 +3,13 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 1.7.0 — 2026-11-12
+- Ajustes → Apariencia → Diseño: además del cristal, cinco aspectos completos para toda la app, inspirados en otros clientes de correo: Moderno (Gmail), AMOLED (negro puro, siempre oscuro), Retro 98 (Outlook Express), Papel (editorial, con serifa) y Brutalista (bordes gruesos y sombras duras). En los diseños que solo tienen modo oscuro no aparece «Claro u oscuro».
+- Sombra 3D para el cristal (Apariencia → Sombra 3D): la sombra sólida de Brutalista bajo tarjetas y botones, del color de acento.
+- Los colores de las cuentas son ahora ocho colores vivos (rojo, naranja, amarillo, verde, cian, azul, morado y magenta), aparte de los colores de la app.
+- Cambiar de diseño ya no saca de Ajustes.
+- Outlook: la sincronización espera más a Microsoft y repite una vez la consulta si tarda demasiado, para que no salga el aviso de sincronización por una respuesta lenta.
+
 ## 1.6.4 — 2026-11-12
 - Al añadir una cuenta ya no sale el aviso «No se pudo sincronizar una de tus cuentas» por fallos pasajeros: si Google limita las peticiones por minuto (lo hacía al descargar de golpe los primeros correos de una cuenta nueva), la app espera y vuelve a pedir sola, y antes de avisar de cualquier fallo de sincronización lo intenta una segunda vez a los pocos segundos.
 
