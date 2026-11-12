@@ -43,6 +43,8 @@
     <string name="empty_body">Los mensajes que muevas a esta carpeta aparecerán aquí.</string>
     <string name="search_hint">Buscar (from:, is:unread, has:attachment)</string>
     <string name="no_results">Ningún mensaje coincide con la búsqueda.</string>
+    <string name="filter_none_unread">No hay mensajes sin leer aquí.</string>
+    <string name="filter_none_starred">No hay mensajes destacados aquí.</string>
     <string name="menu_open">Abrir carpetas</string>
     <string name="search">Buscar</string>
     <string name="close">Cerrar</string>

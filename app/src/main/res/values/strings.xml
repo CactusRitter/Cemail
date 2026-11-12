@@ -45,6 +45,8 @@
     <string name="empty_body">Messages you move to this folder will show up here.</string>
     <string name="search_hint">Search mail (from:, is:unread, has:attachment)</string>
     <string name="no_results">No messages match your search.</string>
+    <string name="filter_none_unread">No unread messages here.</string>
+    <string name="filter_none_starred">No starred messages here.</string>
     <string name="menu_open">Open folders</string>
     <string name="search">Search</string>
     <string name="close">Close</string>

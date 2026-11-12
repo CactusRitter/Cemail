@@ -197,7 +197,14 @@ fun ListScreen(
                     ) {
                         Icon(CemailIcons.Inbox, null, Modifier.size(56.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(
-                            stringResource(if (state.query.isBlank() && filter == ListFilter.NONE) R.string.empty_title else R.string.no_results),
+                            stringResource(
+                                when {
+                                    state.query.isNotBlank() -> R.string.no_results
+                                    filter == ListFilter.UNREAD -> R.string.filter_none_unread
+                                    filter == ListFilter.STARRED -> R.string.filter_none_starred
+                                    else -> R.string.empty_title
+                                },
+                            ),
                             Modifier.padding(top = 12.dp),
                             style = MaterialTheme.typography.titleMedium,
                             textAlign = TextAlign.Center,
