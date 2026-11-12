@@ -3,6 +3,12 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 1.8.0 — 2026-11-12
+- Borradores en el servidor (Gmail y Outlook), sin copias repetidas: el borrador se guarda solo al salir de Redactar (nunca mientras escribes, nunca vacío), y al reabrirlo y volver a guardarlo se actualiza el mismo en vez de crear otro. Al enviarlo, tirarlo a la papelera o vaciarlo, desaparece también del servidor. Si el servidor falla, el borrador se queda en el teléfono y la siguiente vez sustituye al que hubiera allí.
+- Ajustes → Copia de ajustes: guarda en un archivo (Drive, Descargas…) el aspecto, los gestos, las notificaciones, las firmas y el nombre y color de cada cuenta, y los restaura aquí o en otro dispositivo. Nunca incluye contraseñas ni el acceso a las cuentas.
+- Las notificaciones de correo nuevo tienen «Posponer», que abre las opciones de posponer de Cemail.
+- Accesibilidad (TalkBack): cada correo dice si está sin leer o destacado y ofrece las acciones de deslizar; el botón de quitar un destinatario dice a quién quita.
+
 ## 1.7.4 — 2026-11-12
 - Tabletas: los Ajustes se pueden mover. Arrastrando en el espacio vacío de un lado (no sobre las tarjetas), la columna pasa del centro a ese lado, y desde un lado vuelve al centro tirando hacia el otro. Se queda donde la dejes. Unas flechitas a los lados, del mismo material que el diseño elegido (cristal, bisel, contorno…), indican hacia dónde se puede mover.
 - Las opciones que solo sirven en pantallas anchas («Lista de mensajes: Izquierda / Derecha») ya no aparecen ni se aplican en el móvil ni en un plegable cerrado.

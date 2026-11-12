@@ -204,6 +204,8 @@ class RoomMailRepository(
                 AppLog.i("draft", "saved on the server${if (before != null) " (updated)" else ""}")
             } catch (e: Exception) {
                 AppLog.e("draft", "could not save on the server, kept on the phone", e)
+                // Still tied to its old copy on the server, so the next save updates that one instead of adding another.
+                if (before != null) dao.linkDraft(localId, accountId, before)
             }
         }
     }
@@ -213,7 +215,9 @@ class RoomMailRepository(
             val remote = dao.remoteIdOf(id, accountId)
             dao.delete(id)
             if (remote != null) {
-                try { api.deleteDraft(remote) } catch (e: Exception) { AppLog.e("draft", "could not delete on the server", e) }
+                runCatching { api.deleteDraft(remote) }
+                    .recoverCatching { kotlinx.coroutines.delay(3_000); api.deleteDraft(remote) }
+                    .exceptionOrNull()?.let { AppLog.e("draft", "could not delete on the server", it) }
             }
         }
     }
