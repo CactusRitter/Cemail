@@ -227,10 +227,10 @@ private fun MainPage(settings: AppSettings, accountCount: Int, onRoute: (String)
     )
     val rows: List<Triple<String, String, Pair<String, ImageVector>>> = listOf(
         Triple(stringResource(R.string.settings_section_accounts), pluralStringResource(R.plurals.accounts_count, accountCount, accountCount), SettingsRoute.ACCOUNTS to Icons.Filled.Person),
+        Triple(stringResource(R.string.settings_section_appearance), stringResource(R.string.settings_row_appearance_body), SettingsRoute.APPEARANCE to CemailIcons.Palette),
         Triple(stringResource(R.string.settings_section_messages), stringResource(R.string.settings_row_messages_body), SettingsRoute.MESSAGES to Icons.Filled.Email),
         Triple(stringResource(R.string.settings_gestures_title), summary, SettingsRoute.GESTURES to Icons.AutoMirrored.Filled.ArrowForward),
         Triple(stringResource(R.string.settings_notifications_page), stringResource(R.string.settings_row_notifications_body), SettingsRoute.NOTIFICATIONS to Icons.Filled.Notifications),
-        Triple(stringResource(R.string.settings_section_appearance), stringResource(R.string.settings_row_appearance_body), SettingsRoute.APPEARANCE to CemailIcons.Palette),
         Triple(stringResource(R.string.settings_section_diagnostics), stringResource(R.string.settings_row_diagnostics_body), SettingsRoute.DIAGNOSTICS to Icons.Filled.Info),
     )
     rows.forEachIndexed { index, (title, body, target) ->
@@ -242,11 +242,27 @@ private fun MainPage(settings: AppSettings, accountCount: Int, onRoute: (String)
 
 // --- Common settings pages ---
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun MessagesPage(settings: AppSettings, repo: SettingsRepository) {
     SwitchRow(R.string.settings_images_title, R.string.settings_images_body, settings.alwaysShowImages, repo::setAlwaysShowImages)
     SwitchRow(R.string.settings_group_title, R.string.settings_group_body, settings.groupByDate, repo::setGroupByDate)
     SwitchRow(R.string.settings_circle_title, R.string.settings_circle_body, settings.showSenderCircle, repo::setShowSenderCircle)
+    SettingsCard {
+        Text(stringResource(R.string.quick_title), style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.quick_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(
+                com.cemail.app.data.QuickAction.UNREAD to R.string.quick_action_unread,
+                com.cemail.app.data.QuickAction.STARRED to R.string.quick_action_starred,
+                com.cemail.app.data.QuickAction.ACCOUNT to R.string.quick_action_account,
+                com.cemail.app.data.QuickAction.SEARCH to R.string.quick_action_search,
+                com.cemail.app.data.QuickAction.NONE to R.string.quick_action_none,
+            ).forEach { (action, label) ->
+                ChoiceChip(stringResource(label), settings.quickAction == action) { repo.setQuickAction(action) }
+            }
+        }
+    }
 }
 
 /** Which actions the two swipe directions do, and how far a message has to be dragged. */
@@ -400,6 +416,13 @@ private fun AppearancePage(settings: AppSettings, repo: SettingsRepository) {
             com.cemail.app.ui.theme.ThemeStyle.entries.forEach { style ->
                 ChoiceChip(stringResource(style.label), settings.themeStyle == style) { repo.setThemeStyle(style) }
             }
+        }
+        HorizontalDivider(Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)
+        Text(stringResource(R.string.cards_title), style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.cards_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            ChoiceChip(stringResource(R.string.cards_grouped), settings.groupCards) { repo.setGroupCards(true) }
+            ChoiceChip(stringResource(R.string.cards_single), !settings.groupCards) { repo.setGroupCards(false) }
         }
         HorizontalDivider(Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)
         Text(stringResource(R.string.accent_title), style = MaterialTheme.typography.titleSmall)

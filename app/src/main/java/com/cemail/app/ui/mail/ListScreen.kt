@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import com.cemail.app.ui.glass.GroupPos
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -111,16 +113,21 @@ fun MailBox.labelRes(): Int = when (this) {
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun ListScreen(
-    state: MailUiState,
+    fullState: MailUiState,
     vm: MailViewModel,
     grouped: Boolean,
+    groupCards: Boolean = true,
     stripeOf: (Mail) -> Color?,
     showSenderCircle: Boolean,
     swipe: com.cemail.app.data.SwipeConfig,
     /** Kept by the caller, so the list is where it was left after reading a message. */
     listState: androidx.compose.foundation.lazy.LazyListState,
     onOpenDrawer: () -> Unit,
+    filter: ListFilter = ListFilter.NONE,
+    /** Draws the quick button (it needs the list's haze state); drawn just above "write". */
+    quickButton: @Composable (dev.chrisbanes.haze.HazeState) -> Unit = {},
 ) {
+    val state = remember(fullState, filter) { fullState.copy(pinned = fullState.pinned.filteredBy(filter), others = fullState.others.filteredBy(filter)) }
     val haze = rememberHazeState()
     val selecting = state.selection.isNotEmpty()
     val startIsArchive = state.box != MailBox.ARCHIVE && state.box != MailBox.TRASH && state.box != MailBox.SPAM
@@ -180,7 +187,7 @@ fun ListScreen(
                 top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() + 80.dp,
                 bottom = 120.dp,
             ),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp), // rows of a group touch; the gap after a group is added to its last row
         ) {
             if (empty) {
                 item {
@@ -190,12 +197,12 @@ fun ListScreen(
                     ) {
                         Icon(CemailIcons.Inbox, null, Modifier.size(56.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(
-                            stringResource(if (state.query.isBlank()) R.string.empty_title else R.string.no_results),
+                            stringResource(if (state.query.isBlank() && filter == ListFilter.NONE) R.string.empty_title else R.string.no_results),
                             Modifier.padding(top = 12.dp),
                             style = MaterialTheme.typography.titleMedium,
                             textAlign = TextAlign.Center,
                         )
-                        if (state.query.isBlank()) {
+                        if (state.query.isBlank() && filter == ListFilter.NONE) {
                             Text(
                                 stringResource(R.string.empty_body),
                                 style = MaterialTheme.typography.bodyMedium,
@@ -211,7 +218,7 @@ fun ListScreen(
             }
             if (state.pinned.isNotEmpty()) {
                 item(key = "h-pinned") { SectionHeader(stringResource(R.string.section_pinned)) }
-                items(state.pinned, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
+                itemsIndexed(state.pinned, key = { _, m -> m.id }) { i, mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, if (groupCards) GroupPos.of(i, state.pinned.size) else GroupPos.Single, groupCards, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
                 if (state.others.isNotEmpty() && !grouped) item(key = "h-mail") { SectionHeader(stringResource(R.string.section_mail)) }
             }
             if (grouped) {
@@ -221,10 +228,10 @@ fun ListScreen(
                     val list = groups[section] ?: return@forEach
                     val collapsed = section in state.collapsedSections
                     item(key = "d-$section") { DateHeader(section, list.size, collapsed) { vm.toggleSection(section) } }
-                    if (!collapsed) items(list, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
+                    if (!collapsed) itemsIndexed(list, key = { _, m -> m.id }) { i, mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, if (groupCards) GroupPos.of(i, list.size) else GroupPos.Single, groupCards, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
                 }
             } else {
-                items(state.others, key = { it.id }) { mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
+                itemsIndexed(state.others, key = { _, m -> m.id }) { i, mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, if (groupCards) GroupPos.of(i, state.others.size) else GroupPos.Single, groupCards, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring())) }
             }
         }
         }
@@ -282,11 +289,14 @@ fun ListScreen(
 
         // Compose button (Thunderbird has a floating "write" button).
         if (!selecting && !state.searching) {
+          androidx.compose.foundation.layout.Column(
+            Modifier.align(Alignment.BottomEnd).windowInsetsPadding(WindowInsets.safeDrawing).padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+          ) {
+            quickButton(haze)
             Box(
                 Modifier
-                    .align(Alignment.BottomEnd)
-                    .windowInsetsPadding(WindowInsets.safeDrawing)
-                    .padding(16.dp)
                     .popIn(delayMillis = 220, initialScale = 0.3f)
                     .pressScale(0.88f)
                     .size(60.dp)
@@ -296,12 +306,13 @@ fun ListScreen(
             ) {
                 Icon(Icons.Filled.Create, stringResource(R.string.compose), tint = MaterialTheme.colorScheme.primary)
             }
+          }
         }
     }
 }
 
 @Composable
-private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsArchive: Boolean, swipe: com.cemail.app.data.SwipeConfig, stripe: Color?, showCircle: Boolean, modifier: Modifier = Modifier) {
+private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsArchive: Boolean, swipe: com.cemail.app.data.SwipeConfig, stripe: Color?, showCircle: Boolean, pos: GroupPos, groupCards: Boolean, modifier: Modifier = Modifier) {
     val one = setOf(mail.id)
     // With "confirm before acting" on, the swipe only asks; the action runs when it is confirmed.
     var pending by remember { mutableStateOf<com.cemail.app.data.SwipeAction?>(null) }
@@ -340,7 +351,9 @@ private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsA
         startIsArchive = startIsArchive,
         stripe = stripe,
         showCircle = showCircle,
-        modifier = modifier.onGloballyPositioned {
+        pos = pos,
+        inGroup = groupCards,
+        modifier = modifier.padding(bottom = if (pos.hasBottom) 8.dp else 0.dp).onGloballyPositioned {
             bounds = it.boundsInRoot()
             bounds?.let { rect -> com.cemail.app.ui.glass.ReadTransition.positions[mail.id] = rect }
         },
@@ -377,7 +390,7 @@ private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsA
 private fun SectionHeader(text: String) {
     Text(
         text,
-        Modifier.padding(start = 8.dp, top = 8.dp),
+        Modifier.padding(start = 8.dp, top = 8.dp, bottom = 8.dp),
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.primary,
     )
@@ -440,7 +453,7 @@ private fun DateHeader(section: DateSection, count: Int, collapsed: Boolean, onC
         DateSection.OLDER -> R.string.section_older
     }
     Row(
-        Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).padding(start = 8.dp, top = 8.dp, bottom = 2.dp),
+        Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).padding(start = 8.dp, top = 8.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -464,7 +477,7 @@ private fun DateHeader(section: DateSection, count: Int, collapsed: Boolean, onC
 private fun EmptyFolderButton(box: MailBox, vm: MailViewModel) {
     var confirm by remember { mutableStateOf(false) }
     val name = stringResource(box.labelRes())
-    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+    Box(Modifier.fillMaxWidth().padding(bottom = 8.dp), contentAlignment = Alignment.Center) {
         Text(
             stringResource(if (box == MailBox.TRASH) R.string.empty_trash else R.string.empty_spam),
             Modifier
