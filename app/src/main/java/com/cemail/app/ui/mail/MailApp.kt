@@ -100,6 +100,10 @@ import com.cemail.app.ui.glass.glass
 import com.cemail.app.ui.icons.CemailIcons
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.layout.absoluteOffset
+import androidx.compose.ui.graphics.graphicsLayer
 
 /** Placeholder identity until Google sign-in (phase 1): messages "sent" in demo mode use this. */
 const val DEMO_ME = "me@cemail.example"
@@ -330,7 +334,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                 ) { target ->
                     when (target) {
                         Screen.COMPOSE -> Centered { lastDraft?.let { ComposeScreen(it, vm, acc.accounts, defaultFrom) } }
-                        Screen.SETTINGS -> Centered {
+                        Screen.SETTINGS -> Dockable(settings.settingsDock, settingsRepo::setSettingsDock) {
                             SettingsScreen(
                                 settings, settingsRepo, acc.accounts, settingsRoute, { settingsRoute = it }, accountVm::remove,
                                 onAddGoogle = startSignIn, onAddMicrosoft = startMicrosoft, onAddImap = { imapForm = IMAP_PLAIN }, onAddYahoo = { imapForm = IMAP_YAHOO },
@@ -517,7 +521,7 @@ private const val POLL_MILLIS = 60_000L
 private enum class Screen(val depth: Int) { LIST(0), READ(1), SETTINGS(1), COMPOSE(2) }
 
 /** From this window width (dp) the list and the open message are shown side by side: tablets, open foldables. */
-private const val TWO_PANE_MIN_WIDTH = 840
+internal const val TWO_PANE_MIN_WIDTH = 840
 
 /** Widest a single screen grows: on a tablet or an open foldable it stays centred instead of stretching. */
 private val MAX_CONTENT_WIDTH = 720.dp
@@ -573,3 +577,120 @@ private fun TwoPane(list: @Composable () -> Unit, open: Mail?, reading: @Composa
         }
     }
 }
+
+/**
+ * Settings on a wide screen: a column that sits on the left, in the centre or on the right, and stays where it was
+ * left. Dragging in the empty space beside it (never inside the cards) moves it one step that way: from the centre to
+ * a side, and from a side back to the centre. It follows the finger and settles with a spring. Faint handles show
+ * where it can go; they are drawn with the design's own surface (glass, bevel, outline…), so they match every look.
+ * Narrower windows (phones) just centre it.
+ */
+@Composable
+private fun Dockable(dock: Int, onDock: (Int) -> Unit, content: @Composable () -> Unit) {
+    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
+        val column = minOf(maxWidth, MAX_CONTENT_WIDTH)
+        val free = maxWidth - column
+        if (maxWidth < TWO_PANE_MIN_WIDTH.dp || free < 120.dp) {
+            Centered(content)
+            return@BoxWithConstraints
+        }
+        val density = androidx.compose.ui.platform.LocalDensity.current
+        val freePx = with(density) { free.toPx() }
+        val columnPx = with(density) { column.toPx() }
+        fun restX(d: Int) = freePx * (d + 1) / 2f
+        val x = remember { androidx.compose.animation.core.Animatable(restX(dock)) }
+        var pulled by remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
+        val scope = androidx.compose.runtime.rememberCoroutineScope()
+        LaunchedEffect(dock, freePx) { x.animateTo(restX(dock), com.cemail.app.ui.glass.bounceSpring()) }
+        // The empty space: the column lies on top of it, so a drag that starts on a card never reaches it.
+        Box(
+            Modifier.fillMaxSize().pointerInput(dock, freePx) {
+                val step = 56.dp.toPx()
+                detectHorizontalDragGestures(
+                    onDragEnd = {
+                        val next = when {
+                            pulled > step -> (dock + 1).coerceAtMost(1)
+                            pulled < -step -> (dock - 1).coerceAtLeast(-1)
+                            else -> dock
+                        }
+                        pulled = 0f
+                        if (next != dock) onDock(next) else scope.launch { x.animateTo(restX(dock), com.cemail.app.ui.glass.bounceSpring()) }
+                    },
+                    onDragCancel = {
+                        pulled = 0f
+                        scope.launch { x.animateTo(restX(dock), com.cemail.app.ui.glass.bounceSpring()) }
+                    },
+                ) { change, amount ->
+                    change.consume()
+                    pulled += amount
+                    // The column follows the finger a little more slowly than it moves: it feels held by a spring.
+                    scope.launch { x.snapTo((restX(dock) + pulled * 0.6f).coerceIn(0f, freePx)) }
+                }
+            },
+        )
+        val gap = with(density) { 14.dp.toPx() }
+        val arrowWidth = with(density) { ARROW_WIDTH.toPx() }
+        // While pulling, the arrow on the side being pulled to grows a little.
+        val grow = (kotlin.math.abs(pulled) / with(density) { 300.dp.toPx() }).coerceAtMost(0.35f)
+        // An arrow on each side the column can still move to, pointing that way.
+        if (dock > -1) MoveArrow(x.value - gap - arrowWidth, pointsRight = false, scale = 1f + if (pulled < 0f) grow else 0f)
+        if (dock < 1) MoveArrow(x.value + columnPx + gap, pointsRight = true, scale = 1f + if (pulled > 0f) grow else 0f)
+        Box(
+            Modifier
+                .absoluteOffset { androidx.compose.ui.unit.IntOffset(x.value.roundToIntSafe(), 0) }
+                .width(column)
+                .fillMaxHeight(),
+        ) { content() }
+    }
+}
+
+/** Size of the arrows beside Settings: an equilateral triangle (width = height × √3 / 2). */
+private val ARROW_HEIGHT = 30.dp
+private val ARROW_WIDTH = 26.dp
+
+/**
+ * The arrow beside the Settings column that tells it can move that way: an equilateral triangle without its back side
+ * (a chevron), made of the design's own floating surface, so it is frosted glass, a bevel, an outline… as the look is.
+ */
+@Composable
+private fun androidx.compose.foundation.layout.BoxScope.MoveArrow(left: Float, pointsRight: Boolean, scale: Float) {
+    Box(
+        Modifier
+            .align(androidx.compose.ui.AbsoluteAlignment.CenterLeft)
+            .absoluteOffset { androidx.compose.ui.unit.IntOffset(left.roundToIntSafe(), 0) }
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .size(width = ARROW_WIDTH, height = ARROW_HEIGHT)
+            .glass(ChevronShape(pointsRight), GlassKind.Chrome),
+    )
+}
+
+/** A chevron (› or ‹): the two sides of an equilateral triangle that meet at its tip, about a third as thick as wide. */
+private class ChevronShape(private val pointsRight: Boolean) : androidx.compose.ui.graphics.Shape {
+    override fun createOutline(
+        size: androidx.compose.ui.geometry.Size,
+        layoutDirection: androidx.compose.ui.unit.LayoutDirection,
+        density: androidx.compose.ui.unit.Density,
+    ): androidx.compose.ui.graphics.Outline {
+        val w = size.width
+        val h = size.height
+        val t = w * 0.36f // thickness of each arm, measured across
+        val path = androidx.compose.ui.graphics.Path().apply {
+            moveTo(0f, 0f)
+            lineTo(t, 0f)
+            lineTo(w, h / 2f)
+            lineTo(t, h)
+            lineTo(0f, h)
+            lineTo(w - t, h / 2f)
+            close()
+            if (!pointsRight) {
+                transform(androidx.compose.ui.graphics.Matrix().apply { scale(-1f, 1f); translate(-w, 0f) })
+            }
+        }
+        return androidx.compose.ui.graphics.Outline.Generic(path)
+    }
+
+    override fun equals(other: Any?) = other is ChevronShape && other.pointsRight == pointsRight
+    override fun hashCode() = pointsRight.hashCode()
+}
+
+private fun Float.roundToIntSafe(): Int = if (isNaN()) 0 else kotlin.math.round(this).toInt()

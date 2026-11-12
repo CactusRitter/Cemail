@@ -14,7 +14,7 @@
     <string name="style_body">El fondo y el tinte del cristal.</string>
     <string name="pane_empty">Elige un mensaje para leerlo aquí.</string>
     <string name="list_side_title">Lista de mensajes</string>
-    <string name="list_side_body">En tabletas, el lado donde va la lista. Con la lista a la derecha, los botones flotantes pasan a la izquierda (también en el móvil).</string>
+    <string name="list_side_body">En tabletas, el lado donde va la lista. Con la lista a la derecha, los botones flotantes pasan a la izquierda.</string>
     <string name="list_side_left">Izquierda</string>
     <string name="list_side_right">Derecha</string>
     <string name="skin_title">Diseño</string>

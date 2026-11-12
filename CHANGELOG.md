@@ -3,6 +3,10 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 1.7.4 — 2026-11-12
+- Tabletas: los Ajustes se pueden mover. Arrastrando en el espacio vacío de un lado (no sobre las tarjetas), la columna pasa del centro a ese lado, y desde un lado vuelve al centro tirando hacia el otro. Se queda donde la dejes. Unas flechitas a los lados, del mismo material que el diseño elegido (cristal, bisel, contorno…), indican hacia dónde se puede mover.
+- Las opciones que solo sirven en pantallas anchas («Lista de mensajes: Izquierda / Derecha») ya no aparecen ni se aplican en el móvil ni en un plegable cerrado.
+
 ## 1.7.3 — 2026-11-12
 - La opción de 1.7.2 se llama ahora Ajustes → Apariencia → «Lista de mensajes», con «Izquierda» o «Derecha» (antes «Diestro» o «Zurdo»). Funciona igual: con la lista a la derecha, los botones flotantes pasan a la izquierda.
 

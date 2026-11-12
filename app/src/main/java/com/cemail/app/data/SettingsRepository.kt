@@ -20,6 +20,8 @@ data class AppSettings(
     val depth3d: Boolean = false,
     /** Left-handed: floating buttons on the left and, on tablets, the list on the right. */
     val listOnRight: Boolean = false,
+    /** Where Settings sits on a wide screen: -1 start, 0 centre, 1 end (moved by dragging beside it). */
+    val settingsDock: Int = 0,
     /** 0 = solid glass, 100 = fully see-through. */
     val transparency: Int = 65,
     /** Load remote images in messages without asking (off by default: they can be tracking pixels). */
@@ -93,6 +95,7 @@ class SettingsRepository(context: Context) {
         skin = prefs.getString(KEY_SKIN, null)?.let { n -> com.cemail.app.ui.theme.Skin.entries.firstOrNull { it.name == n } } ?: com.cemail.app.ui.theme.Skin.GLASS,
         depth3d = prefs.getBoolean(KEY_DEPTH, false),
         listOnRight = prefs.getBoolean(KEY_LIST_RIGHT, false),
+        settingsDock = prefs.getInt(KEY_SETTINGS_DOCK, 0).coerceIn(-1, 1),
         transparency = prefs.getInt(KEY_TRANSPARENCY, 65),
         alwaysShowImages = prefs.getBoolean(KEY_IMAGES, false),
         groupByDate = prefs.getBoolean(KEY_GROUP, true),
@@ -173,6 +176,11 @@ class SettingsRepository(context: Context) {
     fun setDepth3d(value: Boolean) {
         prefs.edit().putBoolean(KEY_DEPTH, value).apply()
         _state.value = _state.value.copy(depth3d = value)
+    }
+
+    fun setSettingsDock(value: Int) {
+        prefs.edit().putInt(KEY_SETTINGS_DOCK, value.coerceIn(-1, 1)).apply()
+        _state.value = _state.value.copy(settingsDock = value.coerceIn(-1, 1))
     }
 
     fun setListOnRight(value: Boolean) {
@@ -310,6 +318,7 @@ class SettingsRepository(context: Context) {
         const val KEY_SKIN = "skin"
         const val KEY_DEPTH = "depth_3d"
         const val KEY_LIST_RIGHT = "list_right"
+        const val KEY_SETTINGS_DOCK = "settings_dock"
         const val KEY_ACCOUNT_LABEL = "account_label_"
         const val KEY_SENDER_NAME = "account_sender_"
         const val KEY_ACCOUNT_COLOR = "account_color_"

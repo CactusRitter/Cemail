@@ -76,7 +76,8 @@ class MainActivity : ComponentActivity() {
                 val vm: MailViewModel = viewModel(key = scopeKey, factory = MailViewModel.Factory(repo) { id -> if (id in ids) app.mailRepositoryFor(id) else null })
                 androidx.compose.runtime.CompositionLocalProvider(
                     com.cemail.app.ui.mail.LocalAccountLooks provides settings.accountLooks,
-                    com.cemail.app.ui.glass.LocalListOnRight provides settings.listOnRight,
+                    // Only where there are two panes: on a phone (or a closed foldable) the option is not shown nor applied.
+                    com.cemail.app.ui.glass.LocalListOnRight provides (settings.listOnRight && androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= com.cemail.app.ui.mail.TWO_PANE_MIN_WIDTH),
                 ) {
                     MailApp(vm, accountVm, settings, app.settings)
                 }

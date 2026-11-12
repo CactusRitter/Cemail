@@ -425,8 +425,8 @@ private fun AppearancePage(settings: AppSettings, repo: SettingsRepository) {
         }
     }
     if (glassLook) SwitchRow(R.string.depth_title, R.string.depth_body, settings.depth3d, repo::setDepth3d)
-    // Which side the message list goes on (tablets); with it on the right, the floating buttons go left.
-    SettingsCard {
+    // Which side the message list goes on: only where there are two panes (tablets, open foldables), not on phones.
+    if (androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= com.cemail.app.ui.mail.TWO_PANE_MIN_WIDTH) SettingsCard {
         Text(stringResource(R.string.list_side_title), style = MaterialTheme.typography.titleSmall)
         Text(stringResource(R.string.list_side_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

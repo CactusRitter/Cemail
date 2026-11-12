@@ -16,7 +16,7 @@
     <string name="style_body">The background and the tint of the glass.</string>
     <string name="pane_empty">Choose a message to read it here.</string>
     <string name="list_side_title">Message list</string>
-    <string name="list_side_body">On tablets, the side the list goes on. With the list on the right, the floating buttons move to the left (on phones too).</string>
+    <string name="list_side_body">On tablets, the side the list goes on. With the list on the right, the floating buttons move to the left.</string>
     <string name="list_side_left">Left</string>
     <string name="list_side_right">Right</string>
     <string name="skin_title">Design</string>
