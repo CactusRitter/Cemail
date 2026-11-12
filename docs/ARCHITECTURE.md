@@ -57,7 +57,7 @@ Se usa el parámetro `q` de Gmail (con su sintaxis: `from:`, `has:attachment`…
 
 ## Mostrar correos
 - Texto plano, o HTML saneado con jsoup.
-- `WebView` con JavaScript, acceso a archivos y contenido desactivados; los enlaces se abren fuera de la app.
+- `WebView` con JavaScript, acceso a archivos y contenido desactivados; los enlaces se abren fuera de la app. Con un tema oscuro, el WebView oscurece el correo (`setAlgorithmicDarkeningAllowed` con un tema oscuro propio) y `HtmlSanitizer.allowDark` quita las peticiones de `color-scheme` del correo, que si no lo impiden; se desactiva en Ajustes → Mensajes o por correo desde «Más».
 - Imágenes remotas bloqueadas por defecto (píxeles de rastreo), con botón para mostrarlas.
 - Imágenes `cid:` incrustadas: se sirven desde los adjuntos descargados.
 
