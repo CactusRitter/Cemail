@@ -1,7 +1,13 @@
 package com.cemail.app.ui.mail
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -104,5 +110,11 @@ private fun LabelRow(
             Icon(Icons.Filled.KeyboardArrowDown, null, Modifier.padding(12.dp), tint = androidx.compose.ui.graphics.Color.Transparent)
         }
     }
-    if (expanded) node.children.forEachIndexed { i, child -> LabelRow(child, depth + 1, state, onPick, onToggle, revealed, stagger(0, i)) }
+    // Sub-labels: the room opens and closes smoothly (as Cc and Bcc do in Compose), the rows pop in on opening and fade
+    // out on closing.
+    AnimatedVisibility(expanded, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp) /* the gap of the menu itself */) {
+            node.children.forEachIndexed { i, child -> LabelRow(child, depth + 1, state, onPick, onToggle, revealed, stagger(0, i)) }
+        }
+    }
 }

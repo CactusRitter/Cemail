@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
 
+## 1.10.1 — 2026-11-13
+- Menú: al plegar una etiqueta, sus subetiquetas se desvanecen mientras el hueco se cierra con suavidad (antes desaparecían de golpe); al desplegarla, el hueco también se abre poco a poco.
+
 ## 1.10.0 — 2026-11-13
 - Cemail en alemán: si el móvil está en alemán (o se elige el alemán para Cemail en Ajustes de Android → Apps → Cemail → Idioma), toda la app sale en alemán. Al responder y reenviar se usan «AW:» y «WG:».
 - Menú: las etiquetas de la cuenta aparecen con la misma animación que las carpetas, una tras otra, al elegir la cuenta, al abrir el menú y al desplegar las subetiquetas.
