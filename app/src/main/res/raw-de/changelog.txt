@@ -1,3 +1,6 @@
+## 2.2.0
+- Ungelesene E-Mails fallen auf: In der Liste ist eine ungelesene Nachricht eine hellere Kachel mit Schatten, die aus der Karte herausragt, in allen Designs sowie hell und dunkel.
+
 ## 2.1.0
 - Einstellungen, Updates: Neuigkeiten dieser Version, die der nächsten (falls es eine gibt) und die früherer Versionen.
 

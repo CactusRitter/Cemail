@@ -1,3 +1,6 @@
+## 2.2.0
+- Unread emails stand out: in the list, an unread message is a lighter tile with a shadow that rises above the card, in every look and in light and dark.
+
 ## 2.1.0
 - Settings, Updates: what is new in this version, what the next one brings (when there is one) and the earlier versions.
 

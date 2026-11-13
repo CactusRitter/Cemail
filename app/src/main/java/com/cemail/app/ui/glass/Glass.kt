@@ -190,6 +190,30 @@ private fun Modifier.hardShadow(shape: Shape, color: Color, offset: Dp, top: Boo
     }
 }
 
+/**
+ * An unread message in the list: a lighter tile inside its row that stands out of the card, closer to the screen. It
+ * has the shadow of the look (soft, or the solid one of the 3D looks) or, where a look has none, a strong edge.
+ */
+@Composable
+fun Modifier.unreadTile(radius: Dp = 14.dp): Modifier {
+    val skin = LocalSkin.current
+    val glass = LocalGlass.current
+    val c = MaterialTheme.colorScheme
+    val shape = RoundedCornerShape(skin.radius(radius))
+    val fill = if (skin.dark) androidx.compose.ui.graphics.lerp(c.surface, c.onSurface, 0.30f) else c.surface.copy(alpha = 0.94f)
+    val lifted = when {
+        skin.hardShadow > 0.dp -> hardShadow(shape, skin.hardShadowColor, skin.hardShadow)
+        skin.softShadow -> shadow(8.dp, shape, ambientColor = glass.shadow, spotColor = glass.shadow)
+        else -> this
+    }
+    val surface = lifted.background(fill, shape)
+    return when {
+        skin.skin == Skin.GLASS -> surface.border(1.dp, Brush.verticalGradient(listOf(glass.borderTop, glass.borderBottom)), shape)
+        skin.edge == Edge.NONE || skin.edge == Edge.GLASS -> surface
+        else -> surface.border(skin.edgeWidth, skin.strongEdgeColor.takeIf { it != Color.Transparent } ?: skin.edgeColor, shape)
+    }
+}
+
 /** Soft gradient with blurred colour blobs that the glass surfaces float on. */
 @Composable
 fun GlassBackground(modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {

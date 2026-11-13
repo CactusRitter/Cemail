@@ -62,6 +62,7 @@ import com.cemail.app.ui.glass.GlassKind
 import com.cemail.app.ui.glass.GroupPos
 import com.cemail.app.ui.glass.glassSegment
 import com.cemail.app.ui.glass.glassSpring
+import com.cemail.app.ui.glass.unreadTile
 import com.cemail.app.ui.icons.CemailIcons
 
 /** "14:32" for today, "Nov 9" otherwise: formatted by the platform for the current locale. */
@@ -159,7 +160,9 @@ fun MailRow(
                 .glassSegment(pos, 20.dp, kind)
                 .then(if (stripe != null) Modifier.accountCorner(stripe, if (pos.hasTop) radius else 0.dp) else Modifier)
                 .combinedClickable(role = Role.Button, onClick = onClick, onLongClick = onLongClick)
-                .padding(horizontal = 14.dp, vertical = 10.dp),
+                .padding(horizontal = 6.dp, vertical = 3.dp)
+                .then(if (!mail.read && !selected && !current) Modifier.unreadTile() else Modifier)
+                .padding(horizontal = 8.dp, vertical = 7.dp),
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
