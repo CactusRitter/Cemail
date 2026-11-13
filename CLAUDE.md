@@ -46,7 +46,7 @@ powershell -File scripts/emulator.ps1 window         # arrancar CON ventana, sol
 
 ### Idiomas (obligatorio)
 - La app usa el idioma del sistema. **Ningún texto visible al usuario puede ir escrito en el código**: todo en `res/values*/strings.xml` y se usa con `stringResource(...)` / `context.getString(...)`.
-- `values/strings.xml` es inglés (idioma por defecto y de reserva). `values-es/strings.xml` es español. Cada clave nueva se añade **a la vez en todos** los `values-xx`.
+- `values/strings.xml` es inglés (idioma por defecto y de reserva). `values-es/strings.xml` es español y `values-de/strings.xml` alemán (con «du», como las apps de Google y Samsung). Cada clave nueva se añade **a la vez en todos** los `values-xx`.
 - Plurales con `<plurals>`, nunca concatenando. Textos con variables con `%1$s`, no con concatenación.
 - Fechas, horas y tamaños de archivo con los formateadores de la plataforma según el locale (`DateUtils`, `java.time.format` con `FormatStyle`, `Formatter.formatShortFileSize`).
 - Añadir un idioma nuevo = crear `values-xx/strings.xml`. `generateLocaleConfig` registra el idioma automáticamente para el selector de idioma por app de Android 13+.

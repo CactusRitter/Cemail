@@ -463,7 +463,7 @@ private fun DrawerContent(
                 }
             }
         }
-        if (!unified) LabelSection(state, onPickLabel, onToggleLabel)
+        if (!unified) LabelSection(state, onPickLabel, onToggleLabel, revealed, delayStart = (accounts.size + 1 + boxes.size) * 22)
     }
 }
 
