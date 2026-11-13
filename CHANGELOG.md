@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
+## 2.2.3 — 2026-11-13
+- Ajustes → Actualizaciones: el interruptor de buscar versiones nuevas va arriba del todo, encima del aviso de actualización.
+
 ## 2.2.2 — 2026-11-13
 - Ajustes → Actualizaciones muestra también el aviso de actualización (Descargar / Instalar), no solo la bandeja de entrada. «Buscar ahora» vuelve a ofrecer una versión pospuesta con «Ahora no».
 

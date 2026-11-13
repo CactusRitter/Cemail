@@ -618,8 +618,8 @@ private fun UpdatesPage(settings: AppSettings, repo: SettingsRepository) {
     val upToDate = stringResource(R.string.update_none, com.cemail.app.BuildConfig.VERSION_NAME)
     val failed = stringResource(R.string.update_check_failed)
     val foundText = stringResource(R.string.update_found)
-    com.cemail.app.ui.mail.UpdateBanner(allowLater = false)
     SwitchRow(R.string.settings_updates_title, R.string.settings_updates_body, settings.checkUpdates, repo::setCheckUpdates)
+    com.cemail.app.ui.mail.UpdateBanner(allowLater = false)
     SettingsCard {
         Text(stringResource(R.string.settings_version, com.cemail.app.BuildConfig.VERSION_NAME), style = MaterialTheme.typography.titleSmall)
         result?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }

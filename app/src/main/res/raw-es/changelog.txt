@@ -1,3 +1,6 @@
+## 2.2.3
+- Ajustes, Actualizaciones: el interruptor de buscar versiones nuevas está arriba del todo, encima del aviso de actualización.
+
 ## 2.2.2
 - Ajustes, Actualizaciones: el aviso de actualización también está ahí (Descargar y, ya descargada, el botón de instalar), no solo arriba de la bandeja de entrada. Al buscar ahora se vuelve a ofrecer una versión que habías dejado para después.
 

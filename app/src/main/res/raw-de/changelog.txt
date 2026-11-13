@@ -1,3 +1,6 @@
+## 2.2.3
+- Einstellungen, Updates: Der Schalter zum Suchen neuer Versionen steht ganz oben, über dem Update-Hinweis.
+
 ## 2.2.2
 - Einstellungen, Updates: Der Update-Hinweis ist auch dort (Herunterladen und, sobald geladen, die Installieren-Taste), nicht nur oben im Posteingang. „Jetzt suchen“ bietet auch eine Version an, die du zurückgestellt hattest.
 

@@ -1,3 +1,6 @@
+## 2.2.3
+- Settings, Updates: the switch to look for new versions is at the very top, above the update notice.
+
 ## 2.2.2
 - Settings, Updates: the update notice is there too (Download, and the install button once it is downloaded), not only at the top of the Inbox. Looking now offers a version you had set aside.
 
