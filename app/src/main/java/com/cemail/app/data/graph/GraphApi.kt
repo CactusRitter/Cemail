@@ -257,16 +257,28 @@ class GraphApi(
         val request = builder.header("Authorization", "Bearer $token").build()
         return withContext(Dispatchers.IO) {
             var attempt = 0
+            var serverTries = 0
+            // Microsoft answering 500/502/503/504/429 (an outage on their side): wait and ask again. Only for requests that
+            // are safe to repeat: reads, flag changes, moves and deletes; never a send or a new draft.
+            val repeatable = request.method in setOf("GET", "PATCH", "DELETE") || request.url.encodedPath.endsWith("/move")
+            val serverPauses = if (request.method == "GET") SERVER_PAUSES_READ else SERVER_PAUSES_WRITE
             while (true) {
                 try {
                     return@withContext client.newCall(request).execute().use { response ->
                         if (!response.isSuccessful) {
+                            if (repeatable && response.code in SERVER_ERRORS && serverTries < serverPauses.size) {
+                                val asked = response.header("Retry-After")?.toLongOrNull()?.times(1_000)
+                                throw ServerBusy(minOf(asked ?: serverPauses[serverTries], 20_000L))
+                            }
                             // Only Microsoft's error code (never the body): enough to tell what went wrong in the log.
                             val code = Regex("\"code\"\\s*:\\s*\"(\\w+)\"").find(runCatching { response.body.string() }.getOrDefault(""))?.groupValues?.get(1)
                             throw GmailHttpException(response.code, "Microsoft Graph ${response.code}${code?.let { " $it" }.orEmpty()}")
                         }
                         read(response)
                     }
+                } catch (e: ServerBusy) {
+                    serverTries++
+                    kotlinx.coroutines.delay(e.pauseMillis)
                 } catch (e: java.net.ConnectException) {
                     // A first attempt on a dead route (often right after the app starts): one more try before giving up.
                     if (++attempt > 1) throw e
@@ -285,7 +297,13 @@ class GraphApi(
         }
     }
 
+    /** Microsoft is busy or down: ask again after [pauseMillis] (never leaves [execute]). */
+    private class ServerBusy(val pauseMillis: Long) : java.io.IOException("Microsoft busy")
+
     private companion object {
+        val SERVER_ERRORS = setOf(429, 500, 502, 503, 504)
+        val SERVER_PAUSES_READ = longArrayOf(2_000, 6_000)
+        val SERVER_PAUSES_WRITE = longArrayOf(2_000, 6_000, 15_000)
         const val BASE = "https://graph.microsoft.com/v1.0/me"
         const val SUBSCRIPTIONS = "https://graph.microsoft.com/v1.0/subscriptions"
         const val SELECT = "id,subject,from,toRecipients,receivedDateTime,isRead,flag,hasAttachments,body,conversationId"

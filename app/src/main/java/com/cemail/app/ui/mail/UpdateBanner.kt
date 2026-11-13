@@ -37,6 +37,7 @@ fun UpdateBanner(modifier: Modifier = Modifier) {
     val shown = update ?: return
     var started by remember(shown.version) { mutableStateOf(false) }
     var failed by remember(shown.version) { mutableStateOf(false) }
+    var needsPermission by remember(shown.version) { mutableStateOf(false) }
     val title = stringResource(R.string.update_downloading, shown.version)
     Column(
         modifier
@@ -52,6 +53,7 @@ fun UpdateBanner(modifier: Modifier = Modifier) {
             stringResource(
                 when {
                     failed -> R.string.update_failed
+                    needsPermission -> R.string.update_allow
                     started -> R.string.update_started
                     else -> R.string.update_body
                 },
@@ -81,8 +83,15 @@ fun UpdateBanner(modifier: Modifier = Modifier) {
                         .pressScale(0.94f)
                         .glass(CircleShape, GlassKind.Chrome)
                         .clickable(role = Role.Button) {
-                            started = updates.download(shown, title)
-                            failed = !started
+                            if (!updates.canInstall()) {
+                                // Granting the permission can restart the app, so it comes first: nothing is half-downloaded.
+                                needsPermission = updates.askToAllowInstall()
+                                failed = !needsPermission
+                            } else {
+                                needsPermission = false
+                                started = updates.download(shown, title)
+                                failed = !started
+                            }
                         }
                         .padding(horizontal = 18.dp, vertical = 10.dp),
                     style = MaterialTheme.typography.labelLarge,

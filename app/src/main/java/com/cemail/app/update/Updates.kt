@@ -143,6 +143,21 @@ class Updates(private val context: Context, private val client: OkHttpClient = O
      * false while it is not fully downloaded. Android shows what is being installed and asks first (and, the first
      * time, for leave to install apps that come from Cemail).
      */
+    /** Whether Android already lets Cemail install apps. Granting it can restart the app, so it is asked before downloading. */
+    fun canInstall(): Boolean = context.packageManager.canRequestPackageInstalls()
+
+    /** Opens the Android screen where the user allows installing apps from Cemail. */
+    fun askToAllowInstall(): Boolean = try {
+        context.startActivity(
+            Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${context.packageName}"))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+        )
+        true
+    } catch (e: Exception) {
+        AppLog.e("update", "could not open the install permission", e)
+        false
+    }
+
     fun install(update: AppUpdate): Boolean {
         if (prefs.getString(KEY_DOWNLOADED, null) != update.version) return false
         val manager = context.getSystemService(DownloadManager::class.java)

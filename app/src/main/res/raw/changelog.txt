@@ -1,3 +1,7 @@
+## 2.2.1
+- Updates: the permission to install apps from Cemail is asked before the download starts, so the app is not restarted halfway through it.
+- Outlook: when Microsoft answers with a server error (500, 502, 503, 504 or 429), reads and changes (read, star, move, delete) wait and try again up to three times instead of being lost.
+
 ## 2.2.0
 - Unread emails stand out: in the list, an unread message is a lighter tile with a shadow that rises above the card, in every look and in light and dark.
 

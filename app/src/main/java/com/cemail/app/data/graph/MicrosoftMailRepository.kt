@@ -105,6 +105,9 @@ class MicrosoftMailRepository(
                             val target = wellKnown(after.folder)
                             if (target != null) api.move(remote, target)
                         }
+                    } catch (e: com.cemail.app.data.gmail.GmailHttpException) {
+                        // 404: the message is no longer there under that id (a retried move that had in fact gone through): done.
+                        if (e.code != 404) AppLog.e("graph", "could not apply the change on the server", e)
                     } catch (e: Exception) {
                         AppLog.e("graph", "could not apply the change on the server", e)
                     }

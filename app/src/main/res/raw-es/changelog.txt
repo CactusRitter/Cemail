@@ -1,3 +1,7 @@
+## 2.2.1
+- Actualizaciones: el permiso para instalar apps desde Cemail se pide antes de empezar la descarga, para que la app no se reinicie a mitad.
+- Outlook: cuando Microsoft responde con un error de servidor (500, 502, 503, 504 o 429), las lecturas y los cambios (leído, destacado, mover, borrar) esperan y se reintentan hasta tres veces en vez de perderse.
+
 ## 2.2.0
 - Los correos sin leer destacan: en la lista, un mensaje sin leer es una ficha más clara con sombra que sobresale de la tarjeta, en todos los diseños y en claro y oscuro.
 

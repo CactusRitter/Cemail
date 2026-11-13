@@ -1,3 +1,7 @@
+## 2.2.1
+- Updates: Die Erlaubnis, Apps aus Cemail zu installieren, wird vor dem Download abgefragt, damit die App nicht mittendrin neu startet.
+- Outlook: Antwortet Microsoft mit einem Serverfehler (500, 502, 503, 504 oder 429), warten Lesevorgänge und Änderungen (gelesen, markiert, verschieben, löschen) und werden bis zu dreimal wiederholt, statt verloren zu gehen.
+
 ## 2.2.0
 - Ungelesene E-Mails fallen auf: In der Liste ist eine ungelesene Nachricht eine hellere Kachel mit Schatten, die aus der Karte herausragt, in allen Designs sowie hell und dunkel.
 
