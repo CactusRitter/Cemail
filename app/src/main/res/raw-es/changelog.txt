@@ -1,0 +1,28 @@
+## 2.1.0
+- Ajustes, Actualizaciones: novedades de esta versión, las de la siguiente cuando la hay, y las de versiones anteriores.
+
+## 2.0.2
+- Sincronización más robusta: un fallo de red al renovar el permiso de acceso ya no se cuenta como «sesión cerrada» (solo lo es si Google o Microsoft rechazan la sesión guardada). Gmail prueba primero IPv4, como Outlook, y repite una vez si la conexión ni llegó a empezar; Outlook también repite una vez si falla el DNS.
+
+## 2.0.1
+- Aviso de versión nueva: tras descargarla aparece «Instalar», que vuelve a abrir el instalador de Android si se canceló.
+
+## 2.0.0
+- Cargar más: al final de cada lista hay un botón que trae los 50 correos siguientes que no estén en el teléfono. Funciona con Gmail, Outlook e IMAP.
+- Buscar en el servidor: debajo de los resultados, busca en todo el buzón y en cualquier fecha.
+- Ajustes, Notificaciones y sincronización, Correos sincronizados: Normal, 250 o 500 por cuenta.
+- Actualizaciones: cada versión se publica también en GitHub; Cemail ofrece las nuevas arriba en Recibidos y Android pide permiso antes de instalar.
+- En el menú «Más» de un correo, al mantener pulsado un botón aparece su nombre.
+- Los avances que mostraban código HTML ahora muestran el texto.
+
+## 1.10.1
+- Menú: al plegar una etiqueta, sus subetiquetas se desvanecen mientras el hueco se cierra con suavidad.
+
+## 1.10.0
+- Cemail en alemán. Las etiquetas del menú aparecen con la misma animación que las carpetas.
+
+## 1.9.1
+- Cuentas IMAP: los avances ya no muestran códigos como «&nbsp;», sino las letras reales.
+
+## 1.9.0
+- Correos en modo oscuro: con un tema oscuro, también se adaptan los colores de dentro de cada correo. Se desactiva en Ajustes, Mensajes, o por correo desde «Más».

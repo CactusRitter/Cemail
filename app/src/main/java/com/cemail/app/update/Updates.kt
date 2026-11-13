@@ -22,7 +22,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 
 /** A newer version of Cemail published on GitHub. */
-data class AppUpdate(val version: String, val apkUrl: String, val pageUrl: String)
+data class AppUpdate(val version: String, val apkUrl: String, val pageUrl: String, val notes: String = "")
 
 @Serializable
 private data class GitHubAsset(val name: String = "", @SerialName("browser_download_url") val url: String = "")
@@ -33,6 +33,7 @@ private data class GitHubRelease(
     @SerialName("html_url") val page: String = "",
     val draft: Boolean = false,
     val prerelease: Boolean = false,
+    val body: String? = null,
     val assets: List<GitHubAsset> = emptyList(),
 )
 
@@ -86,14 +87,14 @@ class Updates(private val context: Context, private val client: OkHttpClient = O
         val apk = release.assets.firstOrNull { it.name.endsWith(".apk", ignoreCase = true) }
         val version = release.tag.removePrefix("v")
         val found = if (!release.draft && !release.prerelease && apk != null && Versions.isNewer(version, BuildConfig.VERSION_NAME)) {
-            AppUpdate(version, apk.url, release.page)
+            AppUpdate(version, apk.url, release.page, release.body.orEmpty())
         } else {
             null
         }
         AppLog.i("update", "checked: latest ${release.tag}, ${if (found != null) "newer" else "up to date"}")
         prefs.edit().apply {
-            if (found == null) remove(KEY_VERSION).remove(KEY_APK).remove(KEY_PAGE)
-            else putString(KEY_VERSION, found.version).putString(KEY_APK, found.apkUrl).putString(KEY_PAGE, found.pageUrl)
+            if (found == null) remove(KEY_VERSION).remove(KEY_APK).remove(KEY_PAGE).remove(KEY_NOTES)
+            else putString(KEY_VERSION, found.version).putString(KEY_APK, found.apkUrl).putString(KEY_PAGE, found.pageUrl).putString(KEY_NOTES, found.notes)
         }.apply()
         _available.value = found?.takeIf { it.version != prefs.getString(KEY_IGNORED, null) }
         found
@@ -161,7 +162,7 @@ class Updates(private val context: Context, private val client: OkHttpClient = O
     private fun stored(): AppUpdate? {
         val version = prefs.getString(KEY_VERSION, null) ?: return null
         if (!Versions.isNewer(version, BuildConfig.VERSION_NAME) || version == prefs.getString(KEY_IGNORED, null)) return null
-        return AppUpdate(version, prefs.getString(KEY_APK, null) ?: return null, prefs.getString(KEY_PAGE, "").orEmpty())
+        return AppUpdate(version, prefs.getString(KEY_APK, null) ?: return null, prefs.getString(KEY_PAGE, "").orEmpty(), prefs.getString(KEY_NOTES, "").orEmpty())
     }
 
     private companion object {
@@ -172,6 +173,7 @@ class Updates(private val context: Context, private val client: OkHttpClient = O
         const val KEY_VERSION = "version"
         const val KEY_APK = "apk"
         const val KEY_PAGE = "page"
+        const val KEY_NOTES = "notes"
         const val KEY_IGNORED = "ignored"
         const val KEY_DOWNLOAD = "download_id"
         const val KEY_DOWNLOADED = "download_version"

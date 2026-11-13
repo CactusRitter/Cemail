@@ -637,6 +637,7 @@ private fun UpdatesPage(settings: AppSettings, repo: SettingsRepository) {
             }
         }
     }
+    WhatsNew()
 }
 
 /**

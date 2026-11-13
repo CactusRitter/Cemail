@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
+## 2.1.0 — 2026-11-13
+- Ajustes → Actualizaciones: ahora muestra las novedades de la versión instalada, las de la versión nueva cuando la hay (salen de las notas de su *release* en GitHub, con secciones `## en`, `## es`, `## de`) y, desplegando «Versiones anteriores», las de las anteriores (1.9.0 en adelante, en inglés, español y alemán; las más antiguas están en este archivo).
+
 ## 2.0.2 — 2026-11-13
 - Sincronización más robusta, a raíz del log del teléfono: un fallo de red al renovar el permiso de acceso ya no se cuenta como «sesión cerrada» (solo lo es si Google o Microsoft rechazan la sesión guardada); Gmail prueba primero IPv4, como ya hacía Outlook, y repite una vez si la conexión ni llegó a empezar; Outlook también repite una vez si falla el DNS.
 

@@ -1,0 +1,28 @@
+## 2.1.0
+- Einstellungen, Updates: Neuigkeiten dieser Version, die der nächsten (falls es eine gibt) und die früherer Versionen.
+
+## 2.0.2
+- Robustere Synchronisierung: Ein Netzwerkfehler beim Erneuern der Zugriffserlaubnis gilt nicht mehr als „abgemeldet“ (nur wenn Google oder Microsoft die gespeicherte Anmeldung ablehnen). Gmail versucht zuerst IPv4, wie Outlook, und wiederholt einmal, wenn die Verbindung gar nicht erst zustande kam; Outlook wiederholt bei einem DNS-Fehler ebenfalls einmal.
+
+## 2.0.1
+- Hinweis auf neue Version: Nach dem Herunterladen öffnet „Installieren“ das Android-Installationsfenster erneut, falls es abgebrochen wurde.
+
+## 2.0.0
+- Mehr laden: Am Ende jeder Liste holt eine Schaltfläche die nächsten 50 E-Mails, die noch nicht auf dem Handy sind. Funktioniert mit Gmail, Outlook und IMAP.
+- Auf dem Server suchen: Unter den Suchergebnissen wird das ganze Postfach zu jedem Datum durchsucht.
+- Einstellungen, Benachrichtigungen und Synchronisierung, Synchronisierte E-Mails: Normal, 250 oder 500 pro Konto.
+- Updates: Jede Version wird auch auf GitHub veröffentlicht; Cemail bietet neue oben im Posteingang an, und Android fragt vor der Installation.
+- Im Menü „Mehr“ einer E-Mail zeigt langes Drücken auf eine Schaltfläche ihren Namen.
+- Vorschauen mit HTML-Code zeigen jetzt den Text.
+
+## 1.10.1
+- Menü: Beim Einklappen eines Labels blenden sich die Unterlabels aus, während sich der Platz sanft schließt.
+
+## 1.10.0
+- Cemail auf Deutsch. Die Labels im Menü erscheinen mit derselben Animation wie die Ordner.
+
+## 1.9.1
+- IMAP-Konten: Vorschauen zeigen keine Codes wie „&nbsp;“ mehr, sondern die echten Zeichen.
+
+## 1.9.0
+- E-Mails im Dunkelmodus: Mit einem dunklen Design werden auch die Farben in jeder E-Mail angepasst. Abschaltbar unter Einstellungen, Nachrichten, oder pro E-Mail über „Mehr“.

@@ -484,6 +484,10 @@
     <string name="settings_updates_title">Buscar versiones nuevas</string>
     <string name="settings_updates_body">Una o dos veces al día, Cemail pregunta a GitHub, donde se publican sus versiones, si hay una más nueva, y lo avisa arriba en Recibidos. GitHub solo ve la dirección de tu conexión, nada de ti ni de tu correo.</string>
     <string name="settings_updates_now">Buscar ahora</string>
+    <string name="whatsnew_current">Novedades de la %1$s</string>
+    <string name="whatsnew_next">Novedades de la %1$s (próxima)</string>
+    <string name="whatsnew_earlier">Versiones anteriores</string>
+    <string name="whatsnew_none">Sin notas para esta versión.</string>
     <string name="update_title">Cemail %1$s está disponible</string>
     <string name="update_body">Descárgala y Android te pedirá instalarla. Tus cuentas y ajustes se quedan como están.</string>
     <string name="update_started">Descargando… Al terminar se abre el instalador (la primera vez, Android te pide permitir instalar apps desde Cemail; luego pulsa Instalar).</string>

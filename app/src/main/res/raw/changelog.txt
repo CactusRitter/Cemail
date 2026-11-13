@@ -1,0 +1,28 @@
+## 2.1.0
+- Settings, Updates: what is new in this version, what the next one brings (when there is one) and the earlier versions.
+
+## 2.0.2
+- More robust syncing: a network failure while renewing the access permission no longer counts as "signed out" (it only does when Google or Microsoft reject the saved sign-in). Gmail tries IPv4 first, like Outlook, and retries once if the connection never started; Outlook also retries once on a DNS failure.
+
+## 2.0.1
+- Update notice: after downloading, an "Install" button reopens Android's installer if it was cancelled.
+
+## 2.0.0
+- Load more: a button at the end of each list fetches the next 50 emails that are not on the phone yet. Works with Gmail, Outlook and IMAP.
+- Search the server: below the search results, search the whole mailbox at any date.
+- Settings, Notifications and sync, Synced emails: Normal, 250 or 500 per account.
+- Updates: every version is also published on GitHub; Cemail offers newer ones at the top of the Inbox, and Android asks before installing.
+- In an email's More menu, long-press a button to see its name.
+- Previews that showed HTML code now show the text.
+
+## 1.10.1
+- Menu: collapsing a label fades its sub-labels out while the space closes smoothly.
+
+## 1.10.0
+- Cemail in German. The menu's labels appear with the same animation as the folders.
+
+## 1.9.1
+- IMAP accounts: previews no longer show codes like "&nbsp;" but the real characters.
+
+## 1.9.0
+- Emails in dark mode: with a dark theme, the colors inside each email are adapted too. Turn it off in Settings, Messages, or per email from More.
