@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
+## 2.0.1 — 2026-11-13
+- Aviso de versión nueva: tras descargarla aparece «Instalar», que vuelve a abrir el instalador de Android si se canceló o si Android pidió antes permitir instalar apps desde Cemail.
+
 ## 2.0.0 — 2026-11-13
 - **Cargar más**: al final de cada lista (Recibidos, Archivo, Enviados, Spam, Papelera, Destacados y etiquetas) hay un botón que trae los 50 correos siguientes que no estén en el teléfono. Lo que se carga a mano se queda, aunque sea más antiguo de lo que la sincronización guarda por sí sola. Funciona con Gmail, Outlook e IMAP.
 - **Buscar en el servidor**: al buscar, debajo de los resultados, busca en todo el buzón y en cualquier fecha (no solo en lo que hay en el teléfono). Cada vez que se pulsa, sigue más atrás. Lo encontrado se queda en el teléfono.

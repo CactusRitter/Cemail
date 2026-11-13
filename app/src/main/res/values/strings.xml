@@ -488,10 +488,11 @@
     <string name="settings_updates_now">Look now</string>
     <string name="update_title">Cemail %1$s is available</string>
     <string name="update_body">Download it and Android will ask you to install it. Your accounts and settings stay as they are.</string>
-    <string name="update_started">Downloading… The installer opens when it is done (the first time, Android asks you to allow installing apps from Cemail).</string>
+    <string name="update_started">Downloading… The installer opens when it is done (the first time, Android asks you to allow installing apps from Cemail; then tap Install).</string>
     <string name="update_failed">The download could not start. Try again later.</string>
     <string name="update_download">Download</string>
     <string name="update_later">Not now</string>
+    <string name="update_install">Install</string>
     <string name="update_downloading">Cemail %1$s</string>
     <string name="update_none">You have the latest version (%1$s).</string>
     <string name="update_found">There is a new version: it is shown at the top of the Inbox.</string>

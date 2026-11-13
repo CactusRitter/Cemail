@@ -486,10 +486,11 @@
     <string name="settings_updates_now">Jetzt suchen</string>
     <string name="update_title">Cemail %1$s ist verfügbar</string>
     <string name="update_body">Lade sie herunter, dann fragt Android, ob sie installiert werden soll. Deine Konten und Einstellungen bleiben erhalten.</string>
-    <string name="update_started">Wird heruntergeladen… Danach öffnet sich die Installation (beim ersten Mal fragt Android, ob Cemail Apps installieren darf).</string>
+    <string name="update_started">Wird heruntergeladen… Danach öffnet sich die Installation (beim ersten Mal fragt Android, ob Cemail Apps installieren darf; dann auf Installieren tippen).</string>
     <string name="update_failed">Der Download konnte nicht starten. Versuche es später noch einmal.</string>
     <string name="update_download">Herunterladen</string>
     <string name="update_later">Jetzt nicht</string>
+    <string name="update_install">Installieren</string>
     <string name="update_downloading">Cemail %1$s</string>
     <string name="update_none">Du hast die neueste Version (%1$s).</string>
     <string name="update_found">Es gibt eine neue Version: Sie wird oben im Posteingang angezeigt.</string>

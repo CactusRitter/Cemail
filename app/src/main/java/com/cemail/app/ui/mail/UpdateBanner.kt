@@ -59,7 +59,21 @@ fun UpdateBanner(modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.bodySmall,
             color = if (failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        if (!started) {
+        if (started) {
+            // Once it is downloaded, the installer can be opened again (if it was cancelled, or Android first sent the
+            // user to allow installing apps from Cemail).
+            Text(
+                stringResource(R.string.update_install),
+                Modifier
+                    .padding(top = 4.dp)
+                    .pressScale(0.94f)
+                    .glass(CircleShape, GlassKind.Chrome)
+                    .clickable(role = Role.Button) { updates.install(shown) }
+                    .padding(horizontal = 18.dp, vertical = 10.dp),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        } else {
             Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     stringResource(R.string.update_download),

@@ -120,21 +120,12 @@ class Updates(private val context: Context, private val client: OkHttpClient = O
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                 .setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, name),
         )
+        prefs.edit().putLong(KEY_DOWNLOAD, id).putString(KEY_DOWNLOADED, update.version).apply()
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(c: Context, intent: Intent) {
                 if (intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1) != id) return
                 context.unregisterReceiver(this)
-                val file = manager.getUriForDownloadedFile(id)
-                if (file == null) {
-                    AppLog.e("update", "download of ${update.version} failed")
-                    return
-                }
-                // Android shows what is being installed and asks first (and, the first time, for leave to install apps
-                // that come from Cemail).
-                context.startActivity(
-                    Intent(Intent.ACTION_VIEW).setDataAndType(file, APK)
-                        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK),
-                )
+                if (!install(update)) AppLog.e("update", "download of ${update.version} failed")
             }
         }
         // The download manager is another app: its broadcast has to be let in.
@@ -144,6 +135,27 @@ class Updates(private val context: Context, private val client: OkHttpClient = O
     } catch (e: Exception) {
         AppLog.e("update", "could not start the download", e)
         false
+    }
+
+    /**
+     * Opens Android's installer with the downloaded APK of [update] (also again, after the installer was cancelled).
+     * false while it is not fully downloaded. Android shows what is being installed and asks first (and, the first
+     * time, for leave to install apps that come from Cemail).
+     */
+    fun install(update: AppUpdate): Boolean {
+        if (prefs.getString(KEY_DOWNLOADED, null) != update.version) return false
+        val manager = context.getSystemService(DownloadManager::class.java)
+        val file = manager.getUriForDownloadedFile(prefs.getLong(KEY_DOWNLOAD, -1)) ?: return false
+        return try {
+            context.startActivity(
+                Intent(Intent.ACTION_VIEW).setDataAndType(file, APK)
+                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+            true
+        } catch (e: Exception) {
+            AppLog.e("update", "could not open the installer", e)
+            false
+        }
     }
 
     private fun stored(): AppUpdate? {
@@ -161,5 +173,7 @@ class Updates(private val context: Context, private val client: OkHttpClient = O
         const val KEY_APK = "apk"
         const val KEY_PAGE = "page"
         const val KEY_IGNORED = "ignored"
+        const val KEY_DOWNLOAD = "download_id"
+        const val KEY_DOWNLOADED = "download_version"
     }
 }
