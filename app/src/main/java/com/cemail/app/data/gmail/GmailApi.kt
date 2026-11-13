@@ -78,7 +78,10 @@ interface GmailApi {
 /** Gmail REST API over HTTPS with OkHttp. Network work always runs on [Dispatchers.IO]. */
 class HttpGmailApi(
     private val tokens: AccessTokenProvider,
-    private val client: OkHttpClient = OkHttpClient(),
+    private val client: OkHttpClient = OkHttpClient.Builder()
+        .dns(com.cemail.app.data.net.Ipv4First)
+        .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+        .build(),
 ) : GmailApi {
     private val json = Json { ignoreUnknownKeys = true }
     private val jsonType = "application/json; charset=utf-8".toMediaType()
@@ -251,12 +254,26 @@ class HttpGmailApi(
 
     private suspend fun call(request: Request): String {
         var attempt = 0
+        var netAttempt = 0
         while (true) {
+            // null: the server rejected the saved sign-in. A failed connection throws an IOException instead.
             val token = tokens.accessToken() ?: throw GmailHttpException(401, "not signed in")
-            val reply = withContext(Dispatchers.IO) {
-                client.newCall(request.newBuilder().header("Authorization", "Bearer $token").build()).execute().use { response ->
-                    Triple(response.code, response.body.string(), response.header("Retry-After")?.toLongOrNull())
+            val reply = try {
+                withContext(Dispatchers.IO) {
+                    client.newCall(request.newBuilder().header("Authorization", "Bearer $token").build()).execute().use { response ->
+                        Triple(response.code, response.body.string(), response.header("Retry-After")?.toLongOrNull())
+                    }
                 }
+            } catch (e: java.net.ConnectException) {
+                // The connection never got going, so Google never saw the request (a message is not sent twice): the
+                // network is often only just coming up (after the phone woke, or changed network), ask once more.
+                if (++netAttempt > 1) throw e
+                delay(2_000)
+                continue
+            } catch (e: java.net.UnknownHostException) {
+                if (++netAttempt > 1) throw e
+                delay(2_000)
+                continue
             }
             val (code, text, retryAfter) = reply
             if (code in 200..299) return text

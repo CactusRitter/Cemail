@@ -19,6 +19,7 @@ import net.openid.appauth.TokenRequest
 import net.openid.appauth.TokenResponse
 import org.json.JSONObject
 import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 /** Who just signed in, plus the tokens Google gave us. */
 data class SignInResult(val accountId: String, val email: String, val name: String?, val tokens: Tokens)
@@ -66,7 +67,7 @@ class GoogleAuth(context: Context) {
                 SignInOutcome.Failed(error.errorDescription ?: error.error ?: "error ${error.code}")
             }
         }
-        val token = exchange(response.createTokenExchangeRequest())
+        val token = try { exchange(response.createTokenExchangeRequest()) } catch (e: java.io.IOException) { null }
             ?: return@withContext SignInOutcome.Failed("token")
         val claims = token.idToken?.let(::parseIdToken)
         val sub = claims?.optString("sub").orEmpty()
@@ -94,8 +95,16 @@ class GoogleAuth(context: Context) {
         Tokens(response.refreshToken ?: refresh, response.accessToken, response.accessTokenExpirationTime ?: 0L)
     }
 
+    /** The answer to a token request: null when the server says the saved sign-in is no longer valid; a connection problem throws ([TokenFailure]). */
     private suspend fun exchange(request: TokenRequest): TokenResponse? = suspendCancellableCoroutine { cont ->
-        service.performTokenRequest(request) { response, _ -> cont.resume(response) }
+        service.performTokenRequest(request) { response, error ->
+            if (response != null) {
+                cont.resume(response)
+            } else {
+                val failure = TokenFailure.of(error)
+                if (failure == null) cont.resume(null) else cont.resumeWithException(failure)
+            }
+        }
     }
 
     companion object {

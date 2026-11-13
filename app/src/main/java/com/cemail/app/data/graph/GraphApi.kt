@@ -82,7 +82,7 @@ class GraphApi(
     private val tokens: AccessTokenProvider,
     // A full sync lists whole folders with their bodies: Microsoft can take well over the default 10 s to answer.
     private val client: OkHttpClient = OkHttpClient.Builder()
-        .dns(Ipv4First)
+        .dns(com.cemail.app.data.net.Ipv4First)
         .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
         .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
         .build(),
@@ -270,6 +270,10 @@ class GraphApi(
                 } catch (e: java.net.ConnectException) {
                     // A first attempt on a dead route (often right after the app starts): one more try before giving up.
                     if (++attempt > 1) throw e
+                } catch (e: java.net.UnknownHostException) {
+                    // No DNS for a moment (the network is only just coming up): the request never left, ask once more.
+                    if (++attempt > 1) throw e
+                    kotlinx.coroutines.delay(2_000)
                 } catch (e: java.net.SocketTimeoutException) {
                     // Microsoft answering slowly: one more try after a short pause. Only for reads, so a message that
                     // was in fact sent is never sent twice.
@@ -291,8 +295,3 @@ class GraphApi(
     }
 }
 
-/** Tries IPv4 addresses before IPv6 ones: some networks have an IPv6 route to Microsoft that does not work. */
-private object Ipv4First : okhttp3.Dns {
-    override fun lookup(hostname: String): List<java.net.InetAddress> =
-        okhttp3.Dns.SYSTEM.lookup(hostname).sortedBy { it is java.net.Inet6Address }
-}

@@ -17,6 +17,7 @@ import net.openid.appauth.ResponseTypeValues
 import net.openid.appauth.TokenRequest
 import net.openid.appauth.TokenResponse
 import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 /**
  * "Sign in with Microsoft" (Outlook.com, Hotmail, Microsoft 365) with AppAuth: system browser, authorization code +
@@ -54,7 +55,8 @@ class MicrosoftAuth(context: Context) {
                 SignInOutcome.Failed(error.errorDescription ?: error.error ?: "error ${error.code}")
             }
         }
-        val token = exchange(response.createTokenExchangeRequest()) ?: return@withContext SignInOutcome.Failed("token")
+        val token = (try { exchange(response.createTokenExchangeRequest()) } catch (e: java.io.IOException) { null })
+            ?: return@withContext SignInOutcome.Failed("token")
         val claims = token.idToken?.let(GoogleAuth::parseIdToken)
         // "oid" identifies the user in the directory; personal accounts only carry "sub".
         val id = claims?.optString("oid").orEmpty().ifEmpty { claims?.optString("sub").orEmpty() }
@@ -83,8 +85,16 @@ class MicrosoftAuth(context: Context) {
         Tokens(response.refreshToken ?: refresh, response.accessToken, response.accessTokenExpirationTime ?: 0L)
     }
 
+    /** The answer to a token request: null when the server says the saved sign-in is no longer valid; a connection problem throws ([TokenFailure]). */
     private suspend fun exchange(request: TokenRequest): TokenResponse? = suspendCancellableCoroutine { cont ->
-        service.performTokenRequest(request) { response, _ -> cont.resume(response) }
+        service.performTokenRequest(request) { response, error ->
+            if (response != null) {
+                cont.resume(response)
+            } else {
+                val failure = TokenFailure.of(error)
+                if (failure == null) cont.resume(null) else cont.resumeWithException(failure)
+            }
+        }
     }
 
     companion object {
