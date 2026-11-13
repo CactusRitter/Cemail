@@ -43,6 +43,14 @@ class UnifiedMailRepository(private val accounts: List<MailRepository>, scope: C
         accounts.map { async { it.refresh(quick) } }.awaitAll().all { it }
     }
 
+    override suspend fun loadOlder(place: MailPlace): Int = coroutineScope {
+        combineCounts(accounts.map { async { it.loadOlder(place) } }.awaitAll())
+    }
+
+    override suspend fun searchServer(query: String): Int = coroutineScope {
+        combineCounts(accounts.map { async { it.searchServer(query) } }.awaitAll())
+    }
+
     override suspend fun refreshLabel(labelId: String): Boolean = coroutineScope {
         accounts.map { async { it.refreshLabel(labelId) } }.awaitAll().all { it }
     }

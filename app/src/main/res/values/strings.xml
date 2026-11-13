@@ -462,4 +462,38 @@
     <string name="swipe_ask_snooze">Snooze?</string>
     <string name="swipe_yes">Yes</string>
     <string name="swipe_no">No</string>
+    <!-- 2.0.0: older messages, server search, synced amount, updates -->
+    <string name="load_more">Load more messages</string>
+    <string name="loading_more">Loading…</string>
+    <string name="load_more_none">There are no older messages.</string>
+    <string name="load_more_failed">Could not load more messages. Check your connection.</string>
+    <plurals name="load_more_found">
+        <item quantity="one">%d older message loaded.</item>
+        <item quantity="other">%d older messages loaded.</item>
+    </plurals>
+    <string name="search_server">Search on the server</string>
+    <string name="search_server_none">Nothing else found on the server.</string>
+    <string name="search_server_failed">Could not search on the server. Check your connection.</string>
+    <plurals name="search_server_found">
+        <item quantity="one">%d more message found on the server.</item>
+        <item quantity="other">%d more messages found on the server.</item>
+    </plurals>
+    <string name="sync_window_title">Synced messages</string>
+    <string name="sync_window_body">How many messages of each account stay on the phone by themselves. Older ones come with Load more at the end of a list. More means a slower first sync and more space used.</string>
+    <string name="sync_window_normal">Normal</string>
+    <string name="settings_section_updates">Updates</string>
+    <string name="settings_version">Version %1$s</string>
+    <string name="settings_updates_title">Look for new versions</string>
+    <string name="settings_updates_body">Once or twice a day Cemail asks GitHub, where its versions are published, whether there is a newer one, and says so at the top of the Inbox. GitHub only sees the address of your connection, nothing about you or your mail.</string>
+    <string name="settings_updates_now">Look now</string>
+    <string name="update_title">Cemail %1$s is available</string>
+    <string name="update_body">Download it and Android will ask you to install it. Your accounts and settings stay as they are.</string>
+    <string name="update_started">Downloading… The installer opens when it is done (the first time, Android asks you to allow installing apps from Cemail).</string>
+    <string name="update_failed">The download could not start. Try again later.</string>
+    <string name="update_download">Download</string>
+    <string name="update_later">Not now</string>
+    <string name="update_downloading">Cemail %1$s</string>
+    <string name="update_none">You have the latest version (%1$s).</string>
+    <string name="update_found">There is a new version: it is shown at the top of the Inbox.</string>
+    <string name="update_check_failed">Could not check. Check your connection.</string>
 </resources>

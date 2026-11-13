@@ -27,6 +27,10 @@ interface GmailApi {
 
     /** The newest [max] messages that carry one label (by its id), wherever they are. */
     suspend fun listLabelMessageIds(labelId: String, max: Int): List<String> = emptyList()
+
+    /** The newest [max] messages that match [query] (Gmail search words; may be empty) and, if given, carry [labelId]. */
+    suspend fun listMessageIds(query: String, max: Int, labelId: String?): List<String> =
+        if (labelId == null) listMessageIds(query, max) else listLabelMessageIds(labelId, max)
     suspend fun getMessage(id: String): GmailMessage
     suspend fun getLabels(id: String): List<String>
     suspend fun listUserLabels(): List<GmailLabel>
@@ -82,6 +86,11 @@ class HttpGmailApi(
     override suspend fun listMessageIds(query: String, max: Int): List<String> = list(max) { addQueryParameter("q", query) }
 
     override suspend fun listLabelMessageIds(labelId: String, max: Int): List<String> = list(max) { addQueryParameter("labelIds", labelId) }
+
+    override suspend fun listMessageIds(query: String, max: Int, labelId: String?): List<String> = list(max) {
+        if (query.isNotBlank()) addQueryParameter("q", query)
+        labelId?.let { addQueryParameter("labelIds", it) }
+    }
 
     private suspend fun list(max: Int, filter: okhttp3.HttpUrl.Builder.() -> Unit): List<String> {
         val ids = mutableListOf<String>()

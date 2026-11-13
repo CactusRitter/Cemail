@@ -160,6 +160,19 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
     val open = state.open
     val drawer = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    // A newer Cemail on GitHub? (at most twice a day; the Inbox shows it). No connection: nothing happens.
+    val updates = (androidx.compose.ui.platform.LocalContext.current.applicationContext as com.cemail.app.CemailApplication).updates
+    LaunchedEffect(settings.checkUpdates) {
+        if (settings.checkUpdates) {
+            try {
+                updates.check()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                com.cemail.app.AppLog.e("update", "could not check", e)
+            }
+        }
+    }
 
     // A request from outside (launcher menu, widget, another app): switch to the right account first, then carry it out.
     val context = androidx.compose.ui.platform.LocalContext.current

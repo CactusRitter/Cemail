@@ -139,6 +139,26 @@ interface MessageDao {
     @Query("DELETE FROM muted_threads WHERE accountId = :accountId AND threadId = :threadId")
     suspend fun unmute(accountId: String, threadId: String)
 
+    /** Messages brought by hand (Load more, server search): the automatic sync leaves them on the phone. */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun keep(rows: List<KeptMessage>)
+
+    @Query("SELECT remoteId FROM kept_messages WHERE accountId = :accountId")
+    suspend fun keptIds(accountId: String): List<String>
+
+    @Query("DELETE FROM kept_messages WHERE accountId = :accountId")
+    suspend fun forgetKept(accountId: String)
+
+    /** How many messages of a folder (or starred, or with a label) the phone holds: Load more looks past them. */
+    @Query("SELECT COUNT(*) FROM messages WHERE accountId = :accountId AND folder = :folder AND remoteId IS NOT NULL")
+    suspend fun countIn(accountId: String, folder: String): Int
+
+    @Query("SELECT COUNT(*) FROM messages WHERE accountId = :accountId AND starred = 1 AND remoteId IS NOT NULL")
+    suspend fun countStarred(accountId: String): Int
+
+    @Query("SELECT COUNT(*) FROM messages WHERE accountId = :accountId AND (' ' || labelIds || ' ') LIKE '% ' || :labelId || ' %' AND remoteId IS NOT NULL")
+    suspend fun countWithLabel(accountId: String, labelId: String): Int
+
     @Query("SELECT COUNT(*) FROM muted_threads WHERE accountId = :accountId AND threadId = :threadId")
     suspend fun mutedCount(accountId: String, threadId: String): Int
 
@@ -267,6 +287,10 @@ interface MessageDao {
 @Entity(tableName = "muted_threads", primaryKeys = ["accountId", "threadId"])
 data class MutedThread(val accountId: String, val threadId: String)
 
+/** A message the user brought by hand (Load more, server search), by its id on the server. */
+@Entity(tableName = "kept_messages", primaryKeys = ["accountId", "remoteId"])
+data class KeptMessage(val accountId: String, val remoteId: String)
+
 @Entity(tableName = "labels", primaryKeys = ["accountId", "id"])
 data class LabelEntity(val accountId: String, val id: String, val name: String)
 
@@ -283,8 +307,8 @@ interface LabelDao {
 }
 
 @Database(
-    entities = [AccountEntity::class, MessageEntity::class, LabelEntity::class, MessageFts::class, MutedThread::class],
-    version = 10,
+    entities = [AccountEntity::class, MessageEntity::class, LabelEntity::class, MessageFts::class, MutedThread::class, KeptMessage::class],
+    version = 11,
     exportSchema = true,
     autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
@@ -295,7 +319,7 @@ abstract class CemailDatabase : RoomDatabase() {
 
     companion object {
         fun create(context: Context): CemailDatabase =
-            Room.databaseBuilder(context, CemailDatabase::class.java, "cemail.db").addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10).build()
+            Room.databaseBuilder(context, CemailDatabase::class.java, "cemail.db").addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11).build()
     }
 }
 
@@ -327,6 +351,13 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
 val MIGRATION_7_8 = object : Migration(7, 8) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE messages ADD COLUMN sendAt INTEGER")
+    }
+}
+
+/** 2.0.0: messages brought by hand (Load more, server search) stay when they fall out of the synced window. */
+val MIGRATION_10_11 = object : Migration(10, 11) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS `kept_messages` (`accountId` TEXT NOT NULL, `remoteId` TEXT NOT NULL, PRIMARY KEY(`accountId`, `remoteId`))")
     }
 }
 

@@ -1,7 +1,15 @@
 # Historial de versiones de Cemail
 
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
-Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`) y no se reemplaza la anterior.
+Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
+
+## 2.0.0 — 2026-11-13
+- **Cargar más**: al final de cada lista (Recibidos, Archivo, Enviados, Spam, Papelera, Destacados y etiquetas) hay un botón que trae los 50 correos siguientes que no estén en el teléfono. Lo que se carga a mano se queda, aunque sea más antiguo de lo que la sincronización guarda por sí sola. Funciona con Gmail, Outlook e IMAP.
+- **Buscar en el servidor**: al buscar, debajo de los resultados, busca en todo el buzón y en cualquier fecha (no solo en lo que hay en el teléfono). Cada vez que se pulsa, sigue más atrás. Lo encontrado se queda en el teléfono.
+- Ajustes → Notificaciones y sincronización → **Correos sincronizados**: Normal, 250 o 500 por cuenta.
+- **Actualizaciones**: cada versión se publica también en GitHub. Cemail mira una o dos veces al día si hay una más nueva y la ofrece arriba en Recibidos («Descargar» / «Ahora no»); al descargarla, Android pide instalarla. Ajustes → Actualizaciones muestra la versión y permite buscar ahora o desactivarlo.
+- En el menú «Más» de un correo, al mantener pulsado un botón aparece su nombre arriba.
+- Los avances que mostraban código HTML («<!DOCTYPE html…», «<span class=…») ahora muestran el texto.
 
 ## 1.10.1 — 2026-11-13
 - Menú: al plegar una etiqueta, sus subetiquetas se desvanecen mientras el hueco se cierra con suavidad (antes desaparecían de golpe); al desplegarla, el hueco también se abre poco a poco.

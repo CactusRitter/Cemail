@@ -33,6 +33,7 @@ import com.cemail.app.notify.MailNotifier
  */
 class CemailApplication : Application() {
     val settings: SettingsRepository by lazy { SettingsRepository(this) }
+    val updates: com.cemail.app.update.Updates by lazy { com.cemail.app.update.Updates(this) }
 
     val database: CemailDatabase by lazy { CemailDatabase.create(this) }
     val googleAuth: GoogleAuth by lazy { GoogleAuth(this) }
@@ -55,6 +56,7 @@ class CemailApplication : Application() {
                     selfEmail = { accountRepository.accounts.first().firstOrNull { it.id == accountId }?.email },
                     onNewMail = ::notifyNewMail,
                     pushPrefs = getSharedPreferences("push-ms-${accountId.filter { it.isLetterOrDigit() }}", MODE_PRIVATE),
+                    windowSize = { settings.state.value.syncWindow },
                 )
             }
             if (provider == "IMAP") {
@@ -67,6 +69,7 @@ class CemailApplication : Application() {
                     onNewMail = ::notifyNewMail,
                     marks = com.cemail.app.data.mail.SyncMarks.Prefs(this, accountId),
                     senderName = { settings.state.value.lookOf(accountId).senderName },
+                    windowSize = { settings.state.value.syncWindow },
                 )
             }
             RoomMailRepository(
@@ -80,6 +83,7 @@ class CemailApplication : Application() {
                 hidden = settings.state.map { it.hiddenLabels[accountId].orEmpty() }.distinctUntilChanged()
                     .stateIn(appScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, settings.state.value.hiddenLabels[accountId].orEmpty()),
                 senderName = { settings.state.value.lookOf(accountId).senderName },
+                windowSize = { settings.state.value.syncWindow },
             )
         }
     }

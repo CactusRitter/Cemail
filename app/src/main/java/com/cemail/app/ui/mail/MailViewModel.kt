@@ -94,6 +94,9 @@ private data class Ui(
     val collapsedSections: Set<DateSection> = emptySet(),
     /** A label's messages are being fetched by hand (pull-to-refresh inside it). */
     val labelSyncing: Boolean = false,
+    /** Load more / a server search is running, and how many messages the last one brought (null: none yet here). */
+    val moreLoading: Boolean = false,
+    val moreResult: Int? = null,
 )
 
 data class MailUiState(
@@ -116,6 +119,11 @@ data class MailUiState(
     val collapsedSections: Set<DateSection> = emptySet(),
     /** The other messages of the open message's conversation, newest first. */
     val thread: List<Mail> = emptyList(),
+    /** Load more (or a server search, while searching) is running, and how many messages the last one brought. */
+    val moreLoading: Boolean = false,
+    val moreResult: Int? = null,
+    /** Where Load more can look from the list on screen (null: it does not apply there, e.g. Drafts). */
+    val olderPlace: com.cemail.app.data.mail.MailPlace? = null,
 )
 
 class MailViewModel(
@@ -146,6 +154,7 @@ class MailViewModel(
         }.orEmpty()
         MailUiState(
             thread = conversation,
+            moreLoading = u.moreLoading, moreResult = u.moreResult, olderPlace = placeOf(u),
             box = u.box, query = u.query, searching = u.searching, selection = u.selection, syncing = syncing || u.labelSyncing,
             labels = labels, labelId = u.labelId, expanded = u.expanded, collapsedSections = u.collapsedSections,
             unreadByLabel = labels.associate { l -> l.id to mails.count { !it.read && l.id in it.labelIds && !it.discarded } },
@@ -211,8 +220,8 @@ class MailViewModel(
     }
 
     // --- navigation ---
-    fun selectBox(box: MailBox) = ui.update { it.copy(box = box, labelId = null, query = "", searching = false, selection = emptySet()) }
-    fun selectLabel(id: String) = ui.update { it.copy(labelId = id, query = "", searching = false, selection = emptySet()) }
+    fun selectBox(box: MailBox) = ui.update { it.copy(box = box, labelId = null, query = "", searching = false, selection = emptySet(), moreResult = null) }
+    fun selectLabel(id: String) = ui.update { it.copy(labelId = id, query = "", searching = false, selection = emptySet(), moreResult = null) }
     fun toggleSection(section: DateSection) = ui.update {
         it.copy(collapsedSections = if (section in it.collapsedSections) it.collapsedSections - section else it.collapsedSections + section)
     }
@@ -220,7 +229,49 @@ class MailViewModel(
         it.copy(expanded = if (fullName in it.expanded) it.expanded - fullName else it.expanded + fullName)
     }
     fun setSearching(on: Boolean) = ui.update { it.copy(searching = on, query = if (on) it.query else "") }
-    fun setQuery(q: String) = ui.update { it.copy(query = q) }
+    fun setQuery(q: String) = ui.update { it.copy(query = q, moreResult = null) }
+
+    /** Where Load more looks for the list on screen; null where it does not apply (Snoozed, Drafts, Scheduled). */
+    private fun placeOf(u: Ui): com.cemail.app.data.mail.MailPlace? {
+        u.labelId?.let { return com.cemail.app.data.mail.MailPlace.InLabel(it) }
+        return when (u.box) {
+            MailBox.STARRED -> com.cemail.app.data.mail.MailPlace.Starred
+            MailBox.INBOX -> com.cemail.app.data.mail.MailPlace.InFolder(Folder.INBOX)
+            MailBox.SENT -> com.cemail.app.data.mail.MailPlace.InFolder(Folder.SENT)
+            MailBox.ARCHIVE -> com.cemail.app.data.mail.MailPlace.InFolder(Folder.ARCHIVE)
+            MailBox.SPAM -> com.cemail.app.data.mail.MailPlace.InFolder(Folder.SPAM)
+            MailBox.TRASH -> com.cemail.app.data.mail.MailPlace.InFolder(Folder.TRASH)
+            MailBox.SNOOZED, MailBox.DRAFTS, MailBox.OUTBOX -> null
+        }
+    }
+
+    /** Load more, at the end of the list: older messages of this folder or label come from the server. */
+    fun loadOlder() {
+        val u = ui.value
+        val place = placeOf(u) ?: return
+        if (u.moreLoading) return
+        viewModelScope.launch {
+            ui.update { it.copy(moreLoading = true) }
+            val n = repo.loadOlder(place)
+            ui.update { it.copy(moreLoading = false, moreResult = n) }
+            if (n < 0) ui.update { it.copy(undo = UndoEvent(++undoCounter, R.string.load_more_failed, emptyList())) }
+        }
+    }
+
+    /** Search on the server: what it finds (of any date) is kept on the phone and joins the results. */
+    fun searchServer() {
+        val u = ui.value
+        val query = u.query.trim()
+        if (query.isEmpty() || u.moreLoading) return
+        viewModelScope.launch {
+            ui.update { it.copy(moreLoading = true) }
+            val n = repo.searchServer(query)
+            // The full-text search runs again, now over what just arrived too.
+            searchHits.value = repo.searchIds(query)
+            ui.update { it.copy(moreLoading = false, moreResult = if (it.query.trim() == query) n else null) }
+            if (n < 0) ui.update { it.copy(undo = UndoEvent(++undoCounter, R.string.search_server_failed, emptyList())) }
+        }
+    }
     fun open(id: Long) {
         ui.update { it.copy(openId = id) }
         repo.update(setOf(id)) { it.copy(read = true) }

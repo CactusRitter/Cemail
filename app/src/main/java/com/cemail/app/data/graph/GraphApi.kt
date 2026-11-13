@@ -58,6 +58,9 @@ data class GraphMessage(
 data class GraphPage<T>(val value: List<T> = emptyList(), @SerialName("@odata.nextLink") val next: String? = null)
 
 @Serializable
+data class GraphId(val id: String)
+
+@Serializable
 data class GraphAttachment(
     val id: String,
     val name: String = "",
@@ -102,6 +105,42 @@ class GraphApi(
             url = page.next
         }
         return all.take(max)
+    }
+
+    /** The ids of the newest [max] messages of a folder, without anything else (cheap: Load more looks past them). */
+    suspend fun ids(folder: String, max: Int): List<String> {
+        val all = mutableListOf<String>()
+        var url: String? = "$BASE/mailFolders/$folder/messages".toHttpUrl().newBuilder()
+            .addQueryParameter("\$top", minOf(1000, max).toString())
+            .addQueryParameter("\$orderby", "receivedDateTime desc")
+            .addQueryParameter("\$select", "id")
+            .build().toString()
+        while (url != null && all.size < max) {
+            val page = json.decodeFromString(IDS, get(url))
+            all += page.value.map { it.id }
+            url = page.next
+        }
+        return all.take(max)
+    }
+
+    /** One message with everything a row of the list needs. */
+    suspend fun listed(id: String): GraphMessage = message(id, SELECT)
+
+    /**
+     * Up to [max] messages of a folder that contain [query] (in the subject, the sender or the text), whatever their
+     * date. Microsoft returns them by relevance, without paging.
+     */
+    suspend fun search(folder: String, query: String, max: Int): List<String> {
+        // The words go between double quotes, so they cannot have their own.
+        val words = query.replace("\"", " ").trim()
+        if (words.isEmpty()) return emptyList()
+        // Only the ids (cheap): the messages the phone does not have yet are then read one by one ([listed]).
+        val url = "$BASE/mailFolders/$folder/messages".toHttpUrl().newBuilder()
+            .addQueryParameter("\$search", "\"$words\"")
+            .addQueryParameter("\$top", max.toString())
+            .addQueryParameter("\$select", "id")
+            .build().toString()
+        return json.decodeFromString(IDS, get(url)).value.map { it.id }
     }
 
     suspend fun message(id: String, select: String): GraphMessage =
@@ -248,6 +287,7 @@ class GraphApi(
         const val SELECT = "id,subject,from,toRecipients,receivedDateTime,isRead,flag,hasAttachments,body,conversationId"
         val PAGE: KSerializer<GraphPage<GraphMessage>> = GraphPage.serializer(GraphMessage.serializer())
         val ATTACHMENTS: KSerializer<GraphPage<GraphAttachment>> = GraphPage.serializer(GraphAttachment.serializer())
+        val IDS: KSerializer<GraphPage<GraphId>> = GraphPage.serializer(GraphId.serializer())
     }
 }
 

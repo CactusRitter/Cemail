@@ -51,9 +51,13 @@ Esquemas exportados en `app/schemas/`; cada migración lleva su test.
 4. **Acciones del usuario**: se aplican en Room al instante y se encolan en `outbox`; un Worker las manda con `messages.modify` / `trash` con reintentos.
 5. **Enviar**: se construye el mensaje MIME (texto + adjuntos), se codifica en base64url y se manda con `messages.send`. Gmail lo guarda solo en Enviados.
 6. **Segundo plano**: `PeriodicWorkRequest` (mínimo 15 min, configurable). El aviso de correo nuevo llega con ese retraso; el aviso instantáneo exigiría un servidor propio (Pub/Sub + FCM) y no entra en esta versión.
+7. **Ventana y «Cargar más» (2.0.0)**: cada cuenta guarda sola sus correos más recientes (Gmail 120 + 30 de spam; Outlook 100 en Recibidos y 40 por carpeta; IMAP 80 y 30; o 250/500 según Ajustes). «Cargar más» trae los 50 más recientes de la carpeta o etiqueta que el teléfono aún no tiene (se listan solo los ids, que es barato, y se descargan los que faltan), así que rellena huecos en vez de saltárselos. Lo traído a mano (y lo de «Buscar en el servidor») se apunta en la tabla `kept_messages` y la sincronización no lo borra por quedar fuera de la ventana; sí cuando desaparece del servidor.
 
 ## Búsqueda
-Se usa el parámetro `q` de Gmail (con su sintaxis: `from:`, `has:attachment`…) y, sin red, un filtro sencillo sobre lo guardado en Room.
+Al escribir, se busca en el teléfono (índice FTS4 de Room). «Buscar en el servidor» pregunta además al servidor en todo el buzón: Gmail con su parámetro `q` (y su sintaxis: `from:`, `has:attachment`…), Outlook con `$search` en Recibidos, Enviados y Archivo, IMAP con `SEARCH` (asunto, remitente o texto). Se traen los 50 resultados más recientes que el teléfono no tiene, así que cada pulsación sigue más atrás.
+
+## Actualizaciones
+Cada versión se publica como *release* de GitHub con su APK. `update/Updates.kt` consulta la última *release* del repositorio público (como mucho cada 12 h, sin cuenta ni datos del usuario) y, si es más nueva, Recibidos lo avisa; el APK se descarga con `DownloadManager` y se abre el instalador de Android (permiso `REQUEST_INSTALL_PACKAGES`).
 
 ## Mostrar correos
 - Texto plano, o HTML saneado con jsoup.

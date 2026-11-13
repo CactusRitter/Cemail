@@ -119,7 +119,44 @@ class ImapClient(private val config: ImapConfig) {
     fun window(folder: IMAPFolder, limit: Int): List<RemoteMessage> {
         val count = folder.messageCount
         if (count == 0) return emptyList()
-        val messages = folder.getMessages(maxOf(1, count - limit + 1), count)
+        return fetched(folder, folder.getMessages(maxOf(1, count - limit + 1), count))
+    }
+
+    /**
+     * Load more: up to [limit] of the newest messages of the folder whose UID is not in [have] (the ones the phone
+     * holds). Only the UIDs of the newest `have.size + limit` are read first, which is cheap; then the missing ones
+     * whole. So a gap (old messages a search left on the phone) is filled instead of skipped.
+     */
+    fun missingNewest(folder: IMAPFolder, have: Set<Long>, limit: Int): List<RemoteMessage> {
+        val count = folder.messageCount
+        if (count == 0) return emptyList()
+        val recent = folder.getMessages(maxOf(1, count - have.size - limit + 1), count)
+        folder.fetch(recent, FetchProfile().apply { add(UIDFolder.FetchProfileItem.UID) })
+        val missing = recent.filter { folder.getUID(it) !in have }.takeLast(limit)
+        return fetched(folder, missing.toTypedArray())
+    }
+
+    /**
+     * Up to [limit] of the newest messages of the folder that contain every word of [query] in the subject, the
+     * sender or the text. The server does the searching (IMAP SEARCH), so it reaches every message, of any date.
+     */
+    fun search(folder: IMAPFolder, query: String, have: Set<Long>, limit: Int): List<RemoteMessage> {
+        val words = query.split(Regex("\\s+")).filter { it.isNotBlank() }
+        if (words.isEmpty() || folder.messageCount == 0) return emptyList()
+        val term = words.map { w ->
+            javax.mail.search.OrTerm(
+                arrayOf(javax.mail.search.SubjectTerm(w), javax.mail.search.FromStringTerm(w), javax.mail.search.BodyTerm(w)),
+            ) as javax.mail.search.SearchTerm
+        }.reduce { a, b -> javax.mail.search.AndTerm(a, b) }
+        // Leaving out what the phone has ([have], by UID), so each search goes further back than the one before.
+        val found = folder.search(term)
+        folder.fetch(found, FetchProfile().apply { add(UIDFolder.FetchProfileItem.UID) })
+        return fetched(folder, found.filter { folder.getUID(it) !in have }.takeLast(limit).toTypedArray())
+    }
+
+    /** [messages] with their envelope, flags and UID fetched in one go. */
+    private fun fetched(folder: IMAPFolder, messages: Array<Message>): List<RemoteMessage> {
+        if (messages.isEmpty()) return emptyList()
         val profile = FetchProfile().apply {
             add(FetchProfile.Item.ENVELOPE)
             add(FetchProfile.Item.FLAGS)
@@ -162,7 +199,7 @@ class ImapClient(private val config: ImapConfig) {
             }
         }
         try { walk(message) } catch (_: Exception) { /* a broken part: keep what was read */ }
-        val plain = text?.let(::decodeEntities) ?: html?.let { Jsoup.parse(it).text() }.orEmpty()
+        val plain = text?.let(::readablePlain) ?: html?.let { Jsoup.parse(it).text() }.orEmpty()
         val time = (message.receivedDate ?: message.sentDate ?: Date(0)).time
         return ParsedMessage(
             subject = try { message.subject.orEmpty() } catch (_: Exception) { "" },
@@ -298,3 +335,12 @@ private val ENTITY = Regex("""&(#\d{1,7}|#x[0-9a-fA-F]{1,6}|[a-zA-Z][a-zA-Z0-9]{
  */
 internal fun decodeEntities(text: String): String =
     if (ENTITY.containsMatchIn(text)) org.jsoup.parser.Parser.unescapeEntities(text, false).replace('\u00A0', ' ') else text
+
+private val HTML_START = Regex("""^\s*<(!doctype|html|head|body|div|span|table|p[\s>]|meta|style|center|font)""", RegexOption.IGNORE_CASE)
+
+/**
+ * The text of a message as it is shown in the list. Some senders put their HTML in the plain-text part too (the
+ * preview then read "<!DOCTYPE html PUBLIC…"): that is turned into its text; otherwise only the entities are decoded.
+ */
+internal fun readablePlain(text: String): String =
+    if (HTML_START.containsMatchIn(text.take(300))) Jsoup.parse(text).text() else decodeEntities(text)

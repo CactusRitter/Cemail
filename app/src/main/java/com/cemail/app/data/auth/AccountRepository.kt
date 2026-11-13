@@ -31,6 +31,7 @@ class AccountRepository(
         com.cemail.app.AppLog.i("account", "removed ...${accountId.takeLast(4)}")
         tokens.clear(accountId)
         messages.deleteAccount(accountId)
+        messages.forgetKept(accountId)
         java.io.File(inlineRoot, accountId).deleteRecursively()
         // Its picture (see AccountPhotos) goes too.
         inlineRoot.parentFile?.let { java.io.File(it, "avatars/${accountId.filter { c -> c.isLetterOrDigit() }}.jpg").delete() }

@@ -223,6 +223,9 @@ fun ListScreen(
             verticalArrangement = Arrangement.spacedBy(0.dp), // rows of a group touch; the gap after a group is added to its last row
         ) {
             var n = 0
+            if (state.box == MailBox.INBOX && state.labelId == null && state.query.isBlank()) {
+                item(key = "update") { UpdateBanner() }
+            }
             if (empty) {
                 item {
                     Column(
@@ -278,6 +281,13 @@ fun ListScreen(
             } else {
                 val base = n
                 itemsIndexed(state.others, key = { _, m -> m.id }) { i, mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, if (groupCards) GroupPos.of(i, state.others.size) else GroupPos.Single, groupCards, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring()).listTransition(base + i, leaving, entering, epoch)) }
+            }
+            // At the end of the list: older messages from the server (Load more), or, while searching, the server's
+            // own search over the whole mailbox.
+            if (state.query.isNotBlank()) {
+                item(key = "more") { MoreButton(state, search = true, onClick = vm::searchServer) }
+            } else if (state.olderPlace != null && shownFilter == ListFilter.NONE) {
+                item(key = "more") { MoreButton(state, search = false, onClick = vm::loadOlder) }
             }
         }
         }
@@ -522,6 +532,46 @@ private fun DateHeader(section: DateSection, count: Int, collapsed: Boolean, onC
 }
 
 /** "Empty trash" / "Empty spam" at the top of those folders; it asks before deleting anything for good. */
+/** "Load more" (or "Search on the server") under the last message, with what the last try brought. */
+@Composable
+private fun MoreButton(state: MailUiState, search: Boolean, onClick: () -> Unit) {
+    Column(
+        Modifier.fillMaxWidth().padding(top = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        val result = state.moreResult
+        if (result != null && result >= 0 && !state.moreLoading) {
+            Text(
+                when {
+                    result == 0 -> stringResource(if (search) R.string.search_server_none else R.string.load_more_none)
+                    search -> androidx.compose.ui.res.pluralStringResource(R.plurals.search_server_found, result, result)
+                    else -> androidx.compose.ui.res.pluralStringResource(R.plurals.load_more_found, result, result)
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = com.cemail.app.ui.glass.onBackdrop(MaterialTheme.colorScheme.onSurfaceVariant),
+                textAlign = TextAlign.Center,
+            )
+        }
+        Text(
+            stringResource(
+                when {
+                    state.moreLoading -> R.string.loading_more
+                    search -> R.string.search_server
+                    else -> R.string.load_more
+                },
+            ),
+            Modifier
+                .pressScale(0.94f)
+                .glass(CircleShape, GlassKind.Card)
+                .clickable(enabled = !state.moreLoading, role = Role.Button, onClick = onClick)
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+        )
+    }
+}
+
 @Composable
 private fun EmptyFolderButton(box: MailBox, vm: MailViewModel) {
     var confirm by remember { mutableStateOf(false) }

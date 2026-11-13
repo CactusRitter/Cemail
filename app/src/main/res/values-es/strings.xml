@@ -460,4 +460,38 @@
     <string name="swipe_ask_snooze">¿Posponer?</string>
     <string name="swipe_yes">Sí</string>
     <string name="swipe_no">No</string>
+    <!-- 2.0.0: older messages, server search, synced amount, updates -->
+    <string name="load_more">Cargar más correos</string>
+    <string name="loading_more">Cargando…</string>
+    <string name="load_more_none">No hay correos más antiguos.</string>
+    <string name="load_more_failed">No se pudieron cargar más correos. Revisa la conexión.</string>
+    <plurals name="load_more_found">
+        <item quantity="one">%d correo más antiguo cargado.</item>
+        <item quantity="other">%d correos más antiguos cargados.</item>
+    </plurals>
+    <string name="search_server">Buscar en el servidor</string>
+    <string name="search_server_none">No se encontró nada más en el servidor.</string>
+    <string name="search_server_failed">No se pudo buscar en el servidor. Revisa la conexión.</string>
+    <plurals name="search_server_found">
+        <item quantity="one">%d correo más encontrado en el servidor.</item>
+        <item quantity="other">%d correos más encontrados en el servidor.</item>
+    </plurals>
+    <string name="sync_window_title">Correos sincronizados</string>
+    <string name="sync_window_body">Cuántos correos de cada cuenta se quedan en el teléfono por sí solos. Los más antiguos llegan con «Cargar más» al final de una lista. Más correos hacen la primera sincronización más lenta y ocupan más espacio.</string>
+    <string name="sync_window_normal">Normal</string>
+    <string name="settings_section_updates">Actualizaciones</string>
+    <string name="settings_version">Versión %1$s</string>
+    <string name="settings_updates_title">Buscar versiones nuevas</string>
+    <string name="settings_updates_body">Una o dos veces al día, Cemail pregunta a GitHub, donde se publican sus versiones, si hay una más nueva, y lo avisa arriba en Recibidos. GitHub solo ve la dirección de tu conexión, nada de ti ni de tu correo.</string>
+    <string name="settings_updates_now">Buscar ahora</string>
+    <string name="update_title">Cemail %1$s está disponible</string>
+    <string name="update_body">Descárgala y Android te pedirá instalarla. Tus cuentas y ajustes se quedan como están.</string>
+    <string name="update_started">Descargando… Al terminar se abre el instalador (la primera vez, Android te pide permitir instalar apps desde Cemail).</string>
+    <string name="update_failed">No se pudo empezar la descarga. Inténtalo más tarde.</string>
+    <string name="update_download">Descargar</string>
+    <string name="update_later">Ahora no</string>
+    <string name="update_downloading">Cemail %1$s</string>
+    <string name="update_none">Tienes la última versión (%1$s).</string>
+    <string name="update_found">Hay una versión nueva: aparece arriba en Recibidos.</string>
+    <string name="update_check_failed">No se pudo comprobar. Revisa la conexión.</string>
 </resources>

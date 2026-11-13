@@ -72,6 +72,12 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.size
@@ -414,6 +420,8 @@ private class PanelItem(
  */
 @Composable
 private fun ActionGrid(onDismiss: () -> Unit, items: List<PanelItem>) {
+    var hint by remember { mutableStateOf<Int?>(null) }
+    val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
     Box(
         Modifier
             .fillMaxSize()
@@ -432,6 +440,17 @@ private fun ActionGrid(onDismiss: () -> Unit, items: List<PanelItem>) {
                 .padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
+            // The icons carry no text: the name of the one held down shows here, as wide as the grid (4 x 60 + 3 x 6 dp).
+            AnimatedVisibility(hint != null, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
+                Text(
+                    hint?.let { stringResource(it) }.orEmpty(),
+                    Modifier.width(258.dp).padding(horizontal = 6.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                )
+            }
             items.chunked(4).forEachIndexed { rowIndex, row ->
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     row.forEachIndexed { column, item ->
@@ -450,7 +469,14 @@ private fun ActionGrid(onDismiss: () -> Unit, items: List<PanelItem>) {
                                     if (item.selected) MaterialTheme.colorScheme.primaryContainer
                                     else MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
                                 )
-                                .clickable(role = Role.Button) { onDismiss(); item.onClick() },
+                                // A long press tells what the button does (its name, at the top of the window).
+                                .combinedClickable(
+                                    role = Role.Button,
+                                    onLongClick = {
+                                        haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                                        hint = item.label
+                                    },
+                                ) { onDismiss(); item.onClick() },
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(item.icon, stringResource(item.label), tint = tint)

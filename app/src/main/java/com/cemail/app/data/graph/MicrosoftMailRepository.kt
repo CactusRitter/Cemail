@@ -3,6 +3,7 @@ package com.cemail.app.data.graph
 import com.cemail.app.AppLog
 import com.cemail.app.data.db.MessageDao
 import com.cemail.app.data.db.MessageEntity
+import com.cemail.app.data.db.KeptMessage
 import com.cemail.app.data.db.MutedThread
 import com.cemail.app.data.gmail.AttachmentFinder
 import com.cemail.app.data.gmail.AttachmentInfo
@@ -13,7 +14,10 @@ import com.cemail.app.data.gmail.ReplyInfoParser
 import com.cemail.app.data.mail.Folder
 import com.cemail.app.data.mail.Label
 import com.cemail.app.data.mail.Mail
+import com.cemail.app.data.mail.MailPlace
 import com.cemail.app.data.mail.MailRepository
+import com.cemail.app.data.mail.OLDER_PAGE
+import com.cemail.app.data.mail.SEARCH_SCAN
 import com.cemail.app.data.mail.capped
 import com.cemail.app.data.mail.Unsubscribe
 import com.cemail.app.data.mail.UnsubscribeInfo
@@ -58,6 +62,8 @@ class MicrosoftMailRepository(
     private val onNewMail: (accountId: String, mails: List<Mail>) -> Unit = { _, _ -> },
     /** Where this account's Graph subscription (id and secret) is kept between runs; null disables push. */
     private val pushPrefs: android.content.SharedPreferences? = null,
+    /** How many messages the automatic sync keeps in the Inbox (Settings → Synced messages); 0 = the usual amount. */
+    private val windowSize: () -> Int = { 0 },
 ) : MailRepository {
     // No "name for sending" here: Microsoft always puts the Microsoft account's own name on outgoing mail.
     override val mails: StateFlow<List<Mail>> = dao.observe(accountId)
@@ -299,6 +305,57 @@ class MicrosoftMailRepository(
         }.await()
     }
 
+    override suspend fun loadOlder(place: MailPlace): Int = withContext(Dispatchers.IO) {
+        // Microsoft has folders only: no labels, and the starred messages are not a folder of their own.
+        val folder = (place as? MailPlace.InFolder)?.folder ?: return@withContext 0
+        val target = wellKnown(folder)?.takeIf { folder != Folder.DRAFTS } ?: return@withContext 0
+        try {
+            // The newest messages of the folder the phone does not have yet (so a gap is filled, never skipped): their
+            // ids first, which is cheap, then each of the missing ones whole.
+            val cached = dao.remoteOnes(accountId).mapNotNull { it.remoteId }.toHashSet()
+            val missing = api.ids(target, dao.countIn(accountId, folder.name) + OLDER_PAGE).filter { it !in cached }.take(OLDER_PAGE)
+            bring(missing.map { api.listed(it) to folder }, "load more")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppLog.e("sync", "...${accountId.takeLast(4)} Microsoft load more failed", e)
+            -1
+        }
+    }
+
+    override suspend fun searchServer(query: String): Int = withContext(Dispatchers.IO) {
+        if (query.isBlank()) return@withContext 0
+        try {
+            // Where mail is usually looked for; each folder answers with its best matches.
+            // The newest matches the phone does not have yet: each search goes further back than the one before.
+            val cached = dao.remoteOnes(accountId).mapNotNull { it.remoteId }.toHashSet()
+            val found = SEARCHED.flatMap { folder ->
+                api.search(wellKnown(folder)!!, query, SEARCH_SCAN / SEARCHED.size).filter { it !in cached }
+                    .take(OLDER_PAGE / SEARCHED.size).map { api.listed(it) to folder }
+            }
+            bring(found, "server search")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppLog.e("search", "...${accountId.takeLast(4)} Microsoft server search failed", e)
+            -1
+        }
+    }
+
+    /** Saves the messages the phone does not have yet and keeps all of them. Returns how many were new. */
+    private suspend fun bring(found: List<Pair<GraphMessage, Folder>>, what: String): Int {
+        val cached = dao.remoteOnes(accountId).associateBy { it.remoteId!! }
+        var fresh = 0
+        for ((m, folder) in found) {
+            if (m.id in cached) continue
+            dao.insert(m.toEntity(accountId, folder)) // never announced as new mail
+            fresh++
+        }
+        dao.keep(found.map { KeptMessage(accountId, it.first.id) })
+        AppLog.i("sync", "...${accountId.takeLast(4)} Microsoft $what: ${found.size} listed, $fresh new")
+        return fresh
+    }
+
     private suspend fun sync(quick: Boolean) {
         val cached = dao.remoteOnes(accountId).associateBy { it.remoteId!! }
         val seen = HashSet<String>()
@@ -308,7 +365,8 @@ class MicrosoftMailRepository(
             if (quick && folder != Folder.INBOX) continue
             val target = wellKnown(folder) ?: continue
             try {
-                val listed = api.messages(target, if (folder == Folder.INBOX) INBOX_LIMIT else OTHER_LIMIT)
+                val size = windowSize()
+                val listed = api.messages(target, if (folder == Folder.INBOX) size.takeIf { it > 0 } ?: INBOX_LIMIT else (size * 2 / 5).takeIf { it > 0 } ?: OTHER_LIMIT)
                 for (m in listed) {
                     seen += m.id
                     val old = cached[m.id]
@@ -336,7 +394,8 @@ class MicrosoftMailRepository(
                 AppLog.e("sync", "...${accountId.takeLast(4)} a Microsoft folder could not be read", e)
             }
         }
-        val gone = cached.filter { (id, row) -> id !in seen && runCatching { Folder.valueOf(row.folder) }.getOrNull() in done }
+        val kept = dao.keptIds(accountId).toHashSet()
+        val gone = cached.filter { (id, row) -> id !in seen && id !in kept && runCatching { Folder.valueOf(row.folder) }.getOrNull() in done }
             .values.map { it.localId }
         gone.chunked(500).forEach { dao.deleteAll(accountId, it) }
         AppLog.i("sync", "...${accountId.takeLast(4)} Microsoft ${if (quick) "quick" else "full"} ok: ${done.size} folder(s), ${seen.size} listed, ${arrived.size} new unread, ${gone.size} removed")
@@ -466,6 +525,7 @@ class MicrosoftMailRepository(
 
     private companion object {
         val FOLDERS = listOf(Folder.INBOX, Folder.SENT, Folder.DRAFTS, Folder.TRASH, Folder.ARCHIVE, Folder.SPAM)
+        val SEARCHED = listOf(Folder.INBOX, Folder.SENT, Folder.ARCHIVE)
         const val INBOX_LIMIT = 100
         const val OTHER_LIMIT = 40
         const val RECENT_MILLIS = 3L * 24 * 60 * 60 * 1000

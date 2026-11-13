@@ -94,6 +94,19 @@ interface MailRepository {
     /** Ids of the messages whose subject, sender or whole text contain every word of [query] (works offline). */
     suspend fun searchIds(query: String): Set<Long>
 
+    /**
+     * Brings up to [OLDER_PAGE] messages of [place] older than the oldest one on the phone (Load more at the end of a
+     * list). They stay on the phone afterwards, also when they are older than the automatic sync reaches. Returns how
+     * many new messages came (0: there are no more), or -1 if it failed.
+     */
+    suspend fun loadOlder(place: MailPlace): Int = 0
+
+    /**
+     * Looks for [query] on the server, in the whole mailbox and any date, and keeps on the phone what it finds (it then
+     * shows up in [searchIds]). Returns how many new messages came, or -1 if it failed.
+     */
+    suspend fun searchServer(query: String): Int = 0
+
     /** Deletes for good everything in the Trash or Spam folder. false if the server refused (nothing is removed then). */
     suspend fun emptyFolder(folder: Folder): Boolean
 
@@ -145,3 +158,22 @@ class DemoMailRepository(seed: List<Mail>, private val demoLabels: List<Label> =
         return true
     }
 }
+
+/** Where Load more looks: a folder, the starred messages or a label. */
+sealed interface MailPlace {
+    data class InFolder(val folder: Folder) : MailPlace
+    data object Starred : MailPlace
+    data class InLabel(val id: String) : MailPlace
+}
+
+/** How many older messages one Load more brings, and the most a server search keeps. */
+const val OLDER_PAGE = 50
+
+/** The sum of several accounts' answers to Load more or a server search: -1 only if one failed and nothing came. */
+fun combineCounts(counts: List<Int>): Int {
+    val got = counts.filter { it > 0 }.sum()
+    return if (got == 0 && counts.any { it < 0 }) -1 else got
+}
+
+/** How many matches (ids only) a server search looks through to find the ones the phone does not have yet. */
+const val SEARCH_SCAN = 500

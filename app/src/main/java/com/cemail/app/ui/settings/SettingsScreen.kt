@@ -43,6 +43,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -113,6 +114,7 @@ object SettingsRoute {
     const val APPEARANCE = "appearance"
     const val DIAGNOSTICS = "diagnostics"
     const val BACKUP = "backup"
+    const val UPDATES = "updates"
     private const val ACCOUNT = "account:"
 
     fun account(id: String) = ACCOUNT + id
@@ -158,6 +160,7 @@ fun SettingsScreen(
         route == SettingsRoute.APPEARANCE -> stringResource(R.string.settings_section_appearance)
         route == SettingsRoute.DIAGNOSTICS -> stringResource(R.string.settings_section_diagnostics)
         route == SettingsRoute.BACKUP -> stringResource(R.string.settings_section_backup)
+        route == SettingsRoute.UPDATES -> stringResource(R.string.settings_section_updates)
         else -> stringResource(R.string.settings_title)
     }
 
@@ -212,6 +215,7 @@ fun SettingsScreen(
                     target == SettingsRoute.APPEARANCE -> AppearancePage(settings, repo)
                     target == SettingsRoute.DIAGNOSTICS -> DiagnosticsPage()
                     target == SettingsRoute.BACKUP -> BackupPage(repo)
+                    target == SettingsRoute.UPDATES -> UpdatesPage(settings, repo)
                     else -> Unit // an account that was just removed: the screen is on its way out
                 }
             }
@@ -235,6 +239,7 @@ private fun MainPage(settings: AppSettings, accountCount: Int, onRoute: (String)
         Triple(stringResource(R.string.settings_gestures_title), summary, SettingsRoute.GESTURES to Icons.AutoMirrored.Filled.ArrowForward),
         Triple(stringResource(R.string.settings_notifications_page), stringResource(R.string.settings_row_notifications_body), SettingsRoute.NOTIFICATIONS to Icons.Filled.Notifications),
         Triple(stringResource(R.string.settings_section_backup), stringResource(R.string.settings_row_backup_body), SettingsRoute.BACKUP to CemailIcons.Archive),
+        Triple(stringResource(R.string.settings_section_updates), stringResource(R.string.settings_version, com.cemail.app.BuildConfig.VERSION_NAME), SettingsRoute.UPDATES to CemailIcons.Download),
         Triple(stringResource(R.string.settings_section_diagnostics), stringResource(R.string.settings_row_diagnostics_body), SettingsRoute.DIAGNOSTICS to Icons.Filled.Info),
     )
     rows.forEachIndexed { index, (title, body, target) ->
@@ -382,6 +387,18 @@ private fun NotificationsPage(settings: AppSettings, repo: SettingsRepository) {
             com.cemail.app.sync.SyncWorker.INTERVALS.forEach { minutes ->
                 // The background check is rescheduled by the app itself whenever this (or an account's own interval) changes.
                 ChoiceChip(syncIntervalLabel(minutes), settings.syncMinutes == minutes) { repo.setSyncMinutes(minutes) }
+            }
+        }
+    }
+    SettingsCard {
+        Text(stringResource(R.string.sync_window_title), style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.sync_window_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(0, 250, 500).forEach { size ->
+                ChoiceChip(
+                    if (size == 0) stringResource(R.string.sync_window_normal) else size.toString(),
+                    settings.syncWindow == size,
+                ) { repo.setSyncWindow(size) }
             }
         }
     }
@@ -584,6 +601,39 @@ private fun DiagnosticsPage() {
                     CrashLog.clear(context)
                     crash = null
                 }
+            }
+        }
+    }
+}
+
+/** Settings → Updates: this version, looking on GitHub for a newer one (by itself, or now). */
+@Composable
+private fun UpdatesPage(settings: AppSettings, repo: SettingsRepository) {
+    val context = LocalContext.current
+    val updates = (context.applicationContext as com.cemail.app.CemailApplication).updates
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    // What "Look now" found: null = not asked yet; then a version, "up to date" or "could not check".
+    var result by remember { mutableStateOf<String?>(null) }
+    var checking by remember { mutableStateOf(false) }
+    val upToDate = stringResource(R.string.update_none, com.cemail.app.BuildConfig.VERSION_NAME)
+    val failed = stringResource(R.string.update_check_failed)
+    val foundText = stringResource(R.string.update_found)
+    SwitchRow(R.string.settings_updates_title, R.string.settings_updates_body, settings.checkUpdates, repo::setCheckUpdates)
+    SettingsCard {
+        Text(stringResource(R.string.settings_version, com.cemail.app.BuildConfig.VERSION_NAME), style = MaterialTheme.typography.titleSmall)
+        result?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        TextAction(if (checking) R.string.loading_more else R.string.settings_updates_now, MaterialTheme.colorScheme.primary) {
+            if (checking) return@TextAction
+            checking = true
+            scope.launch {
+                result = try {
+                    if (updates.check(force = true) != null) foundText else upToDate
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    failed
+                }
+                checking = false
             }
         }
     }

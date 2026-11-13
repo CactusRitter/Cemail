@@ -460,4 +460,38 @@
     <string name="swipe_ask_snooze">Zurückstellen?</string>
     <string name="swipe_yes">Ja</string>
     <string name="swipe_no">Nein</string>
+    <!-- 2.0.0: older messages, server search, synced amount, updates -->
+    <string name="load_more">Weitere Nachrichten laden</string>
+    <string name="loading_more">Wird geladen…</string>
+    <string name="load_more_none">Es gibt keine älteren Nachrichten.</string>
+    <string name="load_more_failed">Es konnten keine weiteren Nachrichten geladen werden. Prüfe deine Verbindung.</string>
+    <plurals name="load_more_found">
+        <item quantity="one">%d ältere Nachricht geladen.</item>
+        <item quantity="other">%d ältere Nachrichten geladen.</item>
+    </plurals>
+    <string name="search_server">Auf dem Server suchen</string>
+    <string name="search_server_none">Auf dem Server wurde nichts Weiteres gefunden.</string>
+    <string name="search_server_failed">Die Suche auf dem Server ist fehlgeschlagen. Prüfe deine Verbindung.</string>
+    <plurals name="search_server_found">
+        <item quantity="one">%d weitere Nachricht auf dem Server gefunden.</item>
+        <item quantity="other">%d weitere Nachrichten auf dem Server gefunden.</item>
+    </plurals>
+    <string name="sync_window_title">Synchronisierte Nachrichten</string>
+    <string name="sync_window_body">Wie viele Nachrichten jedes Kontos von selbst auf dem Handy bleiben. Ältere kommen mit „Weitere Nachrichten laden“ am Ende einer Liste. Mehr bedeutet eine langsamere erste Synchronisierung und mehr belegten Speicher.</string>
+    <string name="sync_window_normal">Normal</string>
+    <string name="settings_section_updates">Updates</string>
+    <string name="settings_version">Version %1$s</string>
+    <string name="settings_updates_title">Nach neuen Versionen suchen</string>
+    <string name="settings_updates_body">Ein- bis zweimal am Tag fragt Cemail bei GitHub, wo seine Versionen veröffentlicht werden, ob es eine neuere gibt, und zeigt es oben im Posteingang an. GitHub sieht nur die Adresse deiner Verbindung, nichts über dich oder deine E-Mails.</string>
+    <string name="settings_updates_now">Jetzt suchen</string>
+    <string name="update_title">Cemail %1$s ist verfügbar</string>
+    <string name="update_body">Lade sie herunter, dann fragt Android, ob sie installiert werden soll. Deine Konten und Einstellungen bleiben erhalten.</string>
+    <string name="update_started">Wird heruntergeladen… Danach öffnet sich die Installation (beim ersten Mal fragt Android, ob Cemail Apps installieren darf).</string>
+    <string name="update_failed">Der Download konnte nicht starten. Versuche es später noch einmal.</string>
+    <string name="update_download">Herunterladen</string>
+    <string name="update_later">Jetzt nicht</string>
+    <string name="update_downloading">Cemail %1$s</string>
+    <string name="update_none">Du hast die neueste Version (%1$s).</string>
+    <string name="update_found">Es gibt eine neue Version: Sie wird oben im Posteingang angezeigt.</string>
+    <string name="update_check_failed">Prüfung fehlgeschlagen. Prüfe deine Verbindung.</string>
 </resources>

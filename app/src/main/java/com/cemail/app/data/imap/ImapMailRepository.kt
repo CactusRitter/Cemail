@@ -3,6 +3,7 @@ package com.cemail.app.data.imap
 import com.cemail.app.AppLog
 import com.cemail.app.data.db.LabelDao
 import com.cemail.app.data.db.MessageDao
+import com.cemail.app.data.db.KeptMessage
 import com.cemail.app.data.db.MessageEntity
 import com.cemail.app.data.gmail.AttachmentFinder
 import com.cemail.app.data.gmail.AttachmentInfo
@@ -12,7 +13,9 @@ import com.cemail.app.data.gmail.ReplyInfoParser
 import com.cemail.app.data.mail.Folder
 import com.cemail.app.data.mail.Label
 import com.cemail.app.data.mail.Mail
+import com.cemail.app.data.mail.MailPlace
 import com.cemail.app.data.mail.MailRepository
+import com.cemail.app.data.mail.OLDER_PAGE
 import com.cemail.app.data.mail.InlineCache
 import com.cemail.app.data.mail.SyncMarks
 import com.cemail.app.data.mail.Unsubscribe
@@ -56,6 +59,8 @@ class ImapMailRepository(
     private val marks: SyncMarks = SyncMarks.InMemory(),
     /** The name the user chose to send with (Settings); null keeps the one given when the account was added. */
     private val senderName: () -> String? = { null },
+    /** How many messages the automatic sync keeps in the Inbox (Settings → Synced messages); 0 = the usual amount. */
+    private val windowSize: () -> Int = { 0 },
 ) : MailRepository {
     override val mails: StateFlow<List<Mail>> = dao.observe(accountId)
         .map { list -> list.map { it.toMail() } }
@@ -215,6 +220,79 @@ class ImapMailRepository(
         }.await()
     }
 
+    override suspend fun loadOlder(place: MailPlace): Int = withContext(Dispatchers.IO) {
+        // IMAP has folders only (no labels, and the starred messages are spread over all of them).
+        val folder = (place as? MailPlace.InFolder)?.folder?.takeIf { it != Folder.DRAFTS && it != Folder.OUTBOX } ?: return@withContext 0
+        try {
+            client.withStore { store ->
+                val path = marks.get("role.${roleOf(folder)}") ?: return@withStore 0
+                // What the phone already holds of that folder: Load more brings the newest of the rest.
+                val have = db { dao.remoteOnes(accountId) }.mapNotNull { row ->
+                    row.remoteId?.takeIf { folderOf(it) == path }?.let { parseRemote(it).second }
+                }.toHashSet()
+                client.inFolder(store, path, readOnly = true) { f ->
+                    bring(path, folder, client.missingNewest(f, have, OLDER_PAGE), "load more")
+                }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppLog.e("sync", "...${accountId.takeLast(4)} IMAP load more failed", e)
+            -1
+        }
+    }
+
+    override suspend fun searchServer(query: String): Int = withContext(Dispatchers.IO) {
+        if (query.isBlank()) return@withContext 0
+        try {
+            client.withStore { store ->
+                // Where mail is usually looked for; each folder answers with its newest matches.
+                var fresh = 0
+                val remotes = db { dao.remoteOnes(accountId) }.mapNotNull { it.remoteId }
+                for (folder in SEARCHED) {
+                    val path = marks.get("role.${roleOf(folder)}") ?: continue
+                    val have = remotes.filter { folderOf(it) == path }.map { parseRemote(it).second }.toHashSet()
+                    fresh += client.inFolder(store, path, readOnly = true) { f ->
+                        bring(path, folder, client.search(f, query, have, OLDER_PAGE / SEARCHED.size), "server search")
+                    }
+                }
+                fresh
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppLog.e("search", "...${accountId.takeLast(4)} IMAP server search failed", e)
+            -1
+        }
+    }
+
+    /** Saves the messages of [path] the phone does not have yet and keeps all of them. Returns how many were new. */
+    private fun bring(path: String, folder: Folder, messages: List<RemoteMessage>, what: String): Int {
+        val cached = db { dao.remoteOnes(accountId) }.mapNotNull { it.remoteId }.toHashSet()
+        var fresh = 0
+        for (m in messages) {
+            val remote = "$path|${m.uid}"
+            if (remote in cached) continue
+            db { dao.insert(entityOf(remote, folder, m)) } // never announced as new mail
+            fresh++
+        }
+        db { dao.keep(messages.map { KeptMessage(accountId, "$path|${it.uid}") }) }
+        AppLog.i("sync", "...${accountId.takeLast(4)} IMAP $what: ${messages.size} listed, $fresh new")
+        return fresh
+    }
+
+    /** The row for a message of the server, read whole. */
+    private fun entityOf(remote: String, folder: Folder, m: RemoteMessage): MessageEntity {
+        val parsed = client.parse(m.message)
+        return MessageEntity(
+            accountId = accountId, remoteId = remote, folder = folder.name,
+            senderName = parsed.fromName, senderEmail = parsed.fromEmail, subject = parsed.subject,
+            body = parsed.body, timeMillis = parsed.timeMillis, read = m.seen, starred = m.flagged,
+            pinned = false, snoozedUntil = null, hasAttachment = parsed.hasAttachment,
+            labelIds = "", bodyHtml = parsed.html, threadId = null,
+        ).capped()
+    }
+
     private fun <T> db(block: suspend () -> T): T = runBlocking { block() } // already on an IO thread
 
     private fun sync(quick: Boolean) {
@@ -242,7 +320,8 @@ class ImapMailRepository(
                             }
                             marks.put("uidv.${f.path}", validity)
                         }
-                        val limit = if (f.role == Role.INBOX) INBOX_LIMIT else OTHER_LIMIT
+                        val size = windowSize()
+                        val limit = if (f.role == Role.INBOX) size.takeIf { it > 0 } ?: INBOX_LIMIT else (size * 2 / 5).takeIf { it > 0 } ?: OTHER_LIMIT
                         for (m in client.window(folder, limit)) {
                             val remote = "${f.path}|${m.uid}"
                             seen += remote
@@ -271,7 +350,8 @@ class ImapMailRepository(
                     AppLog.e("sync", "...${accountId.takeLast(4)} IMAP folder could not be read", e)
                 }
             }
-            val gone = cached.filter { (remote, _) -> folderOf(remote) in done && remote !in seen }.values.map { it.localId }
+            val kept = db { dao.keptIds(accountId) }.toHashSet()
+            val gone = cached.filter { (remote, _) -> folderOf(remote) in done && remote !in seen && remote !in kept }.values.map { it.localId }
             gone.chunked(500).forEach { chunk -> db { dao.deleteAll(accountId, chunk) } }
             AppLog.i("sync", "...${accountId.takeLast(4)} IMAP ${if (quick) "quick" else "full"} ok: ${done.size} folder(s), ${seen.size} listed, ${arrived.size} new unread, ${gone.size} removed")
             // The first sync of an account brings in its whole window: that is not "new mail".
@@ -427,6 +507,7 @@ class ImapMailRepository(
 
     private companion object {
         val SYNCED = setOf(Role.INBOX, Role.SENT, Role.DRAFTS, Role.TRASH, Role.ARCHIVE, Role.JUNK)
+        val SEARCHED = listOf(Folder.INBOX, Folder.SENT, Folder.ARCHIVE)
         const val INBOX_LIMIT = 80
         const val OTHER_LIMIT = 30
         const val RECENT_MILLIS = 3L * 24 * 60 * 60 * 1000

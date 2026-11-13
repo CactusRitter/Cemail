@@ -4,6 +4,7 @@ import com.cemail.app.data.db.LabelDao
 import com.cemail.app.data.db.LabelEntity
 import com.cemail.app.data.db.MessageDao
 import com.cemail.app.data.db.MessageEntity
+import com.cemail.app.data.db.KeptMessage
 import com.cemail.app.data.db.MutedThread
 import com.cemail.app.data.gmail.GmailApi
 import com.cemail.app.data.gmail.GmailHttpException
@@ -64,6 +65,8 @@ class RoomMailRepository(
     private val marks: SyncMarks = SyncMarks.InMemory(),
     /** The name the user chose to send with (Settings); null lets Gmail use the account's own. */
     private val senderName: () -> String? = { null },
+    /** How many messages the automatic sync keeps (Settings → Synced messages); 0 = the usual amount. */
+    private val windowSize: () -> Int = { 0 },
 ) : MailRepository {
     override val mails: StateFlow<List<Mail>> = dao.observe(accountId)
         .map { list -> list.map { it.toMail() } }
@@ -539,6 +542,77 @@ class RoomMailRepository(
      * Downloads a message whole and stores it (replacing [old]); chats are not kept. [force] keeps it even when it
      * only carries labels that do not sync on their own (the user asked for that label).
      */
+    override suspend fun loadOlder(place: MailPlace): Int = withContext(Dispatchers.IO) {
+        try {
+            val (query, label, onPhone) = when (place) {
+                is MailPlace.InFolder -> Triple(folderQuery(place.folder) ?: return@withContext 0, null, dao.countIn(accountId, place.folder.name))
+                MailPlace.Starred -> Triple("is:starred", null, dao.countStarred(accountId))
+                is MailPlace.InLabel -> Triple("", place.id, dao.countWithLabel(accountId, place.id))
+            }
+            // Not "older than the oldest one here": a label opened by hand may have left a few old messages in a folder,
+            // and the months between them and the synced ones would be skipped. Instead: the newest messages of the place
+            // that the phone does not have yet (Gmail lists ids only, 100 a time, so looking past those it has is cheap).
+            val cached = dao.remoteOnes(accountId).mapNotNull { it.remoteId }.toHashSet()
+            val missing = api.listMessageIds(query, onPhone + OLDER_PAGE, label).filter { it !in cached }.take(OLDER_PAGE)
+            bring(missing, "load more")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppLog.e("sync", "...${accountId.takeLast(4)} load more failed", e)
+            -1
+        }
+    }
+
+    override suspend fun searchServer(query: String): Int = withContext(Dispatchers.IO) {
+        if (query.isBlank()) return@withContext 0
+        try {
+            // Gmail understands the same search words as its own search box (from:, is:unread, has:attachment…).
+            // The newest matches the phone does not have yet: each search goes further back than the one before.
+            val cached = dao.remoteOnes(accountId).mapNotNull { it.remoteId }.toHashSet()
+            bring(api.listMessageIds(query.trim(), SEARCH_SCAN, null).filter { it !in cached }.take(OLDER_PAGE), "server search")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppLog.e("search", "...${accountId.takeLast(4)} server search failed", e)
+            -1
+        }
+    }
+
+    /** Gmail's search words for the messages of a folder (null for the folders Load more does not apply to). */
+    private fun folderQuery(folder: Folder): String? = when (folder) {
+        Folder.INBOX -> "in:inbox"
+        Folder.SENT -> "in:sent"
+        Folder.ARCHIVE -> "-in:inbox -in:sent -in:draft -in:spam -in:trash -in:chats"
+        Folder.SPAM -> "in:spam"
+        Folder.TRASH -> "in:trash"
+        Folder.DRAFTS, Folder.OUTBOX -> null
+    }
+
+    /** Downloads the messages of [ids] the phone does not have yet and keeps all of them. Returns how many were new. */
+    private suspend fun bring(ids: List<String>, what: String): Int {
+        val cached = dao.remoteOnes(accountId).associateBy { it.remoteId!! }
+        val missing = ids.filter { cached[it]?.bodyHtml == null }
+        val gate = Semaphore(6)
+        val ignored = java.util.concurrent.ConcurrentLinkedQueue<MessageEntity>() // never announced as new mail
+        coroutineScope {
+            missing.map { id ->
+                async(Dispatchers.IO) {
+                    gate.withPermit {
+                        try {
+                            ingest(id, cached[id], ignored, force = true)
+                        } catch (e: GmailHttpException) {
+                            if (e.code != 404) throw e // gone in the meantime
+                        }
+                    }
+                }
+            }.awaitAll()
+        }
+        dao.keep(ids.map { KeptMessage(accountId, it) })
+        val fresh = missing.count { it !in cached }
+        AppLog.i("sync", "...${accountId.takeLast(4)} $what: ${ids.size} listed, $fresh new")
+        return fresh
+    }
+
     private suspend fun ingest(id: String, old: MessageEntity?, arrived: java.util.Queue<MessageEntity>, force: Boolean = false) {
         val message = api.getMessage(id)
         if (message.labelIds.any { it == "CHAT" }) {
@@ -577,7 +651,7 @@ class RoomMailRepository(
         val historyAtStart = try { api.currentHistoryId() } catch (_: Exception) { null }
         if (!quick) syncLabels()
         // The newest messages, and the newest spam apart so that a flood of spam never pushes real mail out of the window.
-        val remoteIds = (api.listMessageIds(QUERY, LIMIT) + api.listMessageIds("in:spam", SPAM_LIMIT)).distinct()
+        val remoteIds = (api.listMessageIds(QUERY, windowSize().takeIf { it > 0 } ?: LIMIT) + api.listMessageIds("in:spam", SPAM_LIMIT)).distinct()
         val cached = dao.remoteOnes(accountId).associateBy { it.remoteId!! }
         val gate = Semaphore(6)
         val arrived = java.util.concurrent.ConcurrentLinkedQueue<MessageEntity>()
@@ -619,7 +693,8 @@ class RoomMailRepository(
         }
         // Messages of labels fetched by hand stay although they are older than the window (Gmail's history still
         // removes them if they are deleted).
-        val gone = cached.filterKeys { it !in remoteIds }.values.filterNot { it.inManualLabel() }.map { it.localId }
+        val kept = dao.keptIds(accountId).toHashSet()
+        val gone = cached.filterKeys { it !in remoteIds && it !in kept }.values.filterNot { it.inManualLabel() }.map { it.localId }
         gone.chunked(500).forEach { dao.deleteAll(accountId, it) }
         if (historyAtStart != null) marks.save(historyAtStart, fullToo = true)
         AppLog.i("sync", "...${accountId.takeLast(4)} ${if (quick) "quick" else "full"} ok:${remoteIds.size} listed, ${cached.size} cached, ${arrived.size} new unread, ${gone.size} removed")
@@ -667,7 +742,7 @@ internal fun MessageEntity.capped() = copy(body = body.take(400_000), bodyHtml =
 
 internal fun MessageEntity.toMail() = Mail(
     // The text of messages saved before entities were decoded on arrival (see decodeEntities) reads right too.
-    id = localId, senderName = senderName, senderEmail = senderEmail, subject = subject, body = com.cemail.app.data.imap.decodeEntities(body),
+    id = localId, senderName = senderName, senderEmail = senderEmail, subject = subject, body = com.cemail.app.data.imap.readablePlain(body),
     timeMillis = timeMillis, folder = Folder.valueOf(folder), read = read, starred = starred, pinned = pinned,
     snoozedUntil = snoozedUntil, hasAttachment = hasAttachment,
     labelIds = labelIds.split(" ").filter { it.isNotEmpty() }.toSet(), bodyHtml = bodyHtml, accountId = accountId,
