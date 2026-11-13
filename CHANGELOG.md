@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
+## 2.2.2 — 2026-11-13
+- Ajustes → Actualizaciones muestra también el aviso de actualización (Descargar / Instalar), no solo la bandeja de entrada. «Buscar ahora» vuelve a ofrecer una versión pospuesta con «Ahora no».
+
 ## 2.2.1 — 2026-11-13
 - Actualizaciones: el permiso «instalar apps desconocidas» se pide **antes** de descargar (abre la pantalla de Android y, al volver, se pulsa Descargar otra vez). Antes se pedía a mitad: Android reiniciaba la app, se perdía la espera de la descarga y el instalador no se abría solo (visto en el log de una Samsung).
 - Outlook (a raíz de la caída de Microsoft): los errores 500/502/503/504/429 de Graph se reintentan con espera (2, 6 y 15 s en cambios; 2 y 6 s en lecturas; respeta «Retry-After» hasta 20 s) en lecturas, marcar leído/destacado, mover y borrar; nunca en envíos ni borradores nuevos. Antes un cambio que fallaba se perdía y la siguiente sincronización lo deshacía. Un 404 tras mover se da por hecho. Si Microsoft sigue caído tras los reintentos, el cambio sigue perdiéndose (no hay cola persistente todavía).

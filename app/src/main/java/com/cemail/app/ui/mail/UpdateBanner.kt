@@ -30,7 +30,7 @@ import com.cemail.app.ui.glass.pressScale
 
 /** At the top of the Inbox when GitHub has a newer Cemail: download it (Android then asks to install) or not now. */
 @Composable
-fun UpdateBanner(modifier: Modifier = Modifier) {
+fun UpdateBanner(modifier: Modifier = Modifier, allowLater: Boolean = true) {
     val context = LocalContext.current
     val updates = (context.applicationContext as CemailApplication).updates
     val update by updates.available.collectAsStateWithLifecycle()
@@ -97,7 +97,7 @@ fun UpdateBanner(modifier: Modifier = Modifier) {
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                 )
-                Text(
+                if (allowLater) Text(
                     stringResource(R.string.update_later),
                     Modifier
                         .pressScale(0.94f)

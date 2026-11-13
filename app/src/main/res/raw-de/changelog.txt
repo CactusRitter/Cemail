@@ -1,3 +1,6 @@
+## 2.2.2
+- Einstellungen, Updates: Der Update-Hinweis ist auch dort (Herunterladen und, sobald geladen, die Installieren-Taste), nicht nur oben im Posteingang. „Jetzt suchen“ bietet auch eine Version an, die du zurückgestellt hattest.
+
 ## 2.2.1
 - Updates: Die Erlaubnis, Apps aus Cemail zu installieren, wird vor dem Download abgefragt, damit die App nicht mittendrin neu startet.
 - Outlook: Antwortet Microsoft mit einem Serverfehler (500, 502, 503, 504 oder 429), warten Lesevorgänge und Änderungen (gelesen, markiert, verschieben, löschen) und werden bis zu dreimal wiederholt, statt verloren zu gehen.

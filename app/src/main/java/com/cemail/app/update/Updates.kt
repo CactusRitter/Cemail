@@ -96,6 +96,8 @@ class Updates(private val context: Context, private val client: OkHttpClient = O
             if (found == null) remove(KEY_VERSION).remove(KEY_APK).remove(KEY_PAGE).remove(KEY_NOTES)
             else putString(KEY_VERSION, found.version).putString(KEY_APK, found.apkUrl).putString(KEY_PAGE, found.pageUrl).putString(KEY_NOTES, found.notes)
         }.apply()
+        // Asking by hand (Settings) offers it again even if it was set aside.
+        if (force) prefs.edit().remove(KEY_IGNORED).apply()
         _available.value = found?.takeIf { it.version != prefs.getString(KEY_IGNORED, null) }
         found
     }
