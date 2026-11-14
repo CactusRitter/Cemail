@@ -1,3 +1,6 @@
+## 2.2.4
+- Diseño, como en Cenotes: al abrir un mensaje la ventana crece desde la tarjeta con las esquinas de cada diseño (cuadradas en Retro 98), y el cuerpo del mensaje, las cajas de redactar y las vistas previas de Ajustes ya no se quedan redondeados en los diseños cuadrados. TalkBack ahora dice si interruptores, opciones, colores y etiquetas están activados o elegidos. «Buscar ahora» es un botón que pone «Buscando…» mientras pregunta.
+
 ## 2.2.3
 - Ajustes, Actualizaciones: el interruptor de buscar versiones nuevas está arriba del todo, encima del aviso de actualización.
 

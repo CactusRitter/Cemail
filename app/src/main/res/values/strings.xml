@@ -486,6 +486,7 @@
     <string name="settings_updates_title">Look for new versions</string>
     <string name="settings_updates_body">Once or twice a day Cemail asks GitHub, where its versions are published, whether there is a newer one, and says so at the top of the Inbox. GitHub only sees the address of your connection, nothing about you or your mail.</string>
     <string name="settings_updates_now">Look now</string>
+    <string name="update_checking">Looking…</string>
     <string name="whatsnew_current">What’s new in %1$s</string>
     <string name="whatsnew_next">Coming in %1$s</string>
     <string name="whatsnew_earlier">Earlier versions</string>

@@ -484,6 +484,7 @@
     <string name="settings_updates_title">Nach neuen Versionen suchen</string>
     <string name="settings_updates_body">Ein- bis zweimal am Tag fragt Cemail bei GitHub, wo seine Versionen veröffentlicht werden, ob es eine neuere gibt, und zeigt es oben im Posteingang an. GitHub sieht nur die Adresse deiner Verbindung, nichts über dich oder deine E-Mails.</string>
     <string name="settings_updates_now">Jetzt suchen</string>
+    <string name="update_checking">Wird gesucht…</string>
     <string name="whatsnew_current">Neu in %1$s</string>
     <string name="whatsnew_next">Kommt in %1$s</string>
     <string name="whatsnew_earlier">Frühere Versionen</string>

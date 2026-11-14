@@ -6,6 +6,10 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -319,8 +323,8 @@ private fun FolderSyncRow(
         Modifier
             .fillMaxWidth()
             .heightIn(min = 48.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(enabled = toggles, role = Role.Switch, onClick = onToggle)
+            .clip(com.cemail.app.ui.theme.LocalSkin.current.shape(RoundedCornerShape(16.dp)))
+            .toggleable(value = checked == true, enabled = toggles, role = Role.Switch, onValueChange = { onToggle() })
             .padding(start = (depth * 24).dp, top = 2.dp, bottom = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -442,7 +446,8 @@ private fun AccountLookCard(account: AccountEntity, look: AccountLook, repo: Set
                         .size(40.dp)
                         .clip(CircleShape)
                         .background(accent.shade())
-                        .clickable(role = Role.RadioButton, onClickLabel = name) {
+                        .semantics { contentDescription = name }
+                        .selectable(selected = selected, role = Role.RadioButton) {
                             repo.setAccountLook(account.id, look.copy(label = label, senderName = sender, color = accent))
                         },
                     contentAlignment = Alignment.Center,
@@ -506,7 +511,7 @@ private fun SignatureCard(email: String, repo: SettingsRepository) {
     }
     SettingsCard {
         if (html != null) {
-            Box(Modifier.fillMaxWidth().height(170.dp).clip(RoundedCornerShape(16.dp))) {
+            Box(Modifier.fillMaxWidth().height(170.dp).clip(com.cemail.app.ui.theme.LocalSkin.current.shape(RoundedCornerShape(16.dp)))) {
                 HtmlBody(HtmlSanitizer.page(html, 0, ""), true, Modifier.fillMaxSize()) { }
             }
         } else {

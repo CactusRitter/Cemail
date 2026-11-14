@@ -1,6 +1,7 @@
 package com.cemail.app.ui.account
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -317,7 +318,7 @@ private fun ServerBlock(
             Text(
                 stringResource(label),
                 Modifier
-                    .clickable(role = Role.RadioButton) { onStartTls(value) }
+                    .selectable(selected = startTls == value, role = Role.RadioButton) { onStartTls(value) }
                     .glass(CircleShape, if (startTls == value) GlassKind.Pinned else GlassKind.Card)
                     .padding(horizontal = 14.dp, vertical = 8.dp),
                 style = MaterialTheme.typography.labelLarge,

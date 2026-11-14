@@ -8,6 +8,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -241,7 +242,7 @@ fun ReadScreen(
                 Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp)),
+                    .clip(com.cemail.app.ui.theme.LocalSkin.current.shape(RoundedCornerShape(24.dp))),
             ) {
                 val page = cleanPage
                 when {
@@ -464,7 +465,7 @@ private fun ActionGrid(onDismiss: () -> Unit, items: List<PanelItem>) {
                                 .popIn(delayMillis = 70 + (rowIndex * 4 + column) * 28, initialScale = 0.4f)
                                 .pressScale(0.88f)
                                 .size(60.dp)
-                                .clip(RoundedCornerShape(18.dp))
+                                .clip(com.cemail.app.ui.theme.LocalSkin.current.shape(RoundedCornerShape(18.dp)))
                                 .background(
                                     if (item.selected) MaterialTheme.colorScheme.primaryContainer
                                     else MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
@@ -569,7 +570,7 @@ private fun LabelsPopup(mail: Mail, labels: List<Label>, vm: MailViewModel, onDi
                 labels.sortedBy { it.name.lowercase() }.forEach { label ->
                     val on = label.id in mail.labelIds
                     Row(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).clickable(role = Role.Checkbox) { vm.setLabel(setOf(mail.id), label.id, !on) }
+                        Modifier.fillMaxWidth().clip(com.cemail.app.ui.theme.LocalSkin.current.shape(RoundedCornerShape(16.dp))).toggleable(value = on, role = Role.Checkbox) { vm.setLabel(setOf(mail.id), label.id, !on) }
                             .padding(horizontal = 8.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp),

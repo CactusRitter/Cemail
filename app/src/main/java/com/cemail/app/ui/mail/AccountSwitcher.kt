@@ -2,6 +2,7 @@ package com.cemail.app.ui.mail
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -89,7 +90,7 @@ private fun AccountRow(
             .pressScale(0.96f)
             .fillMaxWidth()
             .then(if (selected) Modifier.glass(shape, GlassKind.Pinned) else Modifier.clip(shape))
-            .clickable(role = Role.RadioButton, onClick = onClick)
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),

@@ -74,6 +74,9 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -503,7 +506,7 @@ private fun AppearancePage(settings: AppSettings, repo: SettingsRepository) {
         )
         // How the glass looks right now: coloured bars behind a floating pill.
         Box(
-            Modifier.fillMaxWidth().height(120.dp).clip(RoundedCornerShape(20.dp)).background(MaterialTheme.colorScheme.background)
+            Modifier.fillMaxWidth().height(120.dp).clip(com.cemail.app.ui.theme.LocalSkin.current.shape(RoundedCornerShape(20.dp))).background(MaterialTheme.colorScheme.background)
                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)) // tinted like the app's background
                 .padding(horizontal = 14.dp, vertical = 12.dp),
         ) {
@@ -534,7 +537,8 @@ private fun AccentDot(color: Color, name: String, selected: Boolean, onClick: ()
             .padding(ring + 2.dp)
             .clip(CircleShape)
             .background(color)
-            .clickable(role = Role.RadioButton, onClickLabel = name, onClick = onClick),
+            .semantics { contentDescription = name }
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         if (selected) Icon(Icons.Filled.Check, name, Modifier.size(20.dp), tint = Color.White)
@@ -623,8 +627,8 @@ private fun UpdatesPage(settings: AppSettings, repo: SettingsRepository) {
     SettingsCard {
         Text(stringResource(R.string.settings_version, com.cemail.app.BuildConfig.VERSION_NAME), style = MaterialTheme.typography.titleSmall)
         result?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        TextAction(if (checking) R.string.loading_more else R.string.settings_updates_now, MaterialTheme.colorScheme.primary) {
-            if (checking) return@TextAction
+        ChoiceChip(stringResource(if (checking) R.string.update_checking else R.string.settings_updates_now), false, enabled = !checking) {
+            if (checking) return@ChoiceChip
             checking = true
             scope.launch {
                 result = try {

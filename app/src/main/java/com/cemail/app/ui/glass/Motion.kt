@@ -151,7 +151,8 @@ fun Modifier.expandFrom(origin: Rect?, mailId: Long, closing: Boolean): Modifier
             progress.animateTo(1f, spring(dampingRatio = 0.9f, stiffness = 170f))
         }
     }
-    val corner = with(LocalDensity.current) { 22.dp.toPx() }
+    // The corner of this look (square in Retro 98, small in Paper…), so the card does not turn round while it grows.
+    val corner = with(LocalDensity.current) { com.cemail.app.ui.theme.LocalSkin.current.radius(22.dp).toPx() }
     return this.graphicsLayer {
         val p = progress.value
         val open = p.coerceIn(0f, 1f) // the spring may overshoot a little: the window never goes beyond the screen

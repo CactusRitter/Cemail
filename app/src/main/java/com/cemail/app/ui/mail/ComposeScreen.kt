@@ -331,7 +331,7 @@ fun ComposeScreen(
                             contentAlignment = Alignment.Center,
                         ) { Icon(Icons.Filled.Close, stringResource(R.string.compose_signature_remove), Modifier.size(20.dp)) }
                     }
-                    Box(Modifier.fillMaxWidth().height(170.dp).clip(RoundedCornerShape(24.dp))) {
+                    Box(Modifier.fillMaxWidth().height(170.dp).clip(com.cemail.app.ui.theme.LocalSkin.current.shape(RoundedCornerShape(24.dp)))) {
                         HtmlBody(HtmlSanitizer.page(signature, 0, ""), true, Modifier.fillMaxSize()) { }
                     }
                 }
@@ -364,7 +364,7 @@ fun ComposeScreen(
                             contentAlignment = Alignment.Center,
                         ) { Icon(Icons.Filled.Close, stringResource(R.string.compose_quote_remove), Modifier.size(20.dp)) }
                     }
-                    Box(Modifier.fillMaxWidth().height(320.dp).clip(RoundedCornerShape(24.dp))) {
+                    Box(Modifier.fillMaxWidth().height(320.dp).clip(com.cemail.app.ui.theme.LocalSkin.current.shape(RoundedCornerShape(24.dp)))) {
                         HtmlBody(HtmlSanitizer.page(quote, 0, draft.quoteCss), draft.quoteShowImages, Modifier.fillMaxSize()) { }
                     }
                 }

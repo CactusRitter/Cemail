@@ -2,6 +2,8 @@ package com.cemail.app.ui.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -72,7 +74,7 @@ internal fun SwitchRow(title: Int, body: Int, checked: Boolean, onChange: (Boole
         Modifier
             .fillMaxWidth()
             .glass(RoundedCornerShape(24.dp), GlassKind.Card)
-            .clickable(role = Role.Switch) { onChange(!checked) }
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onChange)
             .padding(horizontal = 18.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -87,13 +89,13 @@ internal fun SwitchRow(title: Int, body: Int, checked: Boolean, onChange: (Boole
 
 /** One choice among several, as a glass pill (the selected one is pinned and bold). */
 @Composable
-internal fun ChoiceChip(label: String, selected: Boolean, onClick: () -> Unit) {
+internal fun ChoiceChip(label: String, selected: Boolean, enabled: Boolean = true, onClick: () -> Unit) {
     Text(
         label,
         Modifier
             .pressScale(0.94f)
             .glass(CircleShape, if (selected) GlassKind.Pinned else GlassKind.Card)
-            .clickable(role = Role.RadioButton, onClick = onClick)
+            .selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         style = MaterialTheme.typography.labelLarge,
         fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
