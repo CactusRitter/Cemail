@@ -220,6 +220,10 @@
     <string name="settings_remove_title">Dieses Konto entfernen?</string>
     <string name="settings_remove_body">%1$s wird abgemeldet und seine Nachrichten werden von diesem Handy gelöscht. In Gmail ändert sich nichts.</string>
     <string name="cancel">Abbrechen</string>
+    <string name="pick_date">Wähle den Tag</string>
+    <string name="pick_time">Wähle die Uhrzeit</string>
+    <string name="pick_next">Weiter</string>
+    <string name="pick_set">Übernehmen</string>
     <string name="settings_no_accounts">Kein Konto angemeldet.</string>
     <string name="settings_sync_title">Nach neuen E-Mails suchen</string>
     <string name="settings_sync_body">Wie oft Cemail von selbst nach neuen Nachrichten sucht. Auch die Benachrichtigungen richten sich danach. Bei Manuell kommen E-Mails nur, wenn du auf Aktualisieren tippst.</string>

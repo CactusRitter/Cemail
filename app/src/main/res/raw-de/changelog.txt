@@ -1,3 +1,6 @@
+## 2.2.5
+- Später senden → Datum und Uhrzeit wählen: Kalender und Uhr haben das Ce-Design (wie in Cenotes) statt der grauen Android-Dialoge.
+
 ## 2.2.4
 - Design, wie in Cenotes: Beim Öffnen einer Nachricht wächst das Fenster aus der Karte mit den Ecken des jeweiligen Looks (eckig bei Retro 98), und Nachrichtentext, Schreibfelder und Vorschauen in den Einstellungen bleiben in den eckigen Looks nicht mehr rund. TalkBack sagt jetzt, ob Schalter, Optionen, Farben und Labels an oder gewählt sind. „Jetzt suchen“ ist eine Taste, die beim Suchen „Wird gesucht…“ zeigt.
 

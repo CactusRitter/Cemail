@@ -222,6 +222,10 @@
     <string name="settings_remove_title">Remove this account?</string>
     <string name="settings_remove_body">%1$s will be signed out and its messages deleted from this phone. Nothing changes in Gmail.</string>
     <string name="cancel">Cancel</string>
+    <string name="pick_date">Choose the day</string>
+    <string name="pick_time">Choose the time</string>
+    <string name="pick_next">Next</string>
+    <string name="pick_set">Set</string>
     <string name="settings_no_accounts">No account signed in.</string>
     <string name="settings_sync_title">Check for new mail</string>
     <string name="settings_sync_body">How often Cemail looks for new messages on its own. Notifications use this too. With Manual, mail only arrives when you tap refresh.</string>

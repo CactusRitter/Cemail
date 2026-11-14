@@ -220,6 +220,10 @@
     <string name="settings_remove_title">¿Quitar esta cuenta?</string>
     <string name="settings_remove_body">Se cerrará la sesión de %1$s y sus mensajes se borrarán de este teléfono. En Gmail no cambia nada.</string>
     <string name="cancel">Cancelar</string>
+    <string name="pick_date">Elige el día</string>
+    <string name="pick_time">Elige la hora</string>
+    <string name="pick_next">Siguiente</string>
+    <string name="pick_set">Aceptar</string>
     <string name="settings_no_accounts">No hay ninguna cuenta con sesión iniciada.</string>
     <string name="settings_sync_title">Comprobar correo nuevo</string>
     <string name="settings_sync_body">Cada cuánto busca Cemail mensajes nuevos por su cuenta. Las notificaciones usan también este ajuste. Con Manual, el correo solo llega al pulsar actualizar.</string>

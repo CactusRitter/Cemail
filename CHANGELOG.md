@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
+## 2.2.5 — 2026-11-14
+- «Enviar más tarde → Elegir fecha y hora» usa `DateTimeDialog` (calendario y reloj de Material 3 sobre una tarjeta de cristal `Menu`, copiado de Cenotes) en vez de `DatePickerDialog`/`TimePickerDialog` de Android. Un momento pasado se mueve a un minuto desde ahora, como antes.
+
 ## 2.2.4 — 2026-11-14
 - Pulido de diseño a partir de Cenotes: `expandFrom` y los recortes de tarjetas (cuerpo del correo, cajas de redactar, vistas previas) usan las esquinas del diseño (`LocalSkin.shape`); en Retro 98 el cuerpo del correo se quedaba redondeado. Accesibilidad: `toggleable`/`selectable` en `SwitchRow`, `ChoiceChip`, colores de acento, selector de cuentas, STARTTLS/SSL, etiquetas y carpetas a sincronizar (TalkBack dice el estado). «Buscar ahora» es un `ChoiceChip` con «Buscando…».
 

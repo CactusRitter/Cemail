@@ -1,3 +1,6 @@
+## 2.2.5
+- Send later → Pick date and time: the calendar and the clock are in the Ce design (the same as in Cenotes) instead of Android's grey dialogs.
+
 ## 2.2.4
 - Design, as in Cenotes: opening a message grows out of a card with the corners of each look (square in Retro 98), and the message body, the compose boxes and the settings previews no longer stay rounded in the square looks. TalkBack now says whether switches, options, colours and labels are on or chosen. “Look now” is a button that says “Looking…” while it asks.
 

@@ -1,3 +1,6 @@
+## 2.2.5
+- Enviar más tarde → Elegir fecha y hora: el calendario y el reloj tienen el diseño Ce (igual que en Cenotes) en vez de los diálogos grises de Android.
+
 ## 2.2.4
 - Diseño, como en Cenotes: al abrir un mensaje la ventana crece desde la tarjeta con las esquinas de cada diseño (cuadradas en Retro 98), y el cuerpo del mensaje, las cajas de redactar y las vistas previas de Ajustes ya no se quedan redondeados en los diseños cuadrados. TalkBack ahora dice si interruptores, opciones, colores y etiquetas están activados o elegidos. «Buscar ahora» es un botón que pone «Buscando…» mientras pregunta.
 
