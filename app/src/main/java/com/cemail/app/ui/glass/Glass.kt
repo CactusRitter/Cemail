@@ -444,6 +444,14 @@ private fun Modifier.skinSegment(skin: SkinLook, pos: GroupPos, radius: Dp, fill
 @Composable
 fun onBackdrop(default: Color): Color = LocalSkin.current.backdropInk ?: default
 
+/** Kind of glass of the floating "write" / "new" / "reply" button: highlighted, except in looks where it must match the other buttons (Retro 98). */
+@Composable
+fun fabKind(): GlassKind = if (LocalSkin.current.fabPinned) GlassKind.Pinned else GlassKind.Chrome
+
+/** Icon colour of that button: the accent when highlighted, the usual content colour otherwise. */
+@Composable
+fun fabTint(): Color = if (LocalSkin.current.fabPinned) MaterialTheme.colorScheme.primary else androidx.compose.material3.LocalContentColor.current
+
 /** Settings → Appearance → Message list: on the right (tablets), with the floating buttons then on the left. */
 val LocalListOnRight = androidx.compose.runtime.staticCompositionLocalOf { false }
 

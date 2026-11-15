@@ -361,11 +361,11 @@ fun ListScreen(
                     .popIn(delayMillis = 220, initialScale = 0.3f)
                     .pressScale(0.88f)
                     .size(60.dp)
-                    .glass(com.cemail.app.ui.theme.LocalSkin.current.fabCorner?.let { RoundedCornerShape(it) } ?: CircleShape, GlassKind.Pinned, elevation = 10.dp, hazeState = haze)
+                    .glass(com.cemail.app.ui.theme.LocalSkin.current.fabCorner?.let { RoundedCornerShape(it) } ?: CircleShape, com.cemail.app.ui.glass.fabKind(), elevation = 10.dp, hazeState = haze)
                     .clickable(role = Role.Button, onClickLabel = stringResource(R.string.compose)) { vm.newDraft() },
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Filled.Create, stringResource(R.string.compose), tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Filled.Create, stringResource(R.string.compose), tint = com.cemail.app.ui.glass.fabTint())
             }
           }
         }

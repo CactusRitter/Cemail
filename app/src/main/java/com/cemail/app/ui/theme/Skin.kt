@@ -105,6 +105,8 @@ data class SkinLook(
     val backdropInk: Color? = null,
     /** Corner of the floating "write" button; null = round. */
     val fabCorner: Dp? = null,
+    /** The floating "write" button is highlighted (Pinned, accent icon); false = like the other buttons (Retro 98). */
+    val fabPinned: Boolean = true,
 ) {
     private val keepsShapes get() = cornerScale == 1f && maxCorner >= 1000.dp
 
@@ -280,7 +282,7 @@ private fun retro(dark: Boolean, h: Float): SkinTheme {
     val navy = tone(h, 1f, if (dark) 0.72f else 0.27f)
     val look = if (dark) {
         SkinLook(
-            Skin.RETRO, true, cornerScale = 0f, edge = Edge.BEVEL, softShadow = false,
+            Skin.RETRO, true, cornerScale = 0f, fabPinned = false, edge = Edge.BEVEL, softShadow = false,
             bevel = listOf(Color(0xFF7A7A7A), Color(0xFF5A5A5A), Color(0xFF242424), Color(0xFF000000)),
             divider = Color(0xFF2E2E2E), dividerInset = 6.dp,
             listFill = Color(0xFF1C1C1C), listPinned = tone(h, 0.45f, 0.26f),
@@ -289,7 +291,7 @@ private fun retro(dark: Boolean, h: Float): SkinTheme {
         )
     } else {
         SkinLook(
-            Skin.RETRO, false, cornerScale = 0f, edge = Edge.BEVEL, softShadow = false,
+            Skin.RETRO, false, cornerScale = 0f, fabPinned = false, edge = Edge.BEVEL, softShadow = false,
             bevel = listOf(Color.White, Color(0xFFDFDFDF), Color(0xFF808080), Color(0xFF0A0A0A)),
             divider = Color(0xFFE4E4E4), dividerInset = 6.dp,
             listFill = Color.White, listPinned = tone(h, 0.55f, 0.86f),

@@ -5,6 +5,7 @@ Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`, si
 
 ## Sin publicar
 - Posponer ya no ofrece «Deshacer»: muestra un aviso breve («Pospuesto») sin botón (`act(…, undoable = false)`).
+- Retro 98: el botón de redactar (lista) y el de responder (lectura) tienen el mismo color que los demás botones (plateado), no el resaltado blanco (`fabKind()`/`fabTint()`, `SkinLook.fabPinned`). Compartido con Cenotes.
 
 ## 2.2.9 — 2026-11-15
 - Barra de selección: el recuento ya no se parte en trozos («selecte/d») con cinco botones (en Retro 98 en pantallas estrechas); ahora muestra solo el número, y el texto completo queda para TalkBack.

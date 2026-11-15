@@ -336,11 +336,11 @@ fun ReadScreen(
                     .popIn(delayMillis = 60, initialScale = 0.3f)
                     .pressScale(0.88f)
                     .size(60.dp)
-                    .glass(CircleShape, GlassKind.Pinned, opaque = true)
+                    .glass(CircleShape, com.cemail.app.ui.glass.fabKind(), opaque = true)
                     .clickable(role = Role.Button) { reply() },
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(CemailIcons.Reply, stringResource(R.string.action_reply), tint = MaterialTheme.colorScheme.primary)
+                Icon(CemailIcons.Reply, stringResource(R.string.action_reply), tint = com.cemail.app.ui.glass.fabTint())
             }
         }
 
