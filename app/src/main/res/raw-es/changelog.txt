@@ -1,3 +1,6 @@
+## 2.2.8
+- Las sombras laterales de las tarjetas de Ajustes ya no se cortan.
+
 ## 2.2.7
 - Las sombras aparecen junto con la animación, en vez de saltar al terminar.
 

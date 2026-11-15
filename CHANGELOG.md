@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
+## 2.2.8 — 2026-11-15
+- Las sombras laterales de las tarjetas de Ajustes se cortaban: el margen de 12 dp estaba fuera del scroll, que recortaba justo en el borde de la tarjeta. Ahora el margen lateral va dentro del scroll (`SettingsScreen`) y la sombra cabe en él. Regla: el margen de una lista con sombras va dentro del contenedor que hace scroll.
+
 ## 2.2.7 — 2026-11-15
 - La sombra sale a la vez que la animación: `popIn` dibujaba en un búfer del tamaño del elemento mientras la opacidad era menor que 1 y recortaba la sombra (que está fuera de los límites), que aparecía de golpe al terminar. Ahora usa `CompositingStrategy.ModulateAlpha`.
 

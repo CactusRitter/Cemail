@@ -171,10 +171,10 @@ fun SettingsScreen(
         Modifier
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.safeDrawing)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        GlassPill(Modifier.fillMaxWidth()) {
+        GlassPill(Modifier.padding(horizontal = 12.dp).fillMaxWidth()) {
             PillIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), goBack)
             Text(
                 title,
@@ -200,7 +200,9 @@ fun SettingsScreen(
             label = "settingsPage",
         ) { target ->
             Column(
-                Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                    // The side padding goes inside the scroll area: the cards' shadows spill into it instead of being cut at the edge.
+                    .padding(start = 12.dp, end = 12.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 val targetAccount = SettingsRoute.accountId(target)?.let { id -> accounts.firstOrNull { it.id == id } }

@@ -1,3 +1,6 @@
+## 2.2.8
+- The side shadows of the cards in Settings are no longer cut off.
+
 ## 2.2.7
 - Shadows now appear together with the animation instead of popping in when it ends.
 

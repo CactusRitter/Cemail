@@ -1,3 +1,6 @@
+## 2.2.8
+- Die seitlichen Schatten der Karten in den Einstellungen werden nicht mehr abgeschnitten.
+
 ## 2.2.7
 - Schatten erscheinen jetzt zusammen mit der Animation, statt erst an deren Ende aufzutauchen.
 
