@@ -65,7 +65,7 @@ fun QuickButton(
     // For the account switch: the name each stop is announced with.
     val allName = stringResource(R.string.account_all)
     val names = acc.accounts.associate { it.id to it.shownName() }
-    val showing = R.string.quick_account_showing
+    val showingFormat = stringResource(R.string.quick_account_showing)
     val tint = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
     Box(
         Modifier
@@ -82,7 +82,7 @@ fun QuickButton(
                         val stops = listOf<String?>(null) + acc.accounts.map { it.id }
                         val next = stops[(stops.indexOf(acc.selectedId) + 1) % stops.size]
                         onSelectAccount(next)
-                        Toast.makeText(context, context.getString(showing, next?.let { names[it] } ?: allName), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, String.format(showingFormat, next?.let { names[it] } ?: allName), Toast.LENGTH_SHORT).show()
                     }
                     QuickAction.NONE -> Unit
                 }

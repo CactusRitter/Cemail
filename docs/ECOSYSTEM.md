@@ -21,7 +21,7 @@ Se copian tal cual entre apps cambiando solo el paquete. Quien cambie uno **avis
 - Selector de fecha y hora: `DateTimeDialog` (nació en Cenotes, copiado a Cemail en 2.2.5).
 - Textos compartidos en en/es/de con las mismas claves (`pick_*`, `update_*`, `whatsnew_*`, `skin_*`, `accent_*`…).
 
-Propio de cada app (no se copia): la lista y el lector de correo, `unreadTile` y `expandFrom` en Cemail; el editor, las etiquetas y `TaskCheckbox` en Cenotes.
+Propio de cada app (no se copia): la lista y el lector de correo, el muro de los no leídos (`unreadFill`, `wallColorFor`) y `expandFrom` en Cemail; el editor, las etiquetas y `TaskCheckbox` en Cenotes.
 
 ## Cuándo avisar a las otras sesiones
 1. Cambias algo de la lista «Qué se comparte» (archivo, API o clave de texto).
@@ -54,3 +54,4 @@ Si la otra sesión adapta algo al copiar, **avisa de vuelta** para dejar las app
 | 2026-11-14 | Cenotes | `DateTimeDialog` (selector Ce) | Cemail 2.2.5 ✅ |
 | 2026-11-14 | Cemail | Estados de TalkBack (`toggleable`/`selectable`), esquinas del diseño en recortes | Cenotes ya lo tenía (0.16.0) |
 | 2026-11-14 | Cemail | Interruptor de actualizaciones arriba del todo en Ajustes → Actualizaciones | Cenotes ya lo tenía; código igualado (sale en la próxima versión de Cenotes) |
+| 2026-11-15 | Cemail | `Glass.kt`/`Skin.kt`/`Theme.kt`: la sombra 3D del cristal es ahora suave (`SkinLook.lift`/`liftColor`, `liftShadow`, `liftSegment`, `glassDepthColor` nuevo) y `glassSegment` gana `wall`/`fillOverride` (muro de los no leídos); `unreadTile` eliminado | Pendiente de avisar a Cenotes (2.2.6) |

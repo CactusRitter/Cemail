@@ -19,7 +19,7 @@
     <string name="settings_section_backup">Copia de ajustes</string>
     <string name="settings_row_backup_body">Guárdalos en un archivo o tráelos de otro dispositivo</string>
     <string name="backup_title">Copia de tus ajustes</string>
-    <string name="backup_body">Guarda el aspecto, los gestos, las notificaciones, las firmas y el nombre y el color de cada cuenta en un archivo que eliges tú (Drive, Descargas…). Restáurala aquí o en otro móvil o tableta cuando hayas añadido allí tus cuentas. Nunca incluye contraseñas ni el acceso a las cuentas.</string>
+    <string name="backup_body">Guarda el aspecto, los gestos, las notificaciones, las firmas y el nombre y el color de cada cuenta en un archivo que eliges tú (Drive, Descargas…). Restáurala aquí o en otro dispositivo cuando hayas añadido allí tus cuentas. Nunca incluye contraseñas ni el acceso a las cuentas.</string>
     <string name="backup_export">Guardar copia</string>
     <string name="backup_import">Restaurar copia</string>
     <string name="backup_file">Ajustes de Cemail.json</string>
@@ -35,7 +35,7 @@
     <string name="skin_body">El aspecto de toda la app. Cristal es el que comparte con Celander y Cenotes; los demás están en pruebas.</string>
     <string name="skin_always_dark">Este diseño siempre es oscuro.</string>
     <string name="depth_title">Sombra 3D</string>
-    <string name="depth_body">Una sombra sólida bajo tarjetas y botones, como la de Brutalista.</string>
+    <string name="depth_body">Una sombra suave que eleva tarjetas y botones sobre el fondo, como un cristal por encima.</string>
     <string name="skin_glass">Cristal</string>
     <string name="skin_modern">Moderno</string>
     <string name="skin_amoled">AMOLED</string>
@@ -149,7 +149,7 @@
     <string name="demo_4_body">¡Aquí van las fotos de la excursión! La del lago es mi favorita. Dime si quieres los archivos en tamaño completo y te los paso por enlace.</string>
     <string name="demo_5_name">Cenotes</string>
     <string name="demo_5_subject">Tus notas tienen copia de seguridad</string>
-    <string name="demo_5_body">Todo está guardado en tu teléfono. No se ha enviado nada a ningún sitio, como siempre.</string>
+    <string name="demo_5_body">Todo está guardado en tu dispositivo. No se ha enviado nada a ningún sitio, como siempre.</string>
     <string name="demo_6_name">Banco Ejemplo</string>
     <string name="demo_6_subject">Tu extracto mensual</string>
     <string name="demo_6_body">Ya está disponible el extracto de este mes. Es un mensaje de ejemplo para probar los correos fijados y los adjuntos.</string>
@@ -162,7 +162,7 @@
 
     <!-- Inicio de sesión y cuentas -->
     <string name="sign_in_title">Te damos la bienvenida a Cemail</string>
-    <string name="sign_in_body">Añade tu cuenta de correo (Gmail, Outlook, Yahoo…) para leer y enviar tu correo. Tu correo se queda en tu teléfono.</string>
+    <string name="sign_in_body">Añade tu cuenta de correo (Gmail, Outlook, Yahoo…) para leer y enviar tu correo. Tu correo se queda en tu dispositivo.</string>
     <string name="sign_in_google">Iniciar sesión con Google</string>
     <string name="sign_in_unverified">Google dirá que la app no está verificada: toca Avanzado y luego Ir a Cemail.</string>
     <string name="sign_in_demo">Echar un vistazo con mensajes de ejemplo</string>
@@ -218,7 +218,7 @@
     <string name="settings_section_accounts">Cuentas</string>
     <string name="settings_remove_account">Quitar</string>
     <string name="settings_remove_title">¿Quitar esta cuenta?</string>
-    <string name="settings_remove_body">Se cerrará la sesión de %1$s y sus mensajes se borrarán de este teléfono. En Gmail no cambia nada.</string>
+    <string name="settings_remove_body">Se cerrará la sesión de %1$s y sus mensajes se borrarán de este dispositivo. En Gmail no cambia nada.</string>
     <string name="cancel">Cancelar</string>
     <string name="pick_date">Elige el día</string>
     <string name="pick_time">Elige la hora</string>
@@ -238,7 +238,7 @@
     </plurals>
     <string name="settings_section_diagnostics">Diagnóstico</string>
     <string name="settings_crash_title">Último error inesperado</string>
-    <string name="settings_crash_body">Se guarda solo en este teléfono. Cópialo para enviárselo a quien mantiene la app.</string>
+    <string name="settings_crash_body">Se guarda solo en este dispositivo. Cópialo para enviárselo a quien mantiene la app.</string>
     <string name="copy">Copiar</string>
     <string name="clear">Borrar</string>
     <string name="copied">Copiado</string>
@@ -264,11 +264,11 @@
     <string name="notif_action_read">Leído</string>
     <string name="notif_action_delete">Borrar</string>
     <string name="settings_log_title">Registro de actividad</string>
-    <string name="settings_log_body">Un registro de lo que hace la app en este teléfono (sincronizaciones, notificaciones, errores), sin texto de los mensajes. Compártelo para poder leerlo cuando no hay cable.</string>
+    <string name="settings_log_body">Un registro de lo que hace la app en este dispositivo (sincronizaciones, notificaciones, errores), sin texto de los mensajes. Compártelo para poder leerlo cuando no hay cable.</string>
     <string name="settings_log_share">Compartir registro</string>
     <string name="settings_log_share_title">Compartir el registro</string>
     <string name="attachments_label">Adjuntos</string>
-    <string name="attachment_open_failed">Ninguna app de este teléfono puede abrir este archivo. Prueba a compartirlo.</string>
+    <string name="attachment_open_failed">Ninguna app de este dispositivo puede abrir este archivo. Prueba a compartirlo.</string>
     <string name="attachment_download_failed">No se pudo descargar el adjunto. Comprueba tu conexión.</string>
     <string name="attachment_share">Compartir</string>
     <string name="compose_attach">Adjuntar archivos</string>
@@ -337,7 +337,7 @@
     <string name="step_number">%1$d.</string>
     <string name="sign_in_other">Otra cuenta (IMAP)</string>
     <string name="imap_title">Otra cuenta</string>
-    <string name="imap_body">Funciona con Yahoo, iCloud, GMX y la mayoría de proveedores. Muchos piden una contraseña de aplicación: créala en los ajustes de seguridad de tu proveedor. Se guarda cifrada en este teléfono.</string>
+    <string name="imap_body">Funciona con Yahoo, iCloud, GMX y la mayoría de proveedores. Muchos piden una contraseña de aplicación: créala en los ajustes de seguridad de tu proveedor. Se guarda cifrada en este dispositivo.</string>
     <string name="imap_email">Correo electrónico</string>
     <string name="imap_password">Contraseña o contraseña de aplicación</string>
     <string name="imap_name">Tu nombre (lo ven los destinatarios)</string>
@@ -448,7 +448,7 @@
     <string name="settings_signature_paste">Pegar HTML del portapapeles</string>
     <string name="settings_signature_paste_empty">El portapapeles no tiene nada que pegar.</string>
     <string name="settings_push_title">Notificaciones instantáneas</string>
-    <string name="settings_push_body">Gmail avisa a tu teléfono en el momento en que llega un correo, sin esperar a la siguiente comprobación. Pasa por un pequeño servicio gratuito que solo ve tu dirección y un identificador anónimo del teléfono, nunca tus mensajes.</string>
+    <string name="settings_push_body">Gmail avisa a tu dispositivo en el momento en que llega un correo, sin esperar a la siguiente comprobación. Pasa por un pequeño servicio gratuito que solo ve tu dirección y un identificador anónimo del dispositivo, nunca tus mensajes.</string>
     <string name="settings_swipe_confirm_title">Confirmar antes de actuar</string>
     <string name="settings_swipe_confirm_body">Tras deslizar, pregunta primero (por ejemplo «¿Borrar?») en lugar de hacerlo al instante.</string>
     <string name="settings_swipe_undo_title">Tiempo para deshacer</string>
@@ -481,7 +481,7 @@
         <item quantity="other">%d correos más encontrados en el servidor.</item>
     </plurals>
     <string name="sync_window_title">Correos sincronizados</string>
-    <string name="sync_window_body">Cuántos correos de cada cuenta se quedan en el teléfono por sí solos. Los más antiguos llegan con «Cargar más» al final de una lista. Más correos hacen la primera sincronización más lenta y ocupan más espacio.</string>
+    <string name="sync_window_body">Cuántos correos de cada cuenta se quedan en el dispositivo por sí solos. Los más antiguos llegan con «Cargar más» al final de una lista. Más correos hacen la primera sincronización más lenta y ocupan más espacio.</string>
     <string name="sync_window_normal">Normal</string>
     <string name="settings_section_updates">Actualizaciones</string>
     <string name="settings_version">Versión %1$s</string>

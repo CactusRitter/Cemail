@@ -79,9 +79,9 @@ fun Modifier.glass(
     val skin = LocalSkin.current
     if (skin.skin != Skin.GLASS) return skinSurface(skin, skin.shape(shape), fill, kind, elevation, glass.shadow, if (opaque) MaterialTheme.colorScheme.surface else null)
     var m = this
-    if (skin.hardShadow > 0.dp) {
-        // "3D" glass: a solid shadow under every surface instead of the soft one (Appearance → 3D shadow).
-        m = m.hardShadow(shape, skin.hardShadowColor, depthOf(skin, kind, elevation))
+    if (skin.lift) {
+        // "3D" glass (Appearance → 3D shadow): a soft shadow that lifts the slab off the background.
+        m = m.liftShadow(shape, skin.liftColor, liftDepth(kind, elevation))
     } else if (elevation > 0.dp) {
         m = m.shadow(elevation, shape, ambientColor = glass.shadow, spotColor = glass.shadow)
     }
@@ -191,27 +191,32 @@ private fun Modifier.hardShadow(shape: Shape, color: Color, offset: Dp, top: Boo
 }
 
 /**
- * An unread message in the list: a lighter tile inside its row that stands out of the card, closer to the screen. It
- * has the shadow of the look (soft, or the solid one of the 3D looks) or, where a look has none, a strong edge.
+ * The fill of an unread message in a group that shares one card: lighter than the card, like the highlight of a
+ * message that has a card of its own. With [wallColorFor] it makes the unread row a step of the card, a little higher
+ * than the rest (like a building on a 3D map), instead of a second frame inside it.
  */
 @Composable
-fun Modifier.unreadTile(radius: Dp = 14.dp): Modifier {
+fun unreadFill(): Color {
     val skin = LocalSkin.current
-    val glass = LocalGlass.current
     val c = MaterialTheme.colorScheme
-    val shape = RoundedCornerShape(skin.radius(radius))
-    val fill = if (skin.dark) androidx.compose.ui.graphics.lerp(c.surface, c.onSurface, 0.30f) else c.surface.copy(alpha = 0.94f)
-    val lifted = when {
-        skin.hardShadow > 0.dp -> hardShadow(shape, skin.hardShadowColor, skin.hardShadow)
-        skin.softShadow -> shadow(8.dp, shape, ambientColor = glass.shadow, spotColor = glass.shadow)
-        else -> this
-    }
-    val surface = lifted.background(fill, shape)
-    return when {
-        skin.skin == Skin.GLASS -> surface.border(1.dp, Brush.verticalGradient(listOf(glass.borderTop, glass.borderBottom)), shape)
-        skin.edge == Edge.NONE || skin.edge == Edge.GLASS -> surface
-        else -> surface.border(skin.edgeWidth, skin.strongEdgeColor.takeIf { it != Color.Transparent } ?: skin.edgeColor, shape)
-    }
+    return if (skin.dark) androidx.compose.ui.graphics.lerp(c.surface, c.onSurface, 0.30f) else c.surface.copy(alpha = 0.94f)
+}
+
+/** Colour of the wall under a raised unread row: the 3D shadow's, or a darker shade of [fill]. Null in the bevelled Windows 98 look. */
+@Composable
+fun wallColorFor(fill: Color): Color? {
+    val skin = LocalSkin.current
+    if (skin.edge == Edge.BEVEL) return null
+    if (skin.hardShadow > 0.dp) return skin.hardShadowColor
+    return androidx.compose.ui.graphics.lerp(fill.copy(alpha = 1f), Color.Black, if (skin.dark) 0.45f else 0.24f)
+}
+
+/** Height of the wall under an unread row. */
+private val WALL_HEIGHT = 3.dp
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawWall(color: Color) {
+    val h = WALL_HEIGHT.toPx()
+    drawRect(color, Offset(0f, size.height - h), Size(size.width, h))
 }
 
 /** Soft gradient with blurred colour blobs that the glass surfaces float on. */
@@ -338,23 +343,29 @@ enum class GroupPos {
  * and the bright edge belong to the group as a whole, and a hairline separates one row from the next.
  */
 @Composable
-fun Modifier.glassSegment(pos: GroupPos, radius: Dp = 20.dp, kind: GlassKind = GlassKind.Card): Modifier {
+fun Modifier.glassSegment(
+    pos: GroupPos, radius: Dp = 20.dp, kind: GlassKind = GlassKind.Card,
+    /** An unread row: a wall under it (the row stands a little higher), with [fillOverride] as its lighter fill. */
+    wall: Boolean = false, fillOverride: Color? = null,
+): Modifier {
     val glass = LocalGlass.current
     val skin = LocalSkin.current
     if (skin.skin != Skin.GLASS) {
         val pinned = kind == GlassKind.Pinned
-        val fill = if (pinned) skin.listPinned ?: glass.pinned else skin.listFill ?: glass.card
-        return skinSegment(skin, pos, radius, fill, pinned)
+        val fill = fillOverride ?: if (pinned) skin.listPinned ?: glass.pinned else skin.listFill ?: glass.card
+        return skinSegment(skin, pos, radius, fill, pinned, if (wall) wallColorFor(fill) else null)
     }
-    val fill = if (kind == GlassKind.Pinned) glass.pinned else glass.card
+    val fill = fillOverride ?: if (kind == GlassKind.Pinned) glass.pinned else glass.card
+    val wallColor = if (wall) wallColorFor(fill) else null
     val divider = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
     val shape = pos.shape(radius)
     return this
-        .then(if (skin.hardShadow > 0.dp) Modifier.hardShadow(shape, skin.hardShadowColor, skin.hardShadow, pos.hasTop, pos.hasBottom) else Modifier)
+        .then(if (skin.lift) Modifier.liftSegment(pos, radius, skin.liftColor, liftDepth(GlassKind.Card, 0.dp)) else Modifier)
         .clip(shape)
         .background(fill)
         .drawWithContent {
             drawContent()
+            wallColor?.let { drawWall(it) }
             val r = radius.toPx()
             val stroke = 1.dp.toPx()
             val half = stroke / 2f
@@ -372,7 +383,7 @@ fun Modifier.glassSegment(pos: GroupPos, radius: Dp = 20.dp, kind: GlassKind = G
                 brush, Offset(half, top), Size(size.width - stroke, bottom - top),
                 androidx.compose.ui.geometry.CornerRadius(r - half), style = androidx.compose.ui.graphics.drawscope.Stroke(stroke),
             )
-            if (!pos.hasBottom) {
+            if (!pos.hasBottom && wallColor == null) {
                 drawLine(divider, Offset(14.dp.toPx(), size.height - half), Offset(size.width - 14.dp.toPx(), size.height - half), stroke)
             }
         }
@@ -383,7 +394,7 @@ fun Modifier.glassSegment(pos: GroupPos, radius: Dp = 20.dp, kind: GlassKind = G
  * on the outside of the group and small ones where two rows meet; without one the rows share a card with the look's
  * edge (lines, bevel) and dividers, and the hard shadow, if any, runs down the whole group.
  */
-private fun Modifier.skinSegment(skin: SkinLook, pos: GroupPos, radius: Dp, fill: Color, pinned: Boolean): Modifier {
+private fun Modifier.skinSegment(skin: SkinLook, pos: GroupPos, radius: Dp, fill: Color, pinned: Boolean, wallColor: Color? = null): Modifier {
     val r = skin.radius(radius)
     if (skin.groupGap > 0.dp) {
         val inner = minOf(skin.innerCorner, r)
@@ -392,13 +403,15 @@ private fun Modifier.skinSegment(skin: SkinLook, pos: GroupPos, radius: Dp, fill
             bottomStart = if (pos.hasBottom) r else inner, bottomEnd = if (pos.hasBottom) r else inner,
         )
         val spaced = if (pos.hasBottom) this else padding(bottom = skin.groupGap)
-        return spaced.skinSurface(skin, shape, fill, if (pinned) GlassKind.Pinned else GlassKind.Card, 0.dp, Color.Transparent)
+        val tile = spaced.skinSurface(skin, shape, fill, if (pinned) GlassKind.Pinned else GlassKind.Card, 0.dp, Color.Transparent)
+        return if (wallColor == null) tile else tile.drawWithContent { drawContent(); drawWall(wallColor) }
     }
     val shape = pos.shape(r)
     var m = this
     if (skin.hardShadow > 0.dp) m = m.hardShadow(shape, skin.hardShadowColor, skin.hardShadow, pos.hasTop, pos.hasBottom)
     return m.clip(shape).background(fill).drawWithContent {
         drawContent()
+        wallColor?.let { drawWall(it) }
         when (skin.edge) {
             Edge.BEVEL -> bevel(skin.bevel, raised = false, top = pos.hasTop, bottom = pos.hasBottom)
             Edge.LINE -> {
@@ -417,7 +430,7 @@ private fun Modifier.skinSegment(skin: SkinLook, pos: GroupPos, radius: Dp, fill
             Edge.GLASS, Edge.NONE -> Unit
         }
         val divider = skin.divider
-        if (!pos.hasBottom && divider != null) {
+        if (!pos.hasBottom && divider != null && wallColor == null) {
             val w = skin.dividerWidth.toPx()
             val inset = skin.dividerInset.toPx()
             val y = size.height - w / 2f
@@ -437,3 +450,55 @@ val LocalListOnRight = androidx.compose.runtime.staticCompositionLocalOf { false
 /** Where floating buttons and their panels sit: bottom right, or bottom left when the list is on the right. */
 @Composable
 fun floatingCorner(): Alignment = if (LocalListOnRight.current) Alignment.BottomStart else Alignment.BottomEnd
+
+/**
+ * The lift of a glass slab (Appearance → 3D shadow): a soft shadow that stays outside the shape and falls a little
+ * below it, the way a sheet of glass stands off its background. Built from a few widening layers, so it needs no blur
+ * (which older Androids do not draw).
+ */
+private fun Modifier.liftShadow(shape: Shape, color: Color, depth: Dp): Modifier = drawBehind {
+    // Small controls (chips, buttons) lift less than cards, so a row of them does not look heavy.
+    val scale = (size.height / density / LIFT_FULL_HEIGHT_DP).coerceIn(0.4f, 1f)
+    val d = depth * scale
+    val c = color.copy(alpha = color.alpha * (0.5f + 0.5f * scale))
+    val path = androidx.compose.ui.graphics.Path().apply { addOutline(shape.createOutline(size, layoutDirection, this@drawBehind)) }
+    clipPath(path, androidx.compose.ui.graphics.ClipOp.Difference) { drawLift(path, c, d) }
+}
+
+/** [liftShadow] for a row of a group: the shadow runs round the whole group, never across the seams between rows. */
+private fun Modifier.liftSegment(pos: GroupPos, radius: Dp, color: Color, depth: Dp): Modifier = drawBehind {
+    val r = radius.toPx()
+    val reach = depth.toPx() * 3
+    val top = if (pos.hasTop) 0f else -4 * r
+    val bottom = if (pos.hasBottom) size.height else size.height + 4 * r
+    val path = androidx.compose.ui.graphics.Path().apply {
+        addRoundRect(androidx.compose.ui.geometry.RoundRect(0f, top, size.width, bottom, androidx.compose.ui.geometry.CornerRadius(r)))
+    }
+    clipRect(-reach, if (pos.hasTop) -reach else 0f, size.width + reach, if (pos.hasBottom) size.height + reach else size.height) {
+        clipPath(path, androidx.compose.ui.graphics.ClipOp.Difference) { drawLift(path, color, depth) }
+    }
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawLift(path: androidx.compose.ui.graphics.Path, color: Color, depth: Dp) {
+    val d = depth.toPx()
+    val layers = 8
+    translate(0f, d * 0.45f) {
+        drawPath(path, color.copy(alpha = color.alpha * 0.5f))
+        for (i in layers downTo 1) {
+            drawPath(
+                path, color.copy(alpha = color.alpha * 0.16f),
+                style = androidx.compose.ui.graphics.drawscope.Stroke(d * i / layers * 2, join = androidx.compose.ui.graphics.StrokeJoin.Round),
+            )
+        }
+    }
+}
+
+/** How far a glass surface lifts: dialogs stand highest, floating buttons next, then cards. */
+private fun liftDepth(kind: GlassKind, elevation: Dp): Dp = when {
+    kind == GlassKind.Menu -> 16.dp
+    elevation > 0.dp -> 12.dp
+    else -> 8.dp
+}
+
+/** From this height (dp) up, a surface gets the full lift; smaller ones get less (down to 40 %). */
+private const val LIFT_FULL_HEIGHT_DP = 90f

@@ -1,3 +1,8 @@
+## 2.2.6
+- Los mensajes no leídos ya no llevan un marco propio dentro de la tarjeta: son un escalón de ella, un poco más alto, con un pequeño muro debajo.
+- Sombra 3D (cristal): una sombra suave que eleva el cristal sobre el fondo, en vez de la sombra dura de Brutalista. Los botones pequeños se elevan menos.
+- «Teléfono» y «móvil» pasan a «dispositivo» en los textos.
+
 ## 2.2.5
 - Enviar más tarde → Elegir fecha y hora: el calendario y el reloj tienen el diseño Ce (igual que en Cenotes) en vez de los diálogos grises de Android.
 

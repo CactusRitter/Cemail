@@ -29,7 +29,7 @@ data class AppSettings(
     val themeStyle: com.cemail.app.ui.theme.ThemeStyle = com.cemail.app.ui.theme.ThemeStyle.AURORA,
     /** The whole look of the app (glass, or one of the looks being tried out). */
     val skin: com.cemail.app.ui.theme.Skin = com.cemail.app.ui.theme.Skin.GLASS,
-    /** Glass with a solid, unblurred shadow under every surface (the 3D look of Brutalist). */
+    /** Glass with a soft shadow that lifts every surface off the background (the "3D shadow"). */
     val depth3d: Boolean = false,
     /** Left-handed: floating buttons on the left and, on tablets, the list on the right. */
     val listOnRight: Boolean = false,

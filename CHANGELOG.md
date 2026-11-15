@@ -3,6 +3,12 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
+## 2.2.6 — 2026-11-15
+- Los mensajes no leídos ya no llevan un marco interior: en las tarjetas por grupo son un escalón de la propia tarjeta (relleno algo más claro y un muro de 3 dp debajo, del color de la sombra en Brutalista); con mensajes individuales, la tarjeta lleva el muro. `glassSegment(wall, fillOverride)`, `unreadFill`, `wallColorFor`; `unreadTile` eliminado. Retro 98 se queda plano.
+- Sombra 3D del cristal: ahora es una sombra suave que eleva el cristal sobre el fondo (`SkinLook.lift`, `liftShadow`, `liftSegment`), no la sombra dura de Brutalista. Las superficies pequeñas se elevan menos.
+- «Teléfono/móvil» pasa a «dispositivo» en los textos (como en Cenotes).
+- Lint sin errores: `accountOrder` se crea con `remember` (MainActivity), el idioma sale de `LocalConfiguration` (WhatsNew) y el aviso del selector rápido formatea el texto en composición (QuickButton).
+
 ## 2.2.5 — 2026-11-14
 - «Enviar más tarde → Elegir fecha y hora» usa `DateTimeDialog` (calendario y reloj de Material 3 sobre una tarjeta de cristal `Menu`, copiado de Cenotes) en vez de `DatePickerDialog`/`TimePickerDialog` de Android. Un momento pasado se mueve a un minuto desde ahora, como antes.
 

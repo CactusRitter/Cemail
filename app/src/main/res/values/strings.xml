@@ -21,7 +21,7 @@
     <string name="settings_section_backup">Settings backup</string>
     <string name="settings_row_backup_body">Save them to a file or bring them from another device</string>
     <string name="backup_title">Backup of your settings</string>
-    <string name="backup_body">Saves appearance, gestures, notifications, signatures and the name and colour of each account to a file you choose (Drive, Downloads…). Restore it here or on another phone or tablet once your accounts are added there. Passwords and account access are never in it.</string>
+    <string name="backup_body">Saves appearance, gestures, notifications, signatures and the name and colour of each account to a file you choose (Drive, Downloads…). Restore it here or on another device once your accounts are added there. Passwords and account access are never in it.</string>
     <string name="backup_export">Save a backup</string>
     <string name="backup_import">Restore a backup</string>
     <string name="backup_file">Cemail settings.json</string>
@@ -37,7 +37,7 @@
     <string name="skin_body">The look of the whole app. Glass is the one shared with Celander and Cenotes; the others are being tried out.</string>
     <string name="skin_always_dark">This design is always dark.</string>
     <string name="depth_title">3D shadow</string>
-    <string name="depth_body">A solid shadow under cards and buttons, like the one in Brutalist.</string>
+    <string name="depth_body">A soft shadow that lifts cards and buttons off the background, like glass standing above it.</string>
     <string name="skin_glass">Glass</string>
     <string name="skin_modern">Modern</string>
     <string name="skin_amoled">AMOLED</string>
@@ -151,7 +151,7 @@
     <string name="demo_4_body">Here are the photos from the hike! The lake one is my favourite. Let me know if you want the full-size files and I will send them by link.</string>
     <string name="demo_5_name">Cenotes</string>
     <string name="demo_5_subject">Your notes are backed up</string>
-    <string name="demo_5_body">Everything is saved on your phone. Nothing has been sent anywhere, as always.</string>
+    <string name="demo_5_body">Everything is saved on your device. Nothing has been sent anywhere, as always.</string>
     <string name="demo_6_name">Banco Ejemplo</string>
     <string name="demo_6_subject">Your monthly statement</string>
     <string name="demo_6_body">Your statement for this month is available. This is an example message used to test pinned mail and attachments.</string>
@@ -164,7 +164,7 @@
 
     <!-- Sign in and accounts -->
     <string name="sign_in_title">Welcome to Cemail</string>
-    <string name="sign_in_body">Add your email account (Gmail, Outlook, Yahoo…) to read and send your mail. Your mail stays on your phone.</string>
+    <string name="sign_in_body">Add your email account (Gmail, Outlook, Yahoo…) to read and send your mail. Your mail stays on your device.</string>
     <string name="sign_in_google">Sign in with Google</string>
     <string name="sign_in_unverified">Google will say the app is not verified: tap Advanced, then Go to Cemail.</string>
     <string name="sign_in_demo">Look around with example messages</string>
@@ -220,7 +220,7 @@
     <string name="settings_section_accounts">Accounts</string>
     <string name="settings_remove_account">Remove</string>
     <string name="settings_remove_title">Remove this account?</string>
-    <string name="settings_remove_body">%1$s will be signed out and its messages deleted from this phone. Nothing changes in Gmail.</string>
+    <string name="settings_remove_body">%1$s will be signed out and its messages deleted from this device. Nothing changes in Gmail.</string>
     <string name="cancel">Cancel</string>
     <string name="pick_date">Choose the day</string>
     <string name="pick_time">Choose the time</string>
@@ -240,7 +240,7 @@
     </plurals>
     <string name="settings_section_diagnostics">Diagnostics</string>
     <string name="settings_crash_title">Last unexpected error</string>
-    <string name="settings_crash_body">Saved only on this phone. Copy it to send it to whoever maintains the app.</string>
+    <string name="settings_crash_body">Saved only on this device. Copy it to send it to whoever maintains the app.</string>
     <string name="copy">Copy</string>
     <string name="clear">Clear</string>
     <string name="copied">Copied</string>
@@ -266,11 +266,11 @@
     <string name="notif_action_read">Read</string>
     <string name="notif_action_delete">Delete</string>
     <string name="settings_log_title">Activity log</string>
-    <string name="settings_log_body">A record of what the app does on this phone (syncs, notifications, errors), without message text. Share it so it can be read when you cannot connect a cable.</string>
+    <string name="settings_log_body">A record of what the app does on this device (syncs, notifications, errors), without message text. Share it so it can be read when you cannot connect a cable.</string>
     <string name="settings_log_share">Share log</string>
     <string name="settings_log_share_title">Share the log</string>
     <string name="attachments_label">Attachments</string>
-    <string name="attachment_open_failed">No app on this phone can open this file. Try sharing it.</string>
+    <string name="attachment_open_failed">No app on this device can open this file. Try sharing it.</string>
     <string name="attachment_download_failed">Could not download the attachment. Check your connection.</string>
     <string name="attachment_share">Share</string>
     <string name="compose_attach">Attach files</string>
@@ -339,7 +339,7 @@
     <string name="step_number">%1$d.</string>
     <string name="sign_in_other">Other account (IMAP)</string>
     <string name="imap_title">Other account</string>
-    <string name="imap_body">Works with Yahoo, iCloud, GMX and most providers. Many ask for an app password: create one in your provider\'s security settings. It is stored encrypted on this phone.</string>
+    <string name="imap_body">Works with Yahoo, iCloud, GMX and most providers. Many ask for an app password: create one in your provider\'s security settings. It is stored encrypted on this device.</string>
     <string name="imap_email">Email address</string>
     <string name="imap_password">Password or app password</string>
     <string name="imap_name">Your name (shown to recipients)</string>
@@ -450,7 +450,7 @@
     <string name="settings_signature_paste">Paste HTML from the clipboard</string>
     <string name="settings_signature_paste_empty">The clipboard has nothing to paste.</string>
     <string name="settings_push_title">Instant notifications</string>
-    <string name="settings_push_body">Gmail tells your phone the moment mail arrives, so the notification does not wait for the next check. It goes through a small free relay that only sees your address and an anonymous phone id, never your messages.</string>
+    <string name="settings_push_body">Gmail tells your device the moment mail arrives, so the notification does not wait for the next check. It goes through a small free relay that only sees your address and an anonymous device id, never your messages.</string>
     <string name="settings_swipe_confirm_title">Confirm before acting</string>
     <string name="settings_swipe_confirm_body">After a swipe, ask first (for example “Delete?”) instead of doing it at once.</string>
     <string name="settings_swipe_undo_title">Time to undo</string>
@@ -483,7 +483,7 @@
         <item quantity="other">%d more messages found on the server.</item>
     </plurals>
     <string name="sync_window_title">Synced messages</string>
-    <string name="sync_window_body">How many messages of each account stay on the phone by themselves. Older ones come with Load more at the end of a list. More means a slower first sync and more space used.</string>
+    <string name="sync_window_body">How many messages of each account stay on the device by themselves. Older ones come with Load more at the end of a list. More means a slower first sync and more space used.</string>
     <string name="sync_window_normal">Normal</string>
     <string name="settings_section_updates">Updates</string>
     <string name="settings_version">Version %1$s</string>

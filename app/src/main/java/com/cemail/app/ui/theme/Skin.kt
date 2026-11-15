@@ -89,6 +89,9 @@ data class SkinLook(
     /** A solid shadow without blur, moved down and to the end by [hardShadow] (0 = none). */
     val hardShadow: Dp = 0.dp,
     val hardShadowColor: Color = Color.Transparent,
+    /** Glass only (Appearance → 3D shadow): the glass slab stands off the background, with a soft shadow of this colour. */
+    val lift: Boolean = false,
+    val liftColor: Color = Color.Transparent,
     /** The soft blurred shadow under raised things. */
     val softShadow: Boolean = true,
     /** Bevel colours (Windows 98): highlight, light, shadow, dark. */
@@ -401,10 +404,10 @@ private fun brutal(dark: Boolean, h: Float): SkinTheme {
 }
 
 /**
- * The solid "3D" shadow of the glass (Appearance → 3D shadow): a deep, half see-through shade of the accent on light
- * backgrounds, and a soft glow of it on dark ones, where a dark shadow would not show.
+ * The soft "3D" shadow of the glass (Appearance → 3D shadow): a deep, see-through shade of the accent on light
+ * backgrounds and plain black on dark ones.
  */
 fun glassDepthColor(accent: AccentPalette, dark: Boolean): Color {
     val hsl = hslOf(accent.light)
-    return if (dark) accent.dark.copy(alpha = 0.38f) else tone(hsl[0], hsl[1] * 0.7f, 0.28f).copy(alpha = 0.5f)
+    return if (dark) Color.Black.copy(alpha = 0.55f) else tone(hsl[0], hsl[1] * 0.7f, 0.25f).copy(alpha = 0.27f)
 }

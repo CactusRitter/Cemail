@@ -1,3 +1,8 @@
+## 2.2.6
+- Unread messages no longer have a frame of their own inside the card: they are a slightly raised step of it, with a small wall underneath.
+- 3D shadow (Glass): a soft shadow that lifts the glass off the background, instead of the hard Brutalist one. Small buttons lift less.
+- “Phone” is now “device” in the texts.
+
 ## 2.2.5
 - Send later → Pick date and time: the calendar and the clock are in the Ce design (the same as in Cenotes) instead of Android's grey dialogs.
 

@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -25,7 +26,7 @@ internal fun WhatsNew() {
     val updates = (context.applicationContext as CemailApplication).updates
     val next by updates.available.collectAsState()
     val changelog = remember { context.resources.openRawResource(R.raw.changelog).bufferedReader().use { it.readText() } }
-    val language = context.resources.configuration.locales[0].language
+    val language = LocalConfiguration.current.locales[0].language
     var earlier by remember { mutableStateOf(false) }
     val versions = remember(changelog) { ReleaseNotes.all(changelog) }
 

@@ -312,7 +312,7 @@ private fun glassTheme(settings: AppSettings, dark: Boolean, accent: AccentPalet
         )
     }
     val look = if (settings.depth3d) {
-        SkinLook(Skin.GLASS, dark, hardShadow = 4.dp, hardShadowColor = glassDepthColor(accent, dark))
+        SkinLook(Skin.GLASS, dark, lift = true, liftColor = glassDepthColor(accent, dark))
     } else {
         SkinLook(Skin.GLASS, dark)
     }

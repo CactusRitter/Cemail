@@ -19,7 +19,7 @@
     <string name="settings_section_backup">Sicherung der Einstellungen</string>
     <string name="settings_row_backup_body">In einer Datei speichern oder von einem anderen Gerät übernehmen</string>
     <string name="backup_title">Sicherung deiner Einstellungen</string>
-    <string name="backup_body">Speichert Aussehen, Gesten, Benachrichtigungen, Signaturen sowie Name und Farbe jedes Kontos in einer Datei deiner Wahl (Drive, Downloads…). Stelle sie hier oder auf einem anderen Handy oder Tablet wieder her, sobald deine Konten dort hinzugefügt sind. Passwörter und Kontozugänge sind nie enthalten.</string>
+    <string name="backup_body">Speichert Aussehen, Gesten, Benachrichtigungen, Signaturen sowie Name und Farbe jedes Kontos in einer Datei deiner Wahl (Drive, Downloads…). Stelle sie hier oder auf einem anderen Gerät wieder her, sobald deine Konten dort hinzugefügt sind. Passwörter und Kontozugänge sind nie enthalten.</string>
     <string name="backup_export">Sicherung speichern</string>
     <string name="backup_import">Sicherung wiederherstellen</string>
     <string name="backup_file">Cemail Einstellungen.json</string>
@@ -35,7 +35,7 @@
     <string name="skin_body">Das Aussehen der ganzen App. Glas ist das gemeinsame Design mit Celander und Cenotes; die anderen werden noch ausprobiert.</string>
     <string name="skin_always_dark">Dieses Design ist immer dunkel.</string>
     <string name="depth_title">3D-Schatten</string>
-    <string name="depth_body">Ein fester Schatten unter Karten und Schaltflächen, wie bei Brutalist.</string>
+    <string name="depth_body">Ein weicher Schatten, der Karten und Schaltflächen vom Hintergrund abhebt, wie Glas darüber.</string>
     <string name="skin_glass">Glas</string>
     <string name="skin_modern">Modern</string>
     <string name="skin_amoled">AMOLED</string>
@@ -149,7 +149,7 @@
     <string name="demo_4_body">Hier sind die Fotos von der Wanderung! Das vom See ist mein Lieblingsfoto. Sag Bescheid, wenn du die Dateien in voller Größe willst, dann schicke ich dir einen Link.</string>
     <string name="demo_5_name">Cenotes</string>
     <string name="demo_5_subject">Deine Notizen sind gesichert</string>
-    <string name="demo_5_body">Alles ist auf deinem Handy gespeichert. Wie immer wurde nichts irgendwohin geschickt.</string>
+    <string name="demo_5_body">Alles ist auf deinem Gerät gespeichert. Wie immer wurde nichts irgendwohin geschickt.</string>
     <string name="demo_6_name">Banco Ejemplo</string>
     <string name="demo_6_subject">Dein Monatsauszug</string>
     <string name="demo_6_body">Dein Auszug für diesen Monat ist verfügbar. Das ist eine Beispielnachricht, um angeheftete Nachrichten und Anhänge zu testen.</string>
@@ -162,7 +162,7 @@
 
     <!-- Sign in and accounts -->
     <string name="sign_in_title">Willkommen bei Cemail</string>
-    <string name="sign_in_body">Füge dein E-Mail-Konto hinzu (Gmail, Outlook, Yahoo…), um deine Post zu lesen und zu senden. Deine E-Mails bleiben auf deinem Handy.</string>
+    <string name="sign_in_body">Füge dein E-Mail-Konto hinzu (Gmail, Outlook, Yahoo…), um deine Post zu lesen und zu senden. Deine E-Mails bleiben auf deinem Gerät.</string>
     <string name="sign_in_google">Mit Google anmelden</string>
     <string name="sign_in_unverified">Google meldet, dass die App nicht überprüft ist: Tippe auf Erweitert und dann auf Weiter zu Cemail.</string>
     <string name="sign_in_demo">Mit Beispielnachrichten umsehen</string>
@@ -218,7 +218,7 @@
     <string name="settings_section_accounts">Konten</string>
     <string name="settings_remove_account">Entfernen</string>
     <string name="settings_remove_title">Dieses Konto entfernen?</string>
-    <string name="settings_remove_body">%1$s wird abgemeldet und seine Nachrichten werden von diesem Handy gelöscht. In Gmail ändert sich nichts.</string>
+    <string name="settings_remove_body">%1$s wird abgemeldet und seine Nachrichten werden von diesem Gerät gelöscht. In Gmail ändert sich nichts.</string>
     <string name="cancel">Abbrechen</string>
     <string name="pick_date">Wähle den Tag</string>
     <string name="pick_time">Wähle die Uhrzeit</string>
@@ -238,7 +238,7 @@
     </plurals>
     <string name="settings_section_diagnostics">Diagnose</string>
     <string name="settings_crash_title">Letzter unerwarteter Fehler</string>
-    <string name="settings_crash_body">Nur auf diesem Handy gespeichert. Kopiere ihn, um ihn an die Person zu schicken, die die App betreut.</string>
+    <string name="settings_crash_body">Nur auf diesem Gerät gespeichert. Kopiere ihn, um ihn an die Person zu schicken, die die App betreut.</string>
     <string name="copy">Kopieren</string>
     <string name="clear">Löschen</string>
     <string name="copied">Kopiert</string>
@@ -264,11 +264,11 @@
     <string name="notif_action_read">Gelesen</string>
     <string name="notif_action_delete">Löschen</string>
     <string name="settings_log_title">Aktivitätsprotokoll</string>
-    <string name="settings_log_body">Eine Aufzeichnung dessen, was die App auf diesem Handy tut (Synchronisierungen, Benachrichtigungen, Fehler), ohne Nachrichtentext. Teile es, damit es gelesen werden kann, wenn kein Kabel angeschlossen werden kann.</string>
+    <string name="settings_log_body">Eine Aufzeichnung dessen, was die App auf diesem Gerät tut (Synchronisierungen, Benachrichtigungen, Fehler), ohne Nachrichtentext. Teile es, damit es gelesen werden kann, wenn kein Kabel angeschlossen werden kann.</string>
     <string name="settings_log_share">Protokoll teilen</string>
     <string name="settings_log_share_title">Das Protokoll teilen</string>
     <string name="attachments_label">Anhänge</string>
-    <string name="attachment_open_failed">Keine App auf diesem Handy kann diese Datei öffnen. Versuche, sie zu teilen.</string>
+    <string name="attachment_open_failed">Keine App auf diesem Gerät kann diese Datei öffnen. Versuche, sie zu teilen.</string>
     <string name="attachment_download_failed">Der Anhang konnte nicht heruntergeladen werden. Prüfe deine Verbindung.</string>
     <string name="attachment_share">Teilen</string>
     <string name="compose_attach">Dateien anhängen</string>
@@ -337,7 +337,7 @@
     <string name="step_number">%1$d.</string>
     <string name="sign_in_other">Anderes Konto (IMAP)</string>
     <string name="imap_title">Anderes Konto</string>
-    <string name="imap_body">Funktioniert mit Yahoo, iCloud, GMX und den meisten Anbietern. Viele verlangen ein App-Passwort: Erstelle eines in den Sicherheitseinstellungen deines Anbieters. Es wird verschlüsselt auf diesem Handy gespeichert.</string>
+    <string name="imap_body">Funktioniert mit Yahoo, iCloud, GMX und den meisten Anbietern. Viele verlangen ein App-Passwort: Erstelle eines in den Sicherheitseinstellungen deines Anbieters. Es wird verschlüsselt auf diesem Gerät gespeichert.</string>
     <string name="imap_email">E-Mail-Adresse</string>
     <string name="imap_password">Passwort oder App-Passwort</string>
     <string name="imap_name">Dein Name (für Empfänger sichtbar)</string>
@@ -448,7 +448,7 @@
     <string name="settings_signature_paste">HTML aus der Zwischenablage einfügen</string>
     <string name="settings_signature_paste_empty">In der Zwischenablage ist nichts zum Einfügen.</string>
     <string name="settings_push_title">Sofortige Benachrichtigungen</string>
-    <string name="settings_push_body">Gmail meldet deinem Handy sofort, wenn eine E-Mail ankommt, damit die Benachrichtigung nicht auf die nächste Prüfung wartet. Das läuft über einen kleinen kostenlosen Vermittler, der nur deine Adresse und eine anonyme Handy-ID sieht, nie deine Nachrichten.</string>
+    <string name="settings_push_body">Gmail meldet deinem Gerät sofort, wenn eine E-Mail ankommt, damit die Benachrichtigung nicht auf die nächste Prüfung wartet. Das läuft über einen kleinen kostenlosen Vermittler, der nur deine Adresse und eine anonyme Geräte-ID sieht, nie deine Nachrichten.</string>
     <string name="settings_swipe_confirm_title">Vor dem Ausführen bestätigen</string>
     <string name="settings_swipe_confirm_body">Nach dem Wischen zuerst fragen (zum Beispiel „Löschen?“), statt es sofort zu tun.</string>
     <string name="settings_swipe_undo_title">Zeit zum Rückgängigmachen</string>
@@ -481,7 +481,7 @@
         <item quantity="other">%d weitere Nachrichten auf dem Server gefunden.</item>
     </plurals>
     <string name="sync_window_title">Synchronisierte Nachrichten</string>
-    <string name="sync_window_body">Wie viele Nachrichten jedes Kontos von selbst auf dem Handy bleiben. Ältere kommen mit „Weitere Nachrichten laden“ am Ende einer Liste. Mehr bedeutet eine langsamere erste Synchronisierung und mehr belegten Speicher.</string>
+    <string name="sync_window_body">Wie viele Nachrichten jedes Kontos von selbst auf dem Gerät bleiben. Ältere kommen mit „Weitere Nachrichten laden“ am Ende einer Liste. Mehr bedeutet eine langsamere erste Synchronisierung und mehr belegten Speicher.</string>
     <string name="sync_window_normal">Normal</string>
     <string name="settings_section_updates">Updates</string>
     <string name="settings_version">Version %1$s</string>
