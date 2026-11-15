@@ -49,9 +49,10 @@ Si la otra sesión adapta algo al copiar, **avisa de vuelta** para dejar las app
 ## Registro de cambios compartidos (más reciente arriba)
 | Fecha | Origen | Cambio | Estado en las otras |
 |---|---|---|---|
-| 2026-11-14 | Cenotes | Textos «teléfono/móvil/Handy/phone» → «dispositivo/Gerät/device» (las apps se usan en la tableta) | Cemail: pendiente |
+| 2026-11-14 | Cenotes | Textos «teléfono/móvil/Handy/phone» → «dispositivo/Gerät/device» (las apps se usan en la tableta) | Cemail 2.2.6 ✅ |
 | 2026-11-14 | Cenotes | Un solo fondo detrás de los paneles de tableta (`ScreenBackground`/`LocalSharedBackdrop`; había un corte entre lista y nota) | Cemail ya tenía un solo fondo |
 | 2026-11-14 | Cenotes | `DateTimeDialog` (selector Ce) | Cemail 2.2.5 ✅ |
 | 2026-11-14 | Cemail | Estados de TalkBack (`toggleable`/`selectable`), esquinas del diseño en recortes | Cenotes ya lo tenía (0.16.0) |
-| 2026-11-14 | Cemail | Interruptor de actualizaciones arriba del todo en Ajustes → Actualizaciones | Cenotes ya lo tenía; código igualado (sale en la próxima versión de Cenotes) |
+| 2026-11-14 | Cemail | Interruptor de actualizaciones arriba del todo en Ajustes → Actualizaciones | Cenotes ya lo tenía; código igualado en 0.17.1 ✅ |
 | 2026-11-15 | Cemail | `Glass.kt`/`Skin.kt`/`Theme.kt`: la sombra 3D del cristal es ahora suave (`SkinLook.lift`/`liftColor`, `liftShadow`, `liftSegment`, `glassDepthColor` nuevo) y `glassSegment` gana `wall`/`fillOverride` (muro de los no leídos); `unreadTile` eliminado | Cenotes 0.17.1 ✅ (archivos copiados tal cual; `depth_body` igual; `WhatsNew` ya usaba `LocalConfiguration`) |
+| 2026-11-15 | Cemail | `Motion.kt`: `popIn` con `CompositingStrategy.ModulateAlpha` (con alpha < 1 el búfer del tamaño del elemento cortaba la sombra exterior, que aparecía de golpe al final) | Cenotes 0.17.2 ✅ |
