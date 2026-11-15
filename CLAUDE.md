@@ -30,12 +30,12 @@ En Windows, `gradlew.bat`. Emulador disponible: `Pixel_API_36`. El SDK está en 
 
 ### Publicar una versión
 1. Subir `versionCode` y `versionName` en `app/build.gradle.kts` y añadir la entrada en `CHANGELOG.md`.
-2. `./gradlew assembleRelease` y copiar el APK a `G:\Mi unidad\Cemail\Cemail-x.y.z.apk`.
+2. `./gradlew assembleRelease` y copiar el APK a `G:\Mi unidad\Ce Apps\Cemail\Cemail-x.y.z.apk`.
 3. Commit y push a `main`.
 4. Publicar la *release* en GitHub con el APK: la app avisa de versiones nuevas leyendo la última *release* del repositorio público (ver `update/Updates.kt`). Si no se publica, nadie se entera de la versión.
 
 ```bash
-gh release create vx.y.z "G:/Mi unidad/Cemail/Cemail-x.y.z.apk" --title "Cemail x.y.z" --notes "…"
+gh release create vx.y.z "G:/Mi unidad/Ce Apps/Cemail/Cemail-x.y.z.apk" --title "Cemail x.y.z" --notes "…"
 ```
 
 ### Emulador sin ventana
