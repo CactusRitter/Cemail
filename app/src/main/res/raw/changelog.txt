@@ -1,3 +1,6 @@
+## 2.2.7
+- Shadows now appear together with the animation instead of popping in when it ends.
+
 ## 2.2.6
 - Unread messages no longer have a frame of their own inside the card: they are a slightly raised step of it, with a small wall underneath.
 - 3D shadow (Glass): a soft shadow that lifts the glass off the background, instead of the hard Brutalist one. Small buttons lift less.

@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
+## 2.2.7 — 2026-11-15
+- La sombra sale a la vez que la animación: `popIn` dibujaba en un búfer del tamaño del elemento mientras la opacidad era menor que 1 y recortaba la sombra (que está fuera de los límites), que aparecía de golpe al terminar. Ahora usa `CompositingStrategy.ModulateAlpha`.
+
 ## 2.2.6 — 2026-11-15
 - Los mensajes no leídos ya no llevan un marco interior: en las tarjetas por grupo son un escalón de la propia tarjeta (relleno algo más claro y un muro de 3 dp debajo, del color de la sombra en Brutalista); con mensajes individuales, la tarjeta lleva el muro. `glassSegment(wall, fillOverride)`, `unreadFill`, `wallColorFor`; `unreadTile` eliminado. Retro 98 se queda plano.
 - Sombra 3D del cristal: ahora es una sombra suave que eleva el cristal sobre el fondo (`SkinLook.lift`, `liftShadow`, `liftSegment`), no la sombra dura de Brutalista. Las superficies pequeñas se elevan menos.

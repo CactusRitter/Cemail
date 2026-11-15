@@ -1,3 +1,6 @@
+## 2.2.7
+- Schatten erscheinen jetzt zusammen mit der Animation, statt erst an deren Ende aufzutauchen.
+
 ## 2.2.6
 - Ungelesene Nachrichten haben keinen eigenen Rahmen mehr in der Karte: Sie sind eine leicht erhöhte Stufe davon, mit einer kleinen Wand darunter.
 - 3D-Schatten (Glas): ein weicher Schatten hebt das Glas vom Hintergrund ab, statt des harten Brutalist-Schattens. Kleine Schaltflächen heben sich weniger ab.

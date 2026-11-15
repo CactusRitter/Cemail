@@ -1,3 +1,6 @@
+## 2.2.7
+- Las sombras aparecen junto con la animación, en vez de saltar al terminar.
+
 ## 2.2.6
 - Los mensajes no leídos ya no llevan un marco propio dentro de la tarjeta: son un escalón de ella, un poco más alto, con un pequeño muro debajo.
 - Sombra 3D (cristal): una sombra suave que eleva el cristal sobre el fondo, en vez de la sombra dura de Brutalista. Los botones pequeños se elevan menos.

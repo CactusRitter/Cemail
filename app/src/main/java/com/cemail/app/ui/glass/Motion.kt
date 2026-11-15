@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Rect
@@ -92,6 +93,9 @@ fun Modifier.popIn(
         scaleY = s
         alpha = p.coerceIn(0f, 1f)
         transformOrigin = origin
+        // Without this, while alpha < 1 the layer is drawn into an offscreen buffer the size of the element, which cuts off
+        // the shadow around it (it is outside the bounds) and it only showed up when the animation ended.
+        compositingStrategy = CompositingStrategy.ModulateAlpha
     }
 }
 
