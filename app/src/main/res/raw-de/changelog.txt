@@ -1,3 +1,7 @@
+## 2.2.10
+- Beim Zurückstellen erscheint ein kurzer Hinweis statt „Rückgängig“.
+- Retro 98: Die Schaltflächen zum Schreiben und Antworten haben dieselbe Farbe wie die anderen.
+
 ## 2.2.9
 - Die Anzahl in der Auswahlleiste bricht nicht mehr auseinander; es wird nur noch die Zahl angezeigt.
 - „Rückgängig“ gibt es nur noch beim Archivieren, Löschen und als Spam markieren (nicht bei gelesen/ungelesen, Zurückstellen, Anheften oder Stern).

@@ -1,3 +1,7 @@
+## 2.2.10
+- Al posponer sale un aviso breve en vez de ofrecer Deshacer.
+- Retro 98: los botones de redactar y responder tienen el mismo color que los demás botones.
+
 ## 2.2.9
 - El recuento de la barra de selección ya no se parte en trozos: muestra solo el número.
 - «Deshacer» sale solo al archivar, borrar y marcar como spam (no al marcar leído/no leído, posponer, fijar o destacar).

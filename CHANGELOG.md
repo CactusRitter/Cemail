@@ -3,7 +3,7 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
-## Sin publicar
+## 2.2.10 — 2026-11-16
 - Posponer ya no ofrece «Deshacer»: muestra un aviso breve («Pospuesto») sin botón (`act(…, undoable = false)`).
 - Retro 98: el botón de redactar (lista) y el de responder (lectura) tienen el mismo color que los demás botones (plateado), no el resaltado blanco (`fabKind()`/`fabTint()`, `SkinLook.fabPinned`). Compartido con Cenotes.
 
