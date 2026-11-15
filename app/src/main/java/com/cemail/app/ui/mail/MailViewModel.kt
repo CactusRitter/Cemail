@@ -288,7 +288,7 @@ class MailViewModel(
     @Volatile var actionUndoMillis: Long = 5_000
 
     // --- actions (each one can be undone) ---
-    private fun act(ids: Set<Long>, @StringRes message: Int?, closeOpen: Boolean = false, transform: (Mail) -> Mail) {
+    private fun act(ids: Set<Long>, @StringRes message: Int?, closeOpen: Boolean = false, undoable: Boolean = true, transform: (Mail) -> Mail) {
         if (ids.isEmpty()) return
         val before = repo.snapshot(ids)
         // An action that changes nothing (a swipe that fires twice, say) must not replace the "Undo" of the one before it.
@@ -297,7 +297,7 @@ class MailViewModel(
         ui.update {
             it.copy(
                 selection = it.selection - ids,
-                undo = message?.let { m -> UndoEvent(++undoCounter, m, before, durationMillis = actionUndoMillis) } ?: it.undo,
+                undo = message?.let { m -> UndoEvent(++undoCounter, m, if (undoable) before else emptyList(), durationMillis = actionUndoMillis) } ?: it.undo,
                 openId = if (closeOpen && it.openId in ids) null else it.openId,
             )
         }
@@ -337,7 +337,7 @@ class MailViewModel(
         val ids = ui.value.snoozeTargets ?: return
         ui.update { it.copy(snoozeTargets = null) }
         val until = option.at(System.currentTimeMillis())
-        act(ids, null, true) { it.copy(snoozedUntil = until, read = true) }
+        act(ids, R.string.done_snoozed, true, undoable = false) { it.copy(snoozedUntil = until, read = true) }
     }
     fun undo() {
         val u = ui.value.undo ?: return

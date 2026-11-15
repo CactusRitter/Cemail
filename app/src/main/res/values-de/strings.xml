@@ -360,6 +360,7 @@
     <string name="notif_snoozed_title">Wieder im Posteingang: %1$s</string>
     <string name="box_spam">Spam</string>
     <string name="done_spammed">Als Spam markiert</string>
+    <string name="done_snoozed">Zurückgestellt</string>
     <string name="action_spam">Spam</string>
     <string name="empty_trash">Papierkorb leeren</string>
     <string name="empty_spam">Spam leeren</string>

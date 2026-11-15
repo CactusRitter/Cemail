@@ -362,6 +362,7 @@
     <string name="notif_snoozed_title">Back in your inbox: %1$s</string>
     <string name="box_spam">Spam</string>
     <string name="done_spammed">Marked as spam</string>
+    <string name="done_snoozed">Snoozed</string>
     <string name="action_spam">Spam</string>
     <string name="empty_trash">Empty trash</string>
     <string name="empty_spam">Empty spam</string>

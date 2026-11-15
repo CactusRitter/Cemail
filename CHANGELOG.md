@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
+## Sin publicar
+- Posponer ya no ofrece «Deshacer»: muestra un aviso breve («Pospuesto») sin botón (`act(…, undoable = false)`).
+
 ## 2.2.9 — 2026-11-15
 - Barra de selección: el recuento ya no se parte en trozos («selecte/d») con cinco botones (en Retro 98 en pantallas estrechas); ahora muestra solo el número, y el texto completo queda para TalkBack.
 - El «Deshacer» queda solo para archivar, borrar y spam. Marcar leído/no leído, posponer, fijar, destacar y volver a la bandeja ya no lo muestran (`act(…, null)`); se quitan los textos sin uso `done_marked`, `done_pinned` y `done_snoozed`.

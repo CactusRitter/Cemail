@@ -360,6 +360,7 @@
     <string name="notif_snoozed_title">De vuelta en tu bandeja: %1$s</string>
     <string name="box_spam">Spam</string>
     <string name="done_spammed">Marcado como spam</string>
+    <string name="done_snoozed">Pospuesto</string>
     <string name="action_spam">Spam</string>
     <string name="empty_trash">Vaciar la papelera</string>
     <string name="empty_spam">Vaciar el spam</string>
