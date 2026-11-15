@@ -3,6 +3,11 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
+## 2.2.9 — 2026-11-15
+- Barra de selección: el recuento ya no se parte en trozos («selecte/d») con cinco botones (en Retro 98 en pantallas estrechas); ahora muestra solo el número, y el texto completo queda para TalkBack.
+- El «Deshacer» queda solo para archivar, borrar y spam. Marcar leído/no leído, posponer, fijar, destacar y volver a la bandeja ya no lo muestran (`act(…, null)`); se quitan los textos sin uso `done_marked`, `done_pinned` y `done_snoozed`.
+- El botón del sobre de la barra de selección se adapta: con todo sin leer marca como leído, con todo leído marca como no leído y, con una mezcla, hace lo que diga el nuevo ajuste Ajustes → Mensajes → «Marcar la selección como…» (`markSelectionRead`, por defecto leído).
+
 ## 2.2.8 — 2026-11-15
 - Las sombras laterales de las tarjetas de Ajustes se cortaban: el margen de 12 dp estaba fuera del scroll, que recortaba justo en el borde de la tarjeta. Ahora el margen lateral va dentro del scroll (`SettingsScreen`) y la sombra cabe en él. Regla: el margen de una lista con sombras va dentro del contenedor que hace scroll.
 

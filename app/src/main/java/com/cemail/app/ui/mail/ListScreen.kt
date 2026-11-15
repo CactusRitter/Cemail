@@ -74,6 +74,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
@@ -382,7 +386,7 @@ private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsA
             com.cemail.app.data.SwipeAction.TRASH -> vm.trash(one)
             com.cemail.app.data.SwipeAction.TOGGLE_READ -> vm.markRead(one, !mail.read)
             com.cemail.app.data.SwipeAction.SPAM -> vm.spam(one)
-            com.cemail.app.data.SwipeAction.STAR -> vm.toggleStar(one, withUndo = true)
+            com.cemail.app.data.SwipeAction.STAR -> vm.toggleStar(one)
             com.cemail.app.data.SwipeAction.SNOOZE -> vm.askSnooze(one)
             com.cemail.app.data.SwipeAction.NONE -> Unit
         }
@@ -460,16 +464,34 @@ private fun SelectionBar(state: MailUiState, vm: MailViewModel, haze: dev.chrisb
     val ids = state.selection
     GlassPill(Modifier.fillMaxWidth(), hazeState = haze) {
         PillIcon(Icons.Filled.Close, stringResource(R.string.close), vm::clearSelection)
+        // Just the number: with five buttons there is no room for the word (it broke into pieces in some looks).
+        val countText = stringResource(R.string.selected_count, ids.size)
         Text(
-            stringResource(R.string.selected_count, ids.size),
-            Modifier.weight(1f).padding(horizontal = 4.dp),
+            ids.size.toString(),
+            Modifier.weight(1f).padding(horizontal = 4.dp).semantics { contentDescription = countText },
             style = MaterialTheme.typography.titleSmall,
+            maxLines = 1,
         )
         PillIcon(CemailIcons.Archive, stringResource(R.string.action_archive), { vm.archive(ids) }, width = 44.dp)
         PillIcon(Icons.Filled.Delete, stringResource(R.string.action_trash), { vm.trash(ids) }, width = 44.dp)
         PillIcon(CemailIcons.Snooze, stringResource(R.string.action_snooze), { vm.askSnooze(ids) }, width = 44.dp)
         PillIcon(CemailIcons.Pin, stringResource(R.string.action_pin), { vm.togglePin(ids) }, width = 44.dp)
-        PillIcon(Icons.Filled.Email, stringResource(R.string.action_mark_unread), { vm.markRead(ids, false) }, width = 44.dp)
+        // All unread: mark as read; all read: mark as unread; a mix: what Settings → Messages says.
+        val markMixedAsRead = (LocalContext.current.applicationContext as com.cemail.app.CemailApplication).settings.state
+            .collectAsStateWithLifecycle().value.markSelectionRead
+        val chosen = (state.pinned + state.others).filter { it.id in ids }
+        val makeRead = when {
+            chosen.isEmpty() -> markMixedAsRead
+            chosen.all { !it.read } -> true
+            chosen.all { it.read } -> false
+            else -> markMixedAsRead
+        }
+        PillIcon(
+            Icons.Filled.Email,
+            stringResource(if (makeRead) R.string.action_mark_read else R.string.action_mark_unread),
+            { vm.markRead(ids, makeRead) },
+            width = 44.dp,
+        )
     }
 }
 

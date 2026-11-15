@@ -1,3 +1,8 @@
+## 2.2.9
+- The selection bar count no longer breaks into pieces; it shows just the number.
+- “Undo” now appears only for archive, delete and spam (not for mark read/unread, snooze, pin or star).
+- The envelope button of the selection bar now marks as read when the selection is unread, and as unread when it is read. For a mix, choose in Settings → Messages.
+
 ## 2.2.8
 - The side shadows of the cards in Settings are no longer cut off.
 

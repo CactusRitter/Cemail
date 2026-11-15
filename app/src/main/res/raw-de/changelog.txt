@@ -1,3 +1,8 @@
+## 2.2.9
+- Die Anzahl in der Auswahlleiste bricht nicht mehr auseinander; es wird nur noch die Zahl angezeigt.
+- „Rückgängig“ gibt es nur noch beim Archivieren, Löschen und als Spam markieren (nicht bei gelesen/ungelesen, Zurückstellen, Anheften oder Stern).
+- Die Umschlag-Schaltfläche der Auswahlleiste markiert ungelesene Auswahl als gelesen und gelesene als ungelesen. Bei einer Mischung wählst du in Einstellungen → Nachrichten.
+
 ## 2.2.8
 - Die seitlichen Schatten der Karten in den Einstellungen werden nicht mehr abgeschnitten.
 

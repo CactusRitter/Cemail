@@ -81,6 +81,8 @@
     <string name="back">Atrás</string>
     <string name="compose">Redactar</string>
     <string name="selected_count">%1$d seleccionados</string>
+    <string name="settings_mark_selection_title">Marcar la selección como…</string>
+    <string name="settings_mark_selection_body">Si seleccionas varios mensajes, unos leídos y otros no, el botón del sobre los marca todos como leídos o todos como no leídos.</string>
     <string name="no_subject">(sin asunto)</string>
     <string name="demo_account">Cuenta de prueba</string>
     <string name="demo_banner">Modo de prueba: son mensajes de ejemplo. Añade una cuenta para usar tu Gmail.</string>
@@ -103,9 +105,6 @@
     <string name="action_undo">Deshacer</string>
     <string name="done_archived">Archivado</string>
     <string name="done_trashed">Movido a la papelera</string>
-    <string name="done_snoozed">Pospuesto</string>
-    <string name="done_pinned">Fijado</string>
-    <string name="done_marked">Actualizado</string>
     <string name="done_sent">Mensaje enviado</string>
     <string name="done_draft_saved">Borrador guardado</string>
 

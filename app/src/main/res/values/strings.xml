@@ -83,6 +83,8 @@
     <string name="back">Back</string>
     <string name="compose">Write</string>
     <string name="selected_count">%1$d selected</string>
+    <string name="settings_mark_selection_title">Mark selection as…</string>
+    <string name="settings_mark_selection_body">When you select several messages, some read and some not, the envelope button marks them all as read or all as unread.</string>
     <string name="no_subject">(no subject)</string>
     <string name="demo_account">Demo account</string>
     <string name="demo_banner">Demo mode: these are example messages. Add an account to use your Gmail.</string>
@@ -105,9 +107,6 @@
     <string name="action_undo">Undo</string>
     <string name="done_archived">Archived</string>
     <string name="done_trashed">Moved to trash</string>
-    <string name="done_snoozed">Snoozed</string>
-    <string name="done_pinned">Pinned</string>
-    <string name="done_marked">Updated</string>
     <string name="done_sent">Message sent</string>
     <string name="done_draft_saved">Draft saved</string>
 

@@ -1,3 +1,8 @@
+## 2.2.9
+- El recuento de la barra de selección ya no se parte en trozos: muestra solo el número.
+- «Deshacer» sale solo al archivar, borrar y marcar como spam (no al marcar leído/no leído, posponer, fijar o destacar).
+- El botón del sobre de la barra de selección marca como leído si la selección está sin leer y como no leído si está leída. Con una mezcla, se elige en Ajustes → Mensajes.
+
 ## 2.2.8
 - Las sombras laterales de las tarjetas de Ajustes ya no se cortan.
 

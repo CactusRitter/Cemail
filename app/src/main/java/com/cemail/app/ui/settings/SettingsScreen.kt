@@ -264,6 +264,14 @@ private fun MessagesPage(settings: AppSettings, repo: SettingsRepository) {
     SwitchRow(R.string.settings_group_title, R.string.settings_group_body, settings.groupByDate, repo::setGroupByDate)
     SwitchRow(R.string.settings_circle_title, R.string.settings_circle_body, settings.showSenderCircle, repo::setShowSenderCircle)
     SettingsCard {
+        Text(stringResource(R.string.settings_mark_selection_title), style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.settings_mark_selection_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            ChoiceChip(stringResource(R.string.action_mark_read), settings.markSelectionRead) { repo.setMarkSelectionRead(true) }
+            ChoiceChip(stringResource(R.string.action_mark_unread), !settings.markSelectionRead) { repo.setMarkSelectionRead(false) }
+        }
+    }
+    SettingsCard {
         Text(stringResource(R.string.quick_title), style = MaterialTheme.typography.titleSmall)
         Text(stringResource(R.string.quick_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

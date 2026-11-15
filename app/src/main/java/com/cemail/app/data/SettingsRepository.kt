@@ -52,6 +52,8 @@ data class AppSettings(
     val syncMinutes: Int = 15,
     /** Round picture (the initial) next to each message in the list. */
     val showSenderCircle: Boolean = true,
+    /** Selecting several messages, some read and some not: the bar button marks them all as read (true) or unread (false). */
+    val markSelectionRead: Boolean = true,
     /** Show a notification for mail that arrives while the app is closed. */
     val notifications: Boolean = true,
     /** Seconds a sent message waits so it can still be undone; 0 = sent at once. */
@@ -124,6 +126,7 @@ class SettingsRepository(context: Context) {
         groupCards = prefs.getBoolean(KEY_GROUP_CARDS, true),
         syncMinutes = prefs.getInt(KEY_SYNC, 15),
         showSenderCircle = prefs.getBoolean(KEY_CIRCLE, true),
+        markSelectionRead = prefs.getBoolean(KEY_MARK_SELECTION, true),
         notifications = prefs.getBoolean(KEY_NOTIFICATIONS, true),
         undoSendSeconds = prefs.getInt(KEY_UNDO_SEND, 5),
         accountSync = prefs.all.filterKeys { it.startsWith(KEY_ACCOUNT_SYNC) }.mapNotNull { (k, v) -> (v as? Int)?.let { k.removePrefix(KEY_ACCOUNT_SYNC) to it } }.toMap(),
@@ -398,7 +401,13 @@ class SettingsRepository(context: Context) {
         _state.value = _state.value.copy(showSenderCircle = value)
     }
 
+    fun setMarkSelectionRead(value: Boolean) {
+        prefs.edit().putBoolean(KEY_MARK_SELECTION, value).apply()
+        _state.value = _state.value.copy(markSelectionRead = value)
+    }
+
     private companion object {
+        const val KEY_MARK_SELECTION = "mark_selection_read"
         const val KEY_PUSH = "push_enabled"
         const val KEY_DEFAULT_ACCOUNT = "default_account"
         const val KEY_ACCOUNT_ORDER = "account_order"

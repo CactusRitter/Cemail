@@ -81,6 +81,8 @@
     <string name="back">Zurück</string>
     <string name="compose">Schreiben</string>
     <string name="selected_count">%1$d ausgewählt</string>
+    <string name="settings_mark_selection_title">Auswahl markieren als…</string>
+    <string name="settings_mark_selection_body">Wenn du mehrere Nachrichten auswählst, einige gelesen und andere nicht, markiert die Umschlag-Schaltfläche alle als gelesen oder alle als ungelesen.</string>
     <string name="no_subject">(kein Betreff)</string>
     <string name="demo_account">Demokonto</string>
     <string name="demo_banner">Demomodus: Das sind Beispielnachrichten. Füge ein Konto hinzu, um dein Gmail zu nutzen.</string>
@@ -103,9 +105,6 @@
     <string name="action_undo">Rückgängig</string>
     <string name="done_archived">Archiviert</string>
     <string name="done_trashed">In den Papierkorb verschoben</string>
-    <string name="done_snoozed">Zurückgestellt</string>
-    <string name="done_pinned">Angeheftet</string>
-    <string name="done_marked">Aktualisiert</string>
     <string name="done_sent">Nachricht gesendet</string>
     <string name="done_draft_saved">Entwurf gespeichert</string>
 

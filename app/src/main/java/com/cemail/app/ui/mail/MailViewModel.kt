@@ -318,17 +318,16 @@ class MailViewModel(
         }
     }
     fun spam(ids: Set<Long>) = act(ids, R.string.done_spammed, true) { it.copy(folder = Folder.SPAM, snoozedUntil = null) }
-    fun moveToInbox(ids: Set<Long>) = act(ids, R.string.done_marked, true) { it.copy(folder = Folder.INBOX, snoozedUntil = null) }
-    /** [withUndo]: the swipe gesture offers to undo it; tapping the star does not. */
-    fun toggleStar(ids: Set<Long>, withUndo: Boolean = false) {
+    fun moveToInbox(ids: Set<Long>) = act(ids, null, true) { it.copy(folder = Folder.INBOX, snoozedUntil = null) }
+    fun toggleStar(ids: Set<Long>) {
         val turnOn = repo.snapshot(ids).any { !it.starred }
-        act(ids, if (withUndo) R.string.done_marked else null) { it.copy(starred = turnOn) }
+        act(ids, null) { it.copy(starred = turnOn) }
     }
     fun togglePin(ids: Set<Long>) {
         val turnOn = repo.snapshot(ids).any { !it.pinned }
-        act(ids, if (turnOn) R.string.done_pinned else R.string.done_marked) { it.copy(pinned = turnOn) }
+        act(ids, null) { it.copy(pinned = turnOn) }
     }
-    fun markRead(ids: Set<Long>, read: Boolean) = act(ids, R.string.done_marked, true) { it.copy(read = read) }
+    fun markRead(ids: Set<Long>, read: Boolean) = act(ids, null, true) { it.copy(read = read) }
     /** Puts a label of the user on the messages, or takes it off. */
     fun setLabel(ids: Set<Long>, labelId: String, on: Boolean) =
         act(ids, null) { it.copy(labelIds = if (on) it.labelIds + labelId else it.labelIds - labelId) }
@@ -338,7 +337,7 @@ class MailViewModel(
         val ids = ui.value.snoozeTargets ?: return
         ui.update { it.copy(snoozeTargets = null) }
         val until = option.at(System.currentTimeMillis())
-        act(ids, R.string.done_snoozed, true) { it.copy(snoozedUntil = until, read = true) }
+        act(ids, null, true) { it.copy(snoozedUntil = until, read = true) }
     }
     fun undo() {
         val u = ui.value.undo ?: return
