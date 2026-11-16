@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Ce Apps/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
+## Sin publicar
+- Brutalista: al cambiar de cuenta, carpeta o filtro, la sombra dura de las tarjetas ya no desaparece por la derecha mientras entran (ni al salir). La animación de entrada de la lista (`listTransition`, solo de Cemail aunque vive en `Motion.kt`) bajaba la opacidad sin `CompositingStrategy.ModulateAlpha`, así que cada fila se pintaba en un búfer del tamaño de la fila y se cortaba lo que sobresale (la sombra desplazada hacia el final); al terminar la animación volvía a aparecer de golpe. Mismo arreglo que ya tenía `popIn`.
+
 ## 2.3.0 — 2026-11-16
 - Etiquetar varios correos a la vez: la barra de selección tiene un botón de etiquetas (solo si algún correo elegido es de una cuenta con etiquetas, es decir, Gmail). Usa el mismo selector que el lector (`LabelsPopup`, ahora en su propio archivo); cada etiqueta se aplica solo a los correos de su cuenta y, con correos de varias cuentas, las etiquetas salen agrupadas bajo el nombre de cada cuenta. Marca la etiqueta si todos los elegidos la tienen; un toque la pone (o la quita) a todos y cierra la selección.
 - Menú lateral: las etiquetas son filas iguales que las carpetas (mismo relleno y altura, icono del color del texto, se encogen al pulsar, el número de no leídos al final). La flecha de desplegar solo aparece en las etiquetas con subetiquetas y ya no ocupa una caja propia (antes había una caja invisible en las demás).

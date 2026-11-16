@@ -211,5 +211,8 @@ fun Modifier.listTransition(index: Int, leaving: Boolean, entering: Boolean, epo
         scaleX = s
         scaleY = s
         alpha = p.coerceIn(0f, 1f)
+        // Like popIn: with an offscreen buffer the size of the row, the hard shadow (it sticks out to the end) was cut off
+        // while the row faded in, and then popped back when the animation ended.
+        compositingStrategy = CompositingStrategy.ModulateAlpha
     }
 }
