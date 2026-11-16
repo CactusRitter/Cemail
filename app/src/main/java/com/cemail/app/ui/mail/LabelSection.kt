@@ -34,6 +34,9 @@ import com.cemail.app.data.mail.buildLabelTree
 import com.cemail.app.ui.glass.GlassKind
 import com.cemail.app.ui.glass.glass
 import com.cemail.app.ui.glass.popIn
+import com.cemail.app.ui.glass.pressScale
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
 import com.cemail.app.ui.icons.CemailIcons
 
 /** The user's Gmail labels as folders in the drawer; folders with sub-folders can be expanded and collapsed. */
@@ -76,24 +79,27 @@ private fun LabelRow(
     val expanded = node.fullName in state.expanded
     val selected = node.id != null && node.id == state.labelId
     val unread = node.id?.let { state.unreadByLabel[it] } ?: 0
+    // The same row as the folders above (MailApp's DrawerContent): same padding, icon colour, press and count. Only a
+    // label with sub-labels adds its small arrow at the end.
     Row(
         Modifier
             .popIn(revealed, delayMillis = delayMillis, initialScale = 0.8f)
             .padding(start = (depth * 16).dp)
+            .pressScale(0.96f)
             .fillMaxWidth()
             .glass(RoundedCornerShape(50), if (selected) GlassKind.Pinned else GlassKind.Card)
             .clickable(role = Role.Button) { if (node.id != null) onPick(node.id) else onToggle(node.fullName) }
-            .padding(start = 16.dp, end = 4.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Icon(
             CemailIcons.Folder, null,
-            tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
         )
         Text(
             node.name,
-            Modifier.weight(1f).padding(vertical = 12.dp),
+            Modifier.weight(1f),
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             maxLines = 1,
@@ -104,10 +110,9 @@ private fun LabelRow(
             Icon(
                 if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
                 stringResource(if (expanded) R.string.label_collapse else R.string.label_expand),
-                Modifier.clickable(role = Role.Button) { onToggle(node.fullName) }.padding(12.dp),
+                Modifier.clip(CircleShape).clickable(role = Role.Button) { onToggle(node.fullName) },
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        } else {
-            Icon(Icons.Filled.KeyboardArrowDown, null, Modifier.padding(12.dp), tint = androidx.compose.ui.graphics.Color.Transparent)
         }
     }
     // Sub-labels: the room opens and closes smoothly (as Cc and Bcc do in Compose), the rows pop in on opening and fade

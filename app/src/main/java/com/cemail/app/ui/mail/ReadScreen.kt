@@ -348,7 +348,7 @@ fun ReadScreen(
             UnsubscribeDialog(mail.senderName, mail.accountId, info, vm, onDismiss = { unsubscribing = false })
         }
         if (attachPanel) AttachmentsPopup(mail.id, attachments, vm) { attachPanel = false }
-        if (labelPanel) LabelsPopup(mail, accountLabels, vm) { labelPanel = false }
+        if (labelPanel) LabelsPopup(listOf(mail), mapOf(mail.accountId to accountLabels), vm, onDismiss = { labelPanel = false })
         if (panel) {
             ActionGrid(
                 onDismiss = { panel = false },
@@ -530,64 +530,6 @@ private fun ThreadCard(thread: List<Mail>, vm: MailViewModel) {
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
-                    }
-                }
-            }
-        }
-    }
-}
-
-/** The user's labels with a check for each one the message has; a tap puts it on or takes it off. */
-@Composable
-private fun LabelsPopup(mail: Mail, labels: List<Label>, vm: MailViewModel, onDismiss: () -> Unit) {
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.2f))
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss),
-    ) {
-        Column(
-            Modifier
-                .align(com.cemail.app.ui.glass.floatingCorner())
-                .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(bottom = 156.dp, end = 16.dp, start = 16.dp)
-                .popIn(initialScale = 0.3f, origin = TransformOrigin(if (com.cemail.app.ui.glass.LocalListOnRight.current) 0f else 1f, 1f))
-                .widthIn(max = 320.dp)
-                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
-                .glass(RoundedCornerShape(28.dp), GlassKind.Menu, elevation = 12.dp)
-                .padding(12.dp),
-        ) {
-            Text(
-                stringResource(R.string.labels_title),
-                Modifier.padding(start = 8.dp, bottom = 6.dp),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            if (labels.isEmpty()) {
-                Text(stringResource(R.string.labels_none), Modifier.padding(8.dp), style = MaterialTheme.typography.bodyMedium)
-            }
-            Column(Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState())) {
-                labels.sortedBy { it.name.lowercase() }.forEach { label ->
-                    val on = label.id in mail.labelIds
-                    Row(
-                        Modifier.fillMaxWidth().clip(com.cemail.app.ui.theme.LocalSkin.current.shape(RoundedCornerShape(16.dp))).toggleable(value = on, role = Role.Checkbox) { vm.setLabel(setOf(mail.id), label.id, !on) }
-                            .padding(horizontal = 8.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        Icon(
-                            CemailIcons.Label, null,
-                            tint = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Text(
-                            label.name,
-                            Modifier.weight(1f),
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = if (on) FontWeight.Bold else FontWeight.Normal,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        if (on) Icon(Icons.Filled.Check, null, tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             }

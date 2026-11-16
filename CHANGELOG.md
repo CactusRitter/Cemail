@@ -3,6 +3,10 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Ce Apps/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
+## Sin publicar
+- Etiquetar varios correos a la vez: la barra de selección tiene un botón de etiquetas (solo si algún correo elegido es de una cuenta con etiquetas, es decir, Gmail). Usa el mismo selector que el lector (`LabelsPopup`, ahora en su propio archivo); cada etiqueta se aplica solo a los correos de su cuenta y, con correos de varias cuentas, las etiquetas salen agrupadas bajo el nombre de cada cuenta. Marca la etiqueta si todos los elegidos la tienen; un toque la pone (o la quita) a todos y cierra la selección.
+- Menú lateral: las etiquetas son filas iguales que las carpetas (mismo relleno y altura, icono del color del texto, se encogen al pulsar, el número de no leídos al final). La flecha de desplegar solo aparece en las etiquetas con subetiquetas y ya no ocupa una caja propia (antes había una caja invisible en las demás).
+
 ## 2.2.10 — 2026-11-16
 - Posponer ya no ofrece «Deshacer»: muestra un aviso breve («Pospuesto») sin botón (`act(…, undoable = false)`).
 - Retro 98: el botón de redactar (lista) y el de responder (lectura) tienen el mismo color que los demás botones (plateado), no el resaltado blanco (`fabKind()`/`fabTint()`, `SkinLook.fabPinned`). Compartido con Cenotes.

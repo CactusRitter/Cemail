@@ -167,6 +167,14 @@ fun ListScreen(
     LaunchedEffect(epoch, live.pinned, live.others) { if (entering) listState.scrollToItem(0) }
     val haze = rememberHazeState()
     val selecting = state.selection.isNotEmpty()
+    // Labelling the selection: the labels of each account among the chosen messages (only Gmail has labels).
+    val chosenMails = (state.pinned + state.others).filter { it.id in state.selection }
+    val chosenAccounts = chosenMails.map { it.accountId }.toSet()
+    val selectionLabels by androidx.compose.runtime.produceState(emptyMap<String, List<com.cemail.app.data.mail.Label>>(), chosenAccounts) {
+        value = chosenAccounts.associateWith { vm.userLabels(it) }
+    }
+    var labelPanel by remember { mutableStateOf(false) }
+    if (!selecting) labelPanel = false
     val startIsArchive = state.box != MailBox.ARCHIVE && state.box != MailBox.TRASH && state.box != MailBox.SPAM
 
     Box(Modifier.fillMaxSize()) {
@@ -319,7 +327,7 @@ fun ListScreen(
                 label = "topBar",
             ) { mode ->
             when (mode) {
-                0 -> SelectionBar(state, vm, haze)
+                0 -> SelectionBar(state, vm, haze, onLabel = if (selectionLabels.values.any { it.isNotEmpty() }) ({ labelPanel = true }) else null)
                 1 -> SearchBar(state, vm, haze)
                 // Same header as Celander and Cenotes: round button on the left, the title in big bold
                 // letters in the middle, and a pill with the actions on the right.
@@ -347,6 +355,8 @@ fun ListScreen(
             }
             }
         }
+
+        if (labelPanel) LabelsPopup(chosenMails, selectionLabels, vm, onDismiss = { labelPanel = false }, keepOpen = false, fromTop = true)
 
         // Compose button (Thunderbird has a floating "write" button).
         if (!selecting && !state.searching) {
@@ -460,7 +470,7 @@ private fun SectionHeader(text: String) {
 }
 
 @Composable
-private fun SelectionBar(state: MailUiState, vm: MailViewModel, haze: dev.chrisbanes.haze.HazeState) {
+private fun SelectionBar(state: MailUiState, vm: MailViewModel, haze: dev.chrisbanes.haze.HazeState, onLabel: (() -> Unit)? = null) {
     val ids = state.selection
     GlassPill(Modifier.fillMaxWidth(), hazeState = haze) {
         PillIcon(Icons.Filled.Close, stringResource(R.string.close), vm::clearSelection)
@@ -476,6 +486,8 @@ private fun SelectionBar(state: MailUiState, vm: MailViewModel, haze: dev.chrisb
         PillIcon(Icons.Filled.Delete, stringResource(R.string.action_trash), { vm.trash(ids) }, width = 44.dp)
         PillIcon(CemailIcons.Snooze, stringResource(R.string.action_snooze), { vm.askSnooze(ids) }, width = 44.dp)
         PillIcon(CemailIcons.Pin, stringResource(R.string.action_pin), { vm.togglePin(ids) }, width = 44.dp)
+        // Only when some chosen message has labels to offer (Gmail accounts; Outlook and IMAP have none).
+        if (onLabel != null) PillIcon(CemailIcons.Label, stringResource(R.string.action_labels), onLabel, width = 44.dp)
         // All unread: mark as read; all read: mark as unread; a mix: what Settings → Messages says.
         val markMixedAsRead = (LocalContext.current.applicationContext as com.cemail.app.CemailApplication).settings.state
             .collectAsStateWithLifecycle().value.markSelectionRead
