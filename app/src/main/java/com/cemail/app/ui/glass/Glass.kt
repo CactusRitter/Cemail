@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -510,3 +512,52 @@ private fun liftDepth(kind: GlassKind, elevation: Dp): Dp = when {
 
 /** From this height (dp) up, a surface gets the full lift; smaller ones get less (down to 40 %). */
 private const val LIFT_FULL_HEIGHT_DP = 90f
+
+// ---- Selection ----
+
+/**
+ * How a selected card is marked, in the style of the look: an outline in the accent colour as thick as the look says
+ * ([SkinLook.selectedEdgeWidth]: thick in Brutalist, thin in the glass), with the corners of the card. Works without
+ * [SelectionBadge] too (a mail "open" in a second pane). The hard shadow of the card stays whole: it is drawn outside.
+ */
+@Composable
+fun Modifier.selectedOutline(shape: Shape): Modifier =
+    border(LocalSkin.current.selectedEdgeWidth, MaterialTheme.colorScheme.primary, shape)
+
+/** The ✓ badge of a selected card, from the badge tokens of the look (see [SkinLook.badgeFill]). */
+@Composable
+fun SelectionBadge(modifier: Modifier = Modifier, size: Dp = 26.dp) {
+    val skin = LocalSkin.current
+    val colors = MaterialTheme.colorScheme
+    val shape = skin.shape(CircleShape)
+    var m = modifier.size(size)
+    // The hard shadow of the look: a solid copy of the badge moved down and to the end.
+    if (skin.badgeShadow > 0.dp) {
+        m = m.drawBehind {
+            val d = skin.badgeShadow.toPx()
+            translate(d, d) { drawOutline(shape.createOutline(this.size, layoutDirection, this), skin.hardShadowColor) }
+        }
+    }
+    m = m.clip(shape).background(skin.badgeFill ?: colors.primary)
+    if (skin.badgeEdgeWidth > 0.dp) m = m.border(skin.badgeEdgeWidth, skin.badgeEdge, shape)
+    if (skin.badgeBevel && skin.bevel.size >= 4) {
+        // Sunken like a Windows 98 check box: dark on top and left, light on the bottom and right.
+        val (hi, light, shade, dark) = skin.bevel
+        m = m.drawBehind {
+            val w = 1.dp.toPx()
+            val s = this.size
+            fun line(c: Color, from: Offset, to: Offset) = drawLine(c, from, to, w)
+            line(shade, Offset(0f, w / 2), Offset(s.width, w / 2)); line(shade, Offset(w / 2, 0f), Offset(w / 2, s.height))
+            line(dark, Offset(w, w * 1.5f), Offset(s.width - w, w * 1.5f)); line(dark, Offset(w * 1.5f, w), Offset(w * 1.5f, s.height - w))
+            line(hi, Offset(0f, s.height - w / 2), Offset(s.width, s.height - w / 2))
+            line(hi, Offset(s.width - w / 2, 0f), Offset(s.width - w / 2, s.height))
+            line(light, Offset(w, s.height - w * 1.5f), Offset(s.width - w, s.height - w * 1.5f))
+            line(light, Offset(s.width - w * 1.5f, w), Offset(s.width - w * 1.5f, s.height - w))
+        }
+    }
+    Box(m, contentAlignment = Alignment.Center) {
+        Icon(
+            Icons.Filled.Check, null, tint = skin.badgeInk ?: colors.onPrimary, modifier = Modifier.size(size * 0.7f),
+        )
+    }
+}

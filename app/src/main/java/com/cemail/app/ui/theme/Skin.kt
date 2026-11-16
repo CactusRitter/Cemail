@@ -107,6 +107,16 @@ data class SkinLook(
     val fabCorner: Dp? = null,
     /** The floating "write" button is highlighted (Pinned, accent icon); false = like the other buttons (Retro 98). */
     val fabPinned: Boolean = true,
+    /** A selected card: width of the accent outline round it. */
+    val selectedEdgeWidth: Dp = 2.5.dp,
+    /** The ✓ badge of a selected card: fill and tick (null = accent and the colour on it), outline (width 0 = none), hard
+     *  shadow height (0 = none) and, in Windows 98, a sunken bevel like a check box. */
+    val badgeFill: Color? = null,
+    val badgeInk: Color? = null,
+    val badgeEdge: Color = Color.Transparent,
+    val badgeEdgeWidth: Dp = 0.dp,
+    val badgeShadow: Dp = 0.dp,
+    val badgeBevel: Boolean = false,
 ) {
     private val keepsShapes get() = cornerScale == 1f && maxCorner >= 1000.dp
 
@@ -262,6 +272,7 @@ private fun amoled(a: AccentPalette, h: Float, s: Float): SkinTheme {
     val black = Color.Black
     val look = SkinLook(
         Skin.AMOLED, dark = true, cornerScale = 0.8f, maxCorner = 22.dp, edge = Edge.LINE,
+        selectedEdgeWidth = 2.dp, badgeEdge = Color(0xFF333333), badgeEdgeWidth = 1.dp,
         edgeColor = Color(0xFF242424), strongEdgeColor = Color(0xFF333333), divider = Color(0xFF1C1C1C), softShadow = false,
     )
     val glass = flat(
@@ -283,6 +294,7 @@ private fun retro(dark: Boolean, h: Float): SkinTheme {
     val look = if (dark) {
         SkinLook(
             Skin.RETRO, true, cornerScale = 0f, fabPinned = false, edge = Edge.BEVEL, softShadow = false,
+            selectedEdgeWidth = 2.dp, badgeFill = Color(0xFF1C1C1C), badgeInk = Color.White, badgeBevel = true,
             bevel = listOf(Color(0xFF7A7A7A), Color(0xFF5A5A5A), Color(0xFF242424), Color(0xFF000000)),
             divider = Color(0xFF2E2E2E), dividerInset = 6.dp,
             listFill = Color(0xFF1C1C1C), listPinned = tone(h, 0.45f, 0.26f),
@@ -292,6 +304,7 @@ private fun retro(dark: Boolean, h: Float): SkinTheme {
     } else {
         SkinLook(
             Skin.RETRO, false, cornerScale = 0f, fabPinned = false, edge = Edge.BEVEL, softShadow = false,
+            selectedEdgeWidth = 2.dp, badgeFill = Color.White, badgeInk = Color.Black, badgeBevel = true,
             bevel = listOf(Color.White, Color(0xFFDFDFDF), Color(0xFF808080), Color(0xFF0A0A0A)),
             divider = Color(0xFFE4E4E4), dividerInset = 6.dp,
             listFill = Color.White, listPinned = tone(h, 0.55f, 0.86f),
@@ -323,6 +336,7 @@ private fun paper(dark: Boolean, h: Float, s: Float): SkinTheme {
     val ink = if (dark) Color(0xFFECE4D6) else Color(0xFF26221C)
     val look = SkinLook(
         Skin.PAPER, dark, cornerScale = 0.22f, maxCorner = 6.dp, edge = Edge.LINE,
+        selectedEdgeWidth = 2.dp, badgeEdge = ink.copy(alpha = 0.8f), badgeEdgeWidth = 1.dp,
         edgeColor = ink.copy(alpha = 0.16f), strongEdgeColor = ink.copy(alpha = 0.8f),
         divider = ink.copy(alpha = 0.13f), dividerInset = 14.dp, softShadow = false,
     )
@@ -369,6 +383,7 @@ private fun brutal(dark: Boolean, h: Float): SkinTheme {
         Skin.BRUTAL, dark, cornerScale = 0.5f, maxCorner = 14.dp, edge = Edge.LINE, edgeWidth = 2.dp,
         edgeColor = line, strongEdgeColor = line, divider = line, dividerWidth = 2.dp, dividerInset = 0.dp,
         hardShadow = 4.dp, hardShadowColor = if (dark) tone(h, 0.9f, 0.62f) else Color(0xFF111111), softShadow = false,
+        selectedEdgeWidth = 4.dp, badgeEdge = line, badgeEdgeWidth = 2.dp, badgeShadow = 2.dp,
     )
     val yellow = Color(0xFFFFE14D)
     val glass = if (dark) {

@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Warning
@@ -63,6 +62,7 @@ import com.cemail.app.ui.glass.GroupPos
 import com.cemail.app.ui.glass.glassSegment
 import com.cemail.app.ui.glass.glassSpring
 import com.cemail.app.ui.glass.unreadFill
+import com.cemail.app.ui.glass.selectedOutline
 import com.cemail.app.ui.icons.CemailIcons
 
 /** "14:32" for today, "Nov 9" otherwise: formatted by the platform for the current locale. */
@@ -141,7 +141,9 @@ fun MailRow(
             }
         },
     ) {
-        val kind = if (selected || current || (!mail.read && !inGroup)) GlassKind.Pinned else GlassKind.Card
+        // Selected or open (tablets) keeps the row's own surface (read or unread) and adds the look's outline, so it is
+        // never mistaken for an unread message; selected also gets the look's ✓ badge.
+        val kind = if (!mail.read && !inGroup) GlassKind.Pinned else GlassKind.Card
         // TalkBack: whether it is unread or starred, and the two swipe actions (which cannot be done by swiping there).
         val unreadText = stringResource(R.string.a11y_unread)
         val starredText = stringResource(R.string.a11y_starred)
@@ -157,7 +159,8 @@ fun MailRow(
         Row(
             Modifier
                 .then(a11y)
-                .glassSegment(pos, 20.dp, kind, wall = !mail.read && !selected && !current, fillOverride = if (inGroup && !mail.read && !selected && !current) unreadFill() else null)
+                .glassSegment(pos, 20.dp, kind, wall = !mail.read, fillOverride = if (inGroup && !mail.read) unreadFill() else null)
+                .then(if (selected || current) Modifier.selectedOutline(shape) else Modifier)
                 .then(if (stripe != null) Modifier.accountCorner(stripe, if (pos.hasTop) radius else 0.dp) else Modifier)
                 .combinedClickable(role = Role.Button, onClick = onClick, onLongClick = onLongClick)
                 .padding(horizontal = 6.dp, vertical = 3.dp)
@@ -168,9 +171,8 @@ fun MailRow(
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                        if (selected) {
-                            Icon(Icons.Filled.Check, null, Modifier.padding(end = 4.dp).size(18.dp), tint = MaterialTheme.colorScheme.primary)
-                        }
+                        // At the start of the row, not over its top end corner: that is where the time is.
+                        if (selected) com.cemail.app.ui.glass.SelectionBadge(Modifier.padding(end = 6.dp), size = 22.dp)
                         SenderTag(mail.senderName, mail.read, showCircle)
                     }
                     if (mail.hasAttachment) {
