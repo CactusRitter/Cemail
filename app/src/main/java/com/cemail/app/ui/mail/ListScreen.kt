@@ -219,6 +219,11 @@ fun ListScreen(
         ) {
         // Each folder, label and account is a list of its own: its messages do not cross-fade with those of the one before
         // (that left half-faded cards of the Inbox drawn over the Trash). Moving or deleting inside a list is still animated.
+        // A row that fades (a message archived, deleted or put back) is drawn in a layer cut to its own size, so a solid
+        // shadow sticking out to the end (Brutalist) blinked away while it faded. Each row is that much wider on the end
+        // side and the list's own margin that much narrower: the cards stay where they were, with the shadow inside the row.
+        val room = com.cemail.app.ui.theme.LocalSkin.current.hardShadow
+        val edge = Modifier.padding(end = room)
         androidx.compose.runtime.key(vm, state.box, state.labelId) {
         LazyColumn(
             state = listState,
@@ -228,7 +233,7 @@ fun ListScreen(
                 .hazeSource(haze),
             contentPadding = PaddingValues(
                 start = 12.dp,
-                end = 12.dp,
+                end = 12.dp - room,
                 top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() + 80.dp,
                 bottom = 120.dp,
             ),
@@ -236,12 +241,12 @@ fun ListScreen(
         ) {
             var n = 0
             if (state.box == MailBox.INBOX && state.labelId == null && state.query.isBlank()) {
-                item(key = "update") { UpdateBanner() }
+                item(key = "update") { Box(edge) { UpdateBanner() } }
             }
             if (empty) {
                 item {
                     Column(
-                        Modifier.fillParentMaxWidth().listTransition(0, leaving, entering, epoch).padding(top = 96.dp),
+                        Modifier.fillParentMaxWidth().then(edge).listTransition(0, leaving, entering, epoch).padding(top = 96.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Icon(CemailIcons.Inbox, null, Modifier.size(56.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -270,14 +275,14 @@ fun ListScreen(
                 }
             }
             if ((state.box == MailBox.TRASH || state.box == MailBox.SPAM) && state.labelId == null && state.query.isBlank() && !empty) {
-                item(key = "empty-folder") { EmptyFolderButton(state.box, vm) }
+                item(key = "empty-folder") { Box(edge) { EmptyFolderButton(state.box, vm) } }
             }
             if (state.pinned.isNotEmpty()) {
                 val pinBase = n
                 n += state.pinned.size
-                item(key = "h-pinned") { Box(Modifier.listTransition(pinBase, leaving, entering, epoch)) { SectionHeader(stringResource(R.string.section_pinned)) } }
-                itemsIndexed(state.pinned, key = { _, m -> m.id }) { i, mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, if (groupCards) GroupPos.of(i, state.pinned.size) else GroupPos.Single, groupCards, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring()).listTransition(pinBase + i, leaving, entering, epoch)) }
-                if (state.others.isNotEmpty() && !grouped) item(key = "h-mail") { SectionHeader(stringResource(R.string.section_mail)) }
+                item(key = "h-pinned") { Box(edge.listTransition(pinBase, leaving, entering, epoch)) { SectionHeader(stringResource(R.string.section_pinned)) } }
+                itemsIndexed(state.pinned, key = { _, m -> m.id }) { i, mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, if (groupCards) GroupPos.of(i, state.pinned.size) else GroupPos.Single, groupCards, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring()).listTransition(pinBase + i, leaving, entering, epoch).then(edge)) }
+                if (state.others.isNotEmpty() && !grouped) item(key = "h-mail") { Box(edge) { SectionHeader(stringResource(R.string.section_mail)) } }
             }
             if (grouped) {
                 val now = System.currentTimeMillis()
@@ -287,19 +292,19 @@ fun ListScreen(
                     val collapsed = section in state.collapsedSections
                     val base = n
                     n += list.size
-                    item(key = "d-$section") { Box(Modifier.listTransition(base, leaving, entering, epoch)) { DateHeader(section, list.size, collapsed) { vm.toggleSection(section) } } }
-                    if (!collapsed) itemsIndexed(list, key = { _, m -> m.id }) { i, mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, if (groupCards) GroupPos.of(i, list.size) else GroupPos.Single, groupCards, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring()).listTransition(base + i, leaving, entering, epoch)) }
+                    item(key = "d-$section") { Box(edge.listTransition(base, leaving, entering, epoch)) { DateHeader(section, list.size, collapsed) { vm.toggleSection(section) } } }
+                    if (!collapsed) itemsIndexed(list, key = { _, m -> m.id }) { i, mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, if (groupCards) GroupPos.of(i, list.size) else GroupPos.Single, groupCards, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring()).listTransition(base + i, leaving, entering, epoch).then(edge)) }
                 }
             } else {
                 val base = n
-                itemsIndexed(state.others, key = { _, m -> m.id }) { i, mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, if (groupCards) GroupPos.of(i, state.others.size) else GroupPos.Single, groupCards, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring()).listTransition(base + i, leaving, entering, epoch)) }
+                itemsIndexed(state.others, key = { _, m -> m.id }) { i, mail -> MailItem(mail, state, vm, startIsArchive, swipe, stripeOf(mail), showSenderCircle, if (groupCards) GroupPos.of(i, state.others.size) else GroupPos.Single, groupCards, Modifier.animateItem(fadeInSpec = glassSpring(), placementSpec = softBounceSpring(), fadeOutSpec = glassSpring()).listTransition(base + i, leaving, entering, epoch).then(edge)) }
             }
             // At the end of the list: older messages from the server (Load more), or, while searching, the server's
             // own search over the whole mailbox.
             if (state.query.isNotBlank()) {
-                item(key = "more") { MoreButton(state, search = true, onClick = vm::searchServer) }
+                item(key = "more") { Box(edge) { MoreButton(state, search = true, onClick = vm::searchServer) } }
             } else if (state.olderPlace != null && shownFilter == ListFilter.NONE) {
-                item(key = "more") { MoreButton(state, search = false, onClick = vm::loadOlder) }
+                item(key = "more") { Box(edge) { MoreButton(state, search = false, onClick = vm::loadOlder) } }
             }
         }
         }
@@ -316,8 +321,12 @@ fun ListScreen(
         }
 
         // Top bar: glass pill over the list (menu, title or search field, search).
+        // While the bars cross-fade each one is drawn cut to its own size: like the rows, the bar gets the room of the
+        // solid shadow (end and bottom) inside it, taken from the margin around it, so the shadow does not blink away.
+        val barRoom = com.cemail.app.ui.theme.LocalSkin.current.hardShadow
         Box(
-            Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 12.dp, vertical = 8.dp),
+            Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(start = 12.dp, end = 12.dp - barRoom, top = 8.dp, bottom = 8.dp - barRoom),
         ) {
             // Selecting, searching and the normal header swap with a little pop instead of changing at once.
             val barMode = if (selecting) 0 else if (state.searching) 1 else 2
@@ -326,6 +335,7 @@ fun ListScreen(
                 transitionSpec = { (fadeIn(glassSpring()) + scaleIn(bounceSpring(), initialScale = 0.92f)) togetherWith fadeOut(glassSpring()) },
                 label = "topBar",
             ) { mode ->
+            Box(Modifier.padding(end = barRoom, bottom = barRoom)) {
             when (mode) {
                 0 -> SelectionBar(state, vm, haze, onLabel = if (selectionLabels.values.any { it.isNotEmpty() }) ({ labelPanel = true }) else null)
                 1 -> SearchBar(state, vm, haze)
@@ -352,6 +362,7 @@ fun ListScreen(
                         GlassIconButton(Icons.Filled.Search, stringResource(R.string.search), { vm.setSearching(true) }, hazeState = haze)
                     },
                 )
+            }
             }
             }
         }
