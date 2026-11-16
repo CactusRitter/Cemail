@@ -37,6 +37,7 @@ import com.cemail.app.ui.glass.popIn
 import com.cemail.app.ui.glass.pressScale
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.layout
 import com.cemail.app.ui.icons.CemailIcons
 
 /** The user's Gmail labels as folders in the drawer; folders with sub-folders can be expanded and collapsed. */
@@ -117,8 +118,24 @@ private fun LabelRow(
     }
     // Sub-labels: the room opens and closes smoothly (as Cc and Bcc do in Compose), the rows pop in on opening and fade
     // out on closing.
-    AnimatedVisibility(expanded, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp) /* the gap of the menu itself */) {
+    // While it opens or closes, the block is drawn cut to its own size, which took away the solid shadow (Brutalist) of
+    // the sub-labels on the end side and under the last one. The block holds that room inside it and is laid out as if
+    // it did not: the rows stay where they were and their shadow is inside what is cut. The room is 0 in other looks.
+    val room = com.cemail.app.ui.theme.LocalSkin.current.hardShadow
+    AnimatedVisibility(
+        expanded,
+        modifier = Modifier.layout { measurable, constraints ->
+            val r = room.roundToPx()
+            val wide = if (constraints.hasBoundedWidth) constraints.copy(maxWidth = constraints.maxWidth + r) else constraints
+            val p = measurable.measure(wide)
+            layout((p.width - r).coerceIn(constraints.minWidth, constraints.maxWidth), (p.height - r).coerceAtLeast(0)) {
+                p.placeRelative(0, 0)
+            }
+        },
+        enter = fadeIn() + expandVertically(),
+        exit = fadeOut() + shrinkVertically(),
+    ) {
+        Column(Modifier.padding(end = room, bottom = room), verticalArrangement = Arrangement.spacedBy(4.dp) /* the gap of the menu itself */) {
             node.children.forEachIndexed { i, child -> LabelRow(child, depth + 1, state, onPick, onToggle, revealed, stagger(0, i)) }
         }
     }
