@@ -37,7 +37,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.cemail.app.R
 import com.cemail.app.data.mail.Label
+import com.cemail.app.data.mail.LabelNode
 import com.cemail.app.data.mail.Mail
+import com.cemail.app.data.mail.buildLabelTree
 import com.cemail.app.ui.glass.GlassKind
 import com.cemail.app.ui.glass.LocalListOnRight
 import com.cemail.app.ui.glass.floatingCorner
@@ -110,15 +112,12 @@ internal fun LabelsPopup(
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
-                    labels.sortedBy { it.name.lowercase() }.forEach { label ->
-                        // With several messages the check means "all of them have it"; a tap then puts it on all.
-                        val on = own.isNotEmpty() && own.all { label.id in it.labelIds }
-                        LabelChoice(label.name, on) {
-                            vm.setLabel(ids, label.id, !on)
-                            if (!keepOpen) {
-                                vm.clearSelection()
-                                onDismiss()
-                            }
+                    // Like the folders in the menu: "Banks/La Caixa" is "La Caixa" under "Banks", never the name with "/".
+                    LabelChoices(buildLabelTree(labels), 0, own) { id, on ->
+                        vm.setLabel(ids, id, on)
+                        if (!keepOpen) {
+                            vm.clearSelection()
+                            onDismiss()
                         }
                     }
                 }
@@ -127,16 +126,29 @@ internal fun LabelsPopup(
     }
 }
 
+/** The label tree, sub-labels indented under their parent; a parent that is not a label itself cannot be ticked. */
 @Composable
-private fun LabelChoice(name: String, on: Boolean, onToggle: () -> Unit) {
+private fun LabelChoices(nodes: List<LabelNode>, depth: Int, mails: List<Mail>, onSet: (id: String, on: Boolean) -> Unit) {
+    nodes.forEach { node ->
+        val id = node.id
+        // With several messages the check means "all of them have it"; a tap then puts it on all.
+        val on = id != null && mails.isNotEmpty() && mails.all { id in it.labelIds }
+        LabelChoice(node.name, on, depth, enabled = id != null) { if (id != null) onSet(id, !on) }
+        LabelChoices(node.children, depth + 1, mails, onSet)
+    }
+}
+
+@Composable
+private fun LabelChoice(name: String, on: Boolean, depth: Int, enabled: Boolean, onToggle: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clip(LocalSkin.current.shape(RoundedCornerShape(16.dp))).toggleable(value = on, role = Role.Checkbox) { onToggle() }
+        Modifier.padding(start = (depth * 16).dp).fillMaxWidth().clip(LocalSkin.current.shape(RoundedCornerShape(16.dp)))
+            .toggleable(value = on, enabled = enabled, role = Role.Checkbox) { onToggle() }
             .padding(horizontal = 8.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Icon(
-            CemailIcons.Label, null,
+            CemailIcons.Folder, null,
             tint = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(

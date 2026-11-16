@@ -95,6 +95,8 @@ import androidx.compose.ui.res.pluralStringResource
 import com.cemail.app.data.mail.Folder
 import com.cemail.app.data.mail.Label
 import com.cemail.app.data.mail.Mail
+import com.cemail.app.data.mail.MailBox
+import androidx.compose.foundation.horizontalScroll
 import com.cemail.app.ui.glass.GlassIconButton
 import com.cemail.app.ui.glass.GlassKind
 import com.cemail.app.ui.glass.GlassPill
@@ -193,6 +195,10 @@ fun ReadScreen(
     }
     val snoozedUntil = mail.snoozedUntil?.takeIf { mail.isSnoozed(System.currentTimeMillis()) }
     val notices = snoozedUntil != null || (hasRemoteImages && !showImages)
+    var labelPanel by remember { mutableStateOf(false) }
+    // Where the message is: its folder (not for the Inbox, the usual place) and the account's labels it has.
+    val folderBox = mail.folder.takeIf { it != Folder.INBOX }?.toBox()
+    val mailLabels = accountLabels.filter { it.id in mail.labelIds }.sortedBy { it.name.lowercase() }
 
     Box(Modifier.fillMaxSize()) {
         Column(
@@ -202,6 +208,13 @@ fun ReadScreen(
                 .padding(start = 12.dp, end = 12.dp, top = 88.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            if (folderBox != null || mailLabels.isNotEmpty()) {
+                PlaceChips(
+                    folderBox, mailLabels,
+                    onFolder = { box -> vm.closeMail(); vm.selectBox(box) },
+                    onLabels = { labelPanel = true },
+                )
+            }
             // The sender and subject are in the pill above; this card only appears when there is something to
             // say or do before reading: a snooze reminder, blocked images, or attached files.
             if (notices) {
@@ -280,7 +293,6 @@ fun ReadScreen(
         val muted by produceState(false, summary.id, panel) { value = panel && vm.isMuted(summary.id) }
         var unsubscribing by remember { mutableStateOf(false) }
         var attachPanel by remember { mutableStateOf(false) }
-        var labelPanel by remember { mutableStateOf(false) }
         Box(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 12.dp, vertical = 8.dp)) {
             GlassPill(Modifier.fillMaxWidth(), height = 64.dp) {
                 PillIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), vm::closeMail)
@@ -673,3 +685,72 @@ private fun UnsubscribeDialog(sender: String, accountId: String, info: com.cemai
 
 /** The opening animation of the reader lasts about this long; the web view waits for it. */
 private const val SETTLE_MILLIS = 520L
+
+/** The list folder a message's folder is shown in. */
+private fun Folder.toBox(): MailBox = when (this) {
+    Folder.INBOX -> MailBox.INBOX
+    Folder.SENT -> MailBox.SENT
+    Folder.DRAFTS -> MailBox.DRAFTS
+    Folder.ARCHIVE -> MailBox.ARCHIVE
+    Folder.TRASH -> MailBox.TRASH
+    Folder.SPAM -> MailBox.SPAM
+    Folder.OUTBOX -> MailBox.OUTBOX
+}
+
+/**
+ * Where the open message is, quietly: a row of small glass chips with its folder and its labels (folders and labels
+ * are the same thing in the menu, so they look alike). The folder chip opens that folder; a label chip opens the
+ * label picker to change them. Many chips scroll sideways; the row is drawn a bit wider than the column so the
+ * scroll does not cut the chips' shadows at the sides.
+ */
+@Composable
+private fun PlaceChips(box: MailBox?, labels: List<Label>, onFolder: (MailBox) -> Unit, onLabels: () -> Unit) {
+    val labelsAction = stringResource(R.string.action_labels)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .layout { measurable, constraints ->
+                val extra = SIDE_ROOM.roundToPx()
+                val wide = constraints.copy(minWidth = constraints.maxWidth + 2 * extra, maxWidth = constraints.maxWidth + 2 * extra)
+                val placeable = measurable.measure(wide)
+                layout(constraints.maxWidth, placeable.height) { placeable.place(-extra, 0) }
+            }
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = SIDE_ROOM, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        box?.let { PlaceChip(it.icon(), stringResource(it.labelRes()), null) { onFolder(it) } }
+        // Just the last part, like the menu ("La Caixa" for "Banks/La Caixa"); the whole name only when two of the
+        // message's labels would otherwise read the same ("Work/Travel" and "Home/Travel").
+        val shortNames = labels.map { it.name.substringAfterLast("/") }
+        labels.forEachIndexed { i, label ->
+            val short = shortNames[i]
+            val text = if (shortNames.count { it == short } > 1) label.name.replace("/", " › ") else short
+            PlaceChip(CemailIcons.Folder, text, labelsAction, onLabels)
+        }
+    }
+}
+
+private val SIDE_ROOM = 12.dp
+
+@Composable
+private fun PlaceChip(icon: ImageVector, text: String, clickLabel: String?, onClick: () -> Unit) {
+    Row(
+        Modifier
+            .pressScale(0.94f)
+            .glass(CircleShape, GlassKind.Card)
+            .clickable(role = Role.Button, onClickLabel = clickLabel, onClick = onClick)
+            .padding(start = 10.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(icon, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            text,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}

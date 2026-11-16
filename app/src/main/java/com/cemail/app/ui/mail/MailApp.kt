@@ -114,7 +114,7 @@ const val DEMO_ME = "me@cemail.example"
 private const val IMAP_PLAIN = "imap"
 private const val IMAP_YAHOO = "yahoo"
 
-private fun MailBox.icon(): ImageVector = when (this) {
+internal fun MailBox.icon(): ImageVector = when (this) {
     MailBox.INBOX -> CemailIcons.Inbox
     MailBox.STARRED -> Icons.Filled.Star
     MailBox.SNOOZED -> CemailIcons.Snooze
