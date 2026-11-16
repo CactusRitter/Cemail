@@ -1,3 +1,6 @@
+## 2.3.1
+- Brutalista: la sombra de las tarjetas ya no parpadea por la derecha al cambiar de cuenta, archivar un correo o abrir subetiquetas en el menú.
+
 ## 2.3.0
 - Etiqueta varios correos a la vez: selecciónalos y toca el botón de etiquetas.
 - Las etiquetas del menú se ven como carpetas, y las etiquetas anidadas salen como árbol de carpetas en el selector.

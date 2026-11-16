@@ -1,3 +1,6 @@
+## 2.3.1
+- Brutalist: Der Schatten der Karten flackert rechts nicht mehr, wenn du das Konto wechselst, eine Mail archivierst oder Unterlabels im Menü öffnest.
+
 ## 2.3.0
 - Mehrere Mails auf einmal labeln: Wähle sie aus und tippe auf die Label-Schaltfläche.
 - Labels im Menü sehen aus wie Ordner, und verschachtelte Labels erscheinen in der Auswahl als Ordnerbaum.
