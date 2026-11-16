@@ -1,3 +1,8 @@
+## 2.3.0
+- Mehrere Mails auf einmal labeln: Wähle sie aus und tippe auf die Label-Schaltfläche.
+- Labels im Menü sehen aus wie Ordner, und verschachtelte Labels erscheinen in der Auswahl als Ordnerbaum.
+- Wenn du eine Mail öffnest, zeigen kleine Chips ihren Ordner und ihre Labels. Tippe auf den Ordner, um ihn zu öffnen, oder auf ein Label, um sie zu ändern.
+
 ## 2.2.10
 - Beim Zurückstellen erscheint ein kurzer Hinweis statt „Rückgängig“.
 - Retro 98: Die Schaltflächen zum Schreiben und Antworten haben dieselbe Farbe wie die anderen.

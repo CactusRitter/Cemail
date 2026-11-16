@@ -1,3 +1,8 @@
+## 2.3.0
+- Label several messages at once: select them and tap the label button.
+- Labels in the menu look like folders, and nested labels show as a folder tree in the label picker.
+- When you open a message, small chips show its folder and labels. Tap the folder to open it, or a label to change them.
+
 ## 2.2.10
 - Snoozing shows a short notice instead of offering Undo.
 - Retro 98: the write and reply buttons have the same colour as the other buttons.

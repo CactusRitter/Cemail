@@ -1,3 +1,8 @@
+## 2.3.0
+- Etiqueta varios correos a la vez: selecciónalos y toca el botón de etiquetas.
+- Las etiquetas del menú se ven como carpetas, y las etiquetas anidadas salen como árbol de carpetas en el selector.
+- Al abrir un correo, unos chips pequeños muestran su carpeta y sus etiquetas. Toca la carpeta para abrirla o una etiqueta para cambiarlas.
+
 ## 2.2.10
 - Al posponer sale un aviso breve en vez de ofrecer Deshacer.
 - Retro 98: los botones de redactar y responder tienen el mismo color que los demás botones.
