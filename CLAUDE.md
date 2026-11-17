@@ -83,3 +83,5 @@ powershell -File scripts/emulator.ps1 window         # arrancar CON ventana, sol
 
 ## Ahorro de tokens (norma de César para todas las apps Ce)
 Lee `D:\cesar\Documents\Claude Projects\Ce\docs\AHORRO.md`: subagentes para leer/comparar/buscar (resumen de 10-15 líneas), salidas siempre recortadas, mensajes cortos entre sesiones, modelo barato en tareas mecánicas, y mantener `docs/TRASPASO.md` de esta app al día (aviso a César «conviene /clear» al cerrar un bloque grande).
+
+**Informar a la líder:** al cerrar cada bloque, `SendMessage` a «Ce Líder» con un resumen de máximo 6 líneas (qué hiciste y commit, decisiones de diseño que tomaste, qué no probaste, qué le pides a César). César no debe ser el único que se entera.
