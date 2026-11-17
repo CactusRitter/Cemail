@@ -24,7 +24,6 @@ import com.cemail.app.data.mail.Mail
 class MailNotifier(private val context: Context) {
 
     fun createChannel() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val channel = NotificationChannel(CHANNEL, context.getString(R.string.notif_channel_name), NotificationManager.IMPORTANCE_DEFAULT)
         channel.description = context.getString(R.string.notif_channel_body)
         context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
