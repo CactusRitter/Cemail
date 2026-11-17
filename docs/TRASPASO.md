@@ -12,7 +12,7 @@ Lo que necesita una sesión nueva (o tras `/clear`) además de `CLAUDE.md`. Mant
 
 ## Pendiente
 - «Sin publicar»: sombra de la barra de formato de Redactar (edd4798) y **Cristal V2** (b2f2b8b, 616f849: Haze 2.0.1, `ui/glass` idéntico al de Celander, `ui/mail/MailMotion.kt`; lo hizo una sesión lateral). Se publica cuando César lo ordene.
-- Revisión Cristal V2 (2026-11-18, emulador): lista y lector de los 6 diseños (claro) sin sombras recortadas ni problemas de contraste. NO probado: Ajustes, transparencia 0/50/100 %, oscuro en Cristal y Brutalista, tableta.
+- Revisión Cristal V2 (2026-11-18, emulador): lista y lector de los 6 diseños (claro), Ajustes → Apariencia en Cristal, transparencia 0/99 % en Cristal, y oscuro en Cristal y Brutalista (lista y lector): sin fallos. NO probado: Ajustes en los otros 5 diseños, transparencia en otro diseño. **Pendiente de César: probar la tableta.**
 
 ## Cómo se trabaja (decisiones de César que no están en el código)
 - Las órdenes llegan de la sesión **Ce Líder** (local_b7aafb42-6a3f-45fc-8dac-f868a2852636). Responderle al id `local_…`, no a la dirección uds. Mensajes cortos.
