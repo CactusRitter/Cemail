@@ -25,11 +25,13 @@
     <string name="backup_private">The file holds your addresses, your mail servers and your signatures, so keep it somewhere of your own.</string>
     <string name="backup_export">Save a backup</string>
     <string name="backup_import">Restore a backup</string>
-    <string name="backup_file">Cemail backup %1$s.json</string>
+    <string name="backup_file">Cemail-settings-%1$s.zip</string>
+    <string name="backup_restore_title">Restore this backup?</string>
+    <string name="backup_restore_body">Your settings and signatures are replaced by those in the backup, and its muted, pinned and snoozed messages come back. Then you sign in again to the accounts it lists.</string>
+    <string name="backup_restore_confirm">Restore</string>
     <string name="backup_saved">Backup saved.</string>
     <string name="backup_restored">Backup restored.</string>
     <string name="backup_invalid">That file is not a Cemail backup.</string>
-    <string name="backup_too_new">This backup comes from a newer Cemail. Update the app and try again.</string>
     <string name="backup_failed">The file could not be read or written.</string>
     <string name="backup_accounts_title">Accounts to add</string>
     <string name="backup_accounts_body">These accounts are in the backup. Sign in to them again: their settings are already in place.</string>

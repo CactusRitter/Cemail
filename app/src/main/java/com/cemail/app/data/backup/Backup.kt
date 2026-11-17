@@ -41,6 +41,12 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.put
 import java.io.File
+import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
 
 /** The server settings of an IMAP account, as a backup keeps them: everything but the password. */
 data class ImapServers(
@@ -63,15 +69,16 @@ data class BackupAccount(
     val imap: ImapServers? = null,
 )
 
-enum class RestoreResult { RESTORED, INVALID, TOO_NEW }
-
 /**
- * The backup file of Cemail (Settings → Backup): one JSON file the user keeps where they like (Drive, Downloads…) and
- * brings back on this or another device, so that only signing in to the accounts is left to do.
+ * The backup of Cemail (Settings → Backup): one .zip the user keeps where they like (Drive, Downloads…) and brings back
+ * on this or another device, so that only signing in to the accounts is left to do.
  *
- * Format 2, read forward-compatibly: unknown fields are ignored and every section may be missing. Cemail versions that
- * only knew format 1 still take its "settings" and "signatures". If a future change cannot be read by older versions,
- * the file says so with "minReader" and those versions refuse it instead of restoring half of it.
+ * The container is the one of every Ce app (see Cenotes' `data/Backup.kt`), with entries at the root:
+ * - `manifest.json`: `{"app":"cemail","container":1,"appVersion":"…","createdAt":ms,"contents":["settings"]}`: whose
+ *   backup it is. Another app's zip, or one without it, is not a Cemail backup.
+ * - `settings.json`: everything, as below.
+ * Only those two names are read; a zip with a path in a name (`..`, `/…`), too many entries or a JSON entry over
+ * [MAX_JSON_BYTES] is refused. Only this container is read: no older files (the Ce apps do not keep old formats).
  * ```
  * { "app": "cemail", "format": 2, "appVersion": "2.3.1", "createdAt": "2026-11-17T10:00:00Z",
  *   "settings": { key: {"b"|"i"|"l"|"f"|"s"|"set": value} },   // SharedPreferences "settings" as stored
@@ -106,10 +113,81 @@ class Backup(
         wanted.filter { a -> present.none { it.id == a.id } }
     }
 
-    /** The whole backup, as the text of the file. */
-    suspend fun export(): String = withContext(Dispatchers.IO) {
+    /** Writes the whole backup, as the zip described above, to [out] (which it closes). */
+    suspend fun export(out: OutputStream) = withContext(Dispatchers.IO) {
+        val data = settingsJson()
+        val manifest = buildJsonObject {
+            put("app", APP)
+            put("container", CONTAINER)
+            put("appVersion", BuildConfig.VERSION_NAME)
+            put("createdAt", System.currentTimeMillis())
+            put("contents", buildJsonArray { add(JsonPrimitive(CONTENT_SETTINGS)) })
+        }
+        ZipOutputStream(out.buffered()).use { zip ->
+            zip.putText(MANIFEST_ENTRY, manifest.toString())
+            zip.putText(SETTINGS_ENTRY, data)
+        }
+    }
+
+    /**
+     * Reads a file the user picked and returns what it would restore, or null when it is not a Cemail backup (not a zip,
+     * another app's, no manifest or no settings, or an entry that breaks the limits). Nothing changes yet: [restore] does.
+     */
+    suspend fun read(input: InputStream): JsonObject? = withContext(Dispatchers.IO) {
+        try {
+            var manifest: JsonObject? = null
+            var data: JsonObject? = null
+            var entries = 0
+            ZipInputStream(input.buffered()).use { zip ->
+                while (true) {
+                    val entry = zip.nextEntry ?: break
+                    if (++entries > MAX_ENTRIES) return@withContext null
+                    val name = entry.name
+                    if (name.startsWith("/") || name.startsWith("\\") || name.split('/', '\\').any { it == ".." }) return@withContext null
+                    when (name) {
+                        MANIFEST_ENTRY -> manifest = parse(readLimited(zip))
+                        SETTINGS_ENTRY -> data = parse(readLimited(zip))
+                    }
+                    zip.closeEntry()
+                }
+            }
+            val m = manifest ?: return@withContext null
+            if (!m["app"].string().equals(APP, ignoreCase = true) || m["container"].int() != CONTAINER) return@withContext null
+            data
+        } catch (e: TooBig) {
+            null
+        } catch (e: java.util.zip.ZipException) {
+            null
+        }
+    }
+
+    private class TooBig : IOException()
+
+    private fun parse(bytes: ByteArray): JsonObject? = runCatching { Json.parseToJsonElement(bytes.decodeToString()).jsonObject }.getOrNull()
+
+    /** An entry's bytes, at most [MAX_JSON_BYTES] (a bigger one is not a backup: it guards against zip bombs). */
+    private fun readLimited(input: InputStream): ByteArray {
+        val out = java.io.ByteArrayOutputStream()
+        val buffer = ByteArray(16 * 1024)
+        while (true) {
+            val n = input.read(buffer)
+            if (n < 0) break
+            if (out.size() + n > MAX_JSON_BYTES) throw TooBig()
+            out.write(buffer, 0, n)
+        }
+        return out.toByteArray()
+    }
+
+    private fun ZipOutputStream.putText(name: String, text: String) {
+        putNextEntry(ZipEntry(name))
+        write(text.toByteArray())
+        closeEntry()
+    }
+
+    /** The data entry: settings, signatures, language, accounts, muted conversations and marked messages. */
+    private suspend fun settingsJson(): String {
         val list = accounts.accounts.first()
-        buildJsonObject {
+        return buildJsonObject {
             put("app", APP)
             put("format", FORMAT)
             put("appVersion", BuildConfig.VERSION_NAME)
@@ -130,11 +208,8 @@ class Backup(
         }.toString()
     }
 
-    /** Applies a backup file; nothing changes when it is not one (or comes from a Cemail this one cannot read). */
-    suspend fun restore(text: String): RestoreResult {
-        val root = runCatching { Json.parseToJsonElement(text).jsonObject }.getOrNull() ?: return RestoreResult.INVALID
-        if (root["app"].string() != APP) return RestoreResult.INVALID
-        if ((root["minReader"].int() ?: 1) > FORMAT) return RestoreResult.TOO_NEW
+    /** Applies a backup that [read] returned. */
+    suspend fun restore(root: JsonObject) {
         withContext(Dispatchers.IO) {
             (root["settings"] as? JsonObject)?.let { settings.restoreBackup(it, root["signatures"] as? JsonObject) }
             val restoredAccounts = root["accounts"].objects().mapNotNull { it.toAccount() }
@@ -163,7 +238,6 @@ class Backup(
         root["locale"].string()?.takeIf { it.isNotBlank() }?.let { tags ->
             withContext(Dispatchers.Main) { setAppLocales(tags) }
         }
-        return RestoreResult.RESTORED
     }
 
     /** The user does not want to add the accounts of the backup that are still missing. */
@@ -250,9 +324,18 @@ class Backup(
 
     private companion object {
         const val APP = "cemail"
-        /** The format this version writes and the newest one it can read. */
+        /** The version of the data entry ("format" in settings.json). */
         const val FORMAT = 2
         const val PENDING_DAYS = 30
+
+        // The zip container shared by the Ce apps.
+        const val CONTAINER = 1
+        const val MANIFEST_ENTRY = "manifest.json"
+        const val SETTINGS_ENTRY = "settings.json"
+        const val CONTENT_SETTINGS = "settings"
+        /** Limits for an untrusted zip: each JSON entry, and the number of entries. */
+        const val MAX_JSON_BYTES = 64 * 1024 * 1024
+        const val MAX_ENTRIES = 20_000
     }
 }
 

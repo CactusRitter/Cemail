@@ -23,7 +23,12 @@ import androidx.compose.ui.unit.dp
 import com.cemail.app.CemailApplication
 import com.cemail.app.R
 import com.cemail.app.data.backup.BackupAccount
-import com.cemail.app.data.backup.RestoreResult
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import kotlinx.serialization.json.JsonObject
 import com.cemail.app.ui.theme.CemailTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -33,45 +38,62 @@ import kotlinx.coroutines.withContext
 class BackupLaunchers(val save: () -> Unit, val restore: () -> Unit)
 
 /**
- * The two file pickers of the backup. The work runs in the app's scope (a restore that changes the language recreates
- * the screen); [onResult] gets the text to show when it ends.
+ * The two file pickers of the backup (a .zip, see data/backup/Backup.kt), and the question before restoring. The work
+ * runs in the app's scope (a restore that changes the language recreates the screen); [onResult] gets the text to show
+ * when it ends.
  */
 @Composable
 fun rememberBackupLaunchers(onResult: (Int) -> Unit): BackupLaunchers {
     val context = LocalContext.current
     val app = context.applicationContext as CemailApplication
     val report by rememberUpdatedState(onResult)
-    val save = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+    // The backup that was picked and read, waiting for the user to confirm it.
+    var picked by remember { mutableStateOf<JsonObject?>(null) }
+    val save = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
         app.appScope.launch(Dispatchers.Main) {
-            val ok = runCatching {
-                val text = app.backup.export()
-                withContext(Dispatchers.IO) { app.contentResolver.openOutputStream(uri)!!.use { it.write(text.toByteArray()) } }
-            }.onFailure { com.cemail.app.AppLog.e("backup", "the backup could not be saved", it) }.isSuccess
+            val ok = runCatching { app.backup.export(app.contentResolver.openOutputStream(uri)!!) }
+                .onFailure { com.cemail.app.AppLog.e("backup", "the backup could not be saved", it) }.isSuccess
             report(if (ok) R.string.backup_saved else R.string.backup_failed)
         }
     }
     val open = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
         app.appScope.launch(Dispatchers.Main) {
-            val text = withContext(Dispatchers.IO) {
-                runCatching { app.contentResolver.openInputStream(uri)!!.use { it.readBytes().decodeToString() } }.getOrNull()
+            val backup = try {
+                withContext(Dispatchers.IO) { app.contentResolver.openInputStream(uri)!!.use { app.backup.read(it) } }
+            } catch (e: Exception) {
+                com.cemail.app.AppLog.e("backup", "the backup could not be read", e)
+                report(R.string.backup_failed)
+                return@launch
             }
-            report(
-                when (text?.let { app.backup.restore(it) }) {
-                    null -> R.string.backup_failed
-                    RestoreResult.RESTORED -> R.string.backup_restored
-                    RestoreResult.INVALID -> R.string.backup_invalid
-                    RestoreResult.TOO_NEW -> R.string.backup_too_new
-                },
-            )
+            if (backup == null) report(R.string.backup_invalid) else picked = backup
         }
+    }
+    picked?.let { backup ->
+        AlertDialog(
+            onDismissRequest = { picked = null },
+            title = { Text(stringResource(R.string.backup_restore_title)) },
+            text = { Text(stringResource(R.string.backup_restore_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    picked = null
+                    app.appScope.launch(Dispatchers.Main) {
+                        val ok = runCatching { app.backup.restore(backup) }
+                            .onFailure { com.cemail.app.AppLog.e("backup", "the backup could not be restored", it) }.isSuccess
+                        report(if (ok) R.string.backup_restored else R.string.backup_failed)
+                    }
+                }) { Text(stringResource(R.string.backup_restore_confirm)) }
+            },
+            dismissButton = { TextButton(onClick = { picked = null }) { Text(stringResource(R.string.cancel)) } },
+        )
     }
     // A date in the name tells the copies apart; ISO, because a local date can have slashes.
     val fileName = stringResource(R.string.backup_file, java.time.LocalDate.now().toString())
     return BackupLaunchers(
         save = { save.launch(fileName) },
-        restore = { open.launch(arrayOf("application/json", "text/plain", "application/octet-stream")) },
+        // Any file: a .zip is often typed loosely by the providers (Drive…) and would show greyed out; read() checks it.
+        restore = { open.launch(arrayOf("*/*")) },
     )
 }
 

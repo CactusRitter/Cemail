@@ -23,11 +23,13 @@
     <string name="backup_private">Die Datei enthält deine Adressen, deine Mailserver und deine Signaturen. Bewahre sie an einem Ort auf, der dir gehört.</string>
     <string name="backup_export">Sicherung speichern</string>
     <string name="backup_import">Sicherung wiederherstellen</string>
-    <string name="backup_file">Cemail-Sicherung %1$s.json</string>
+    <string name="backup_file">Cemail-einstellungen-%1$s.zip</string>
+    <string name="backup_restore_title">Diese Sicherung wiederherstellen?</string>
+    <string name="backup_restore_body">Deine Einstellungen und Signaturen werden durch die der Sicherung ersetzt, und ihre stummgeschalteten, angehefteten und zurückgestellten Nachrichten kommen zurück. Danach meldest du dich erneut bei den Konten an, die sie enthält.</string>
+    <string name="backup_restore_confirm">Wiederherstellen</string>
     <string name="backup_saved">Sicherung gespeichert.</string>
     <string name="backup_restored">Sicherung wiederhergestellt.</string>
     <string name="backup_invalid">Diese Datei ist keine Sicherung von Cemail.</string>
-    <string name="backup_too_new">Diese Sicherung stammt aus einem neueren Cemail. Aktualisiere die App und versuch es noch einmal.</string>
     <string name="backup_failed">Die Datei konnte nicht gelesen oder geschrieben werden.</string>
     <string name="backup_accounts_title">Konten zum Hinzufügen</string>
     <string name="backup_accounts_body">Diese Konten sind in der Sicherung. Melde dich erneut bei ihnen an: Ihre Einstellungen sind schon da.</string>

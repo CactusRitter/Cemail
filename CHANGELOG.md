@@ -7,7 +7,11 @@ Cada versión se guarda en Google Drive (`Mi unidad/Ce Apps/Cemail/Cemail-x.y.z.
 - La tecla o el gesto Atrás en el formulario de cuenta IMAP o Yahoo ya no cierra la app: vuelve a donde se abrió (inicio de sesión, «Cuentas por añadir» o Ajustes → Añadir cuenta), igual que su flecha. Además, el formulario entra y sale con la misma animación de las demás pantallas: crece al abrirse y se encoge al volver. Al volver desde Ajustes se queda en «Añadir cuenta»: antes un efecto lo mandaba a «Cuentas» cada vez que se rehacía la pantalla, y ahora solo lo hace cuando de verdad aparece una cuenta nueva.
 - La actualización se descarga dentro de la app, sin la notificación de descargas de Android: el aviso (Recibidos y Ajustes → Actualizaciones) muestra una barra de progreso con porcentaje y megas, y un botón para cancelar; al terminar abre el instalador (o deja el botón Instalar). `Updates` descarga con OkHttp a `filesDir/updates/Cemail-x.y.z.apk.part` y lo renombra al acabar, comprueba que llegó entero (Content-Length y el tamaño que da GitHub), sigue donde se cortó con `Range` y expone el estado en `download: StateFlow<DownloadState>` (inactivo, descargando, listo, error), que vive en la app y sobrevive a girar la pantalla o salir de Ajustes. Sin DownloadManager ni receptor; el instalador recibe el archivo por el FileProvider (`files-path updates/`). Al arrancar se borran los APK descargados que ya no sirven (también los que dejó DownloadManager). Barra nueva del sistema común: `GlassProgressBar` (la pista del deslizador, con la forma de cada diseño). Textos nuevos en en/es/de.
 - Selección por diseño (igual que Cenotes): tokens nuevos en `SkinLook` (`selectedEdgeWidth`, `badgeFill`, `badgeInk`, `badgeEdge`, `badgeEdgeWidth`, `badgeShadow`, `badgeBevel`) y en `Glass.kt` `Modifier.selectedOutline(shape)` y `SelectionBadge`, copiados de Cenotes. Un correo seleccionado ya no usa la superficie «pinned» (se confundía con uno no leído en tarjetas individuales): conserva la suya (leído o no leído) con el contorno del diseño y la insignia ✓ del diseño al principio de la fila (no en la esquina, donde está la hora). El correo abierto en el panel de lectura (tableta) lleva solo el contorno.
-- Copia de seguridad ampliada (Ajustes → Copia de seguridad, y «Restaurar una copia» en la pantalla de inicio de sesión de un móvil nuevo). El archivo («Copia de Cemail AAAA-MM-DD.json») pasa al formato 2, que guarda:
+- Copia de seguridad ampliada (Ajustes → Copia de seguridad, y «Restaurar una copia» en la pantalla de inicio de sesión de un móvil nuevo). La copia es ahora un .zip («Cemail-ajustes-AAAA-MM-DD.zip»; en inglés `settings`, en alemán `einstellungen`) con el contenedor común de las apps Ce, igual que Cenotes:
+  - `manifest.json`: `{"app":"cemail","container":1,"appVersion","createdAt","contents":["settings"]}`;
+  - `settings.json`: los datos, en el formato 2.
+
+  El formato 2 guarda:
   - los ajustes tal como se guardan y las firmas, igual que antes;
   - el idioma propio de la app (Android 13+);
   - la lista de cuentas: id, proveedor, correo, nombre y, en IMAP, los servidores sin la contraseña;
@@ -16,16 +20,19 @@ Cada versión se guarda en Google Drive (`Mi unidad/Ce Apps/Cemail/Cemail-x.y.z.
 
   Nunca lleva tokens, contraseñas, claves o registros de push, la caché de correo ni la bandeja de salida.
 
+  Al importar:
+  - el selector acepta cualquier archivo (`*/*`), para que el .zip no salga en gris;
+  - se lee solo `manifest.json` y `settings.json`;
+  - se rechaza con «no es una copia de Cemail» un zip de otra app, sin manifiesto o sin datos, otro `container`, un `.json` suelto, nombres con `..` o rutas absolutas, más de 20 000 entradas o una entrada de más de 64 MB;
+  - antes de restaurar se pide confirmación.
+
   Al restaurar:
   - se aplican los ajustes (tema, sincronización y push los siguen solos);
   - se guardan las silenciadas;
   - las cuentas que faltan aparecen en «Cuentas por añadir», con el correo ya elegido en Google o Microsoft, o el formulario IMAP relleno salvo la contraseña;
   - las marcas de fijado y pospuesto esperan en `restore.json` hasta que la sincronización trae esos correos (máximo 30 días). Una pospuesta ya vencida vuelve a la bandeja.
 
-  Compatibilidad del formato:
-  - Se leen hacia delante: campos desconocidos ignorados y secciones opcionales; `minReader` si algún día hay un cambio incompatible.
-  - Las versiones anteriores siguen leyendo los ajustes y las firmas.
-  - Al importar se saltan las claves cuyo tipo no coincide con el guardado, para que una copia de otra versión no rompa el arranque.
+  No se leen copias antiguas (ni el `.json` de antes): las apps Ce no mantienen formatos viejos.
 
   Código: `data/backup/Backup.kt` y `ui/settings/BackupUi.kt`. Textos en en/es/de, con el aviso de guardar el archivo en un sitio propio.
 

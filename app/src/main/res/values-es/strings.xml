@@ -23,11 +23,13 @@
     <string name="backup_private">El archivo lleva tus direcciones, tus servidores de correo y tus firmas: guárdalo en un sitio tuyo.</string>
     <string name="backup_export">Guardar copia</string>
     <string name="backup_import">Restaurar copia</string>
-    <string name="backup_file">Copia de Cemail %1$s.json</string>
+    <string name="backup_file">Cemail-ajustes-%1$s.zip</string>
+    <string name="backup_restore_title">¿Restaurar esta copia?</string>
+    <string name="backup_restore_body">Tus ajustes y firmas se sustituyen por los de la copia, y vuelven sus correos silenciados, fijados y pospuestos. Después vuelves a iniciar sesión en las cuentas que trae.</string>
+    <string name="backup_restore_confirm">Restaurar</string>
     <string name="backup_saved">Copia guardada.</string>
     <string name="backup_restored">Copia restaurada.</string>
     <string name="backup_invalid">Ese archivo no es una copia de Cemail.</string>
-    <string name="backup_too_new">Esta copia es de un Cemail más nuevo. Actualiza la app y vuelve a intentarlo.</string>
     <string name="backup_failed">No se pudo leer o escribir el archivo.</string>
     <string name="backup_accounts_title">Cuentas por añadir</string>
     <string name="backup_accounts_body">Estas cuentas están en la copia. Vuelve a iniciar sesión en ellas: sus ajustes ya están puestos.</string>

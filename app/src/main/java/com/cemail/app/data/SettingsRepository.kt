@@ -216,27 +216,20 @@ class SettingsRepository(context: Context) {
     }
 
     /**
-     * Applies the values of a backup (made by [backupValues]) on top of the current ones. A key whose value has a
-     * different type here than in the file is skipped: a backup from another version must never leave a value that
-     * [read] cannot take (an Int where a String is expected would close the app on every start).
+     * Applies the values of a backup (made by [backupValues]) on top of the current ones, each with the type it has in
+     * the file.
      */
     fun restoreBackup(values: JsonObject, signatures: JsonObject?) {
-        val current = prefs.all
         val edit = prefs.edit()
         values.forEach { (key, entry) ->
             if (key == KEY_ASKED || key.startsWith(KEY_LAST_BG)) return@forEach // this device's own bookkeeping
             val typed = entry as? JsonObject ?: return@forEach
-            // The type this version reads the key with; for a key it does not know, the type it already has here (if any).
-            val expected = typeOf(key) ?: current[key]?.let { tagOf(it) }
-            fun fits(tag: String) = expected == null || expected == tag
-            typed["b"]?.jsonPrimitive?.booleanOrNull?.let { if (fits("b")) edit.putBoolean(key, it) }
-            typed["i"]?.jsonPrimitive?.intOrNull?.let { if (fits("i")) edit.putInt(key, it) }
-            typed["l"]?.jsonPrimitive?.longOrNull?.let { if (fits("l")) edit.putLong(key, it) }
-            typed["f"]?.jsonPrimitive?.floatOrNull?.let { if (fits("f")) edit.putFloat(key, it) }
-            typed["s"]?.jsonPrimitive?.contentOrNull?.let { if (fits("s")) edit.putString(key, it) }
-            (typed["set"] as? JsonArray)?.let { list ->
-                if (fits("set")) edit.putStringSet(key, list.mapNotNull { it.jsonPrimitive.contentOrNull }.toSet())
-            }
+            typed["b"]?.jsonPrimitive?.booleanOrNull?.let { edit.putBoolean(key, it) }
+            typed["i"]?.jsonPrimitive?.intOrNull?.let { edit.putInt(key, it) }
+            typed["l"]?.jsonPrimitive?.longOrNull?.let { edit.putLong(key, it) }
+            typed["f"]?.jsonPrimitive?.floatOrNull?.let { edit.putFloat(key, it) }
+            typed["s"]?.jsonPrimitive?.contentOrNull?.let { edit.putString(key, it) }
+            (typed["set"] as? JsonArray)?.let { list -> edit.putStringSet(key, list.mapNotNull { it.jsonPrimitive.contentOrNull }.toSet()) }
         }
         edit.commit()
         signatures?.forEach { (name, html) ->
@@ -407,39 +400,6 @@ class SettingsRepository(context: Context) {
     }
 
     private companion object {
-        /** The tag a stored value has in the backup file. */
-        fun tagOf(value: Any): String? = when (value) {
-            is Boolean -> "b"
-            is Int -> "i"
-            is Long -> "l"
-            is Float -> "f"
-            is String -> "s"
-            is Set<*> -> "set"
-            else -> null
-        }
-
-        /** The type [read] expects for [key] (exact keys and per-account prefixes); null for a key it does not know. */
-        fun typeOf(key: String): String? = when {
-            key in BOOLEANS -> "b"
-            key in INTS || key.startsWith(KEY_ACCOUNT_SYNC) -> "i"
-            key == KEY_HUE -> "f"
-            key in STRINGS || STRING_PREFIXES.any { key.startsWith(it) } -> "s"
-            key.startsWith(KEY_HIDDEN_LABELS) -> "set"
-            else -> null
-        }
-
-        val BOOLEANS by lazy {
-            setOf(
-                KEY_DEPTH, KEY_LIST_RIGHT, KEY_IMAGES, KEY_DARK_MAIL, KEY_CHECK_UPDATES, KEY_GROUP, KEY_GROUP_CARDS, KEY_CIRCLE,
-                KEY_MARK_SELECTION, KEY_NOTIFICATIONS, KEY_PUSH, KEY_SWIPE_CONFIRM,
-            )
-        }
-        val INTS by lazy { setOf(KEY_SETTINGS_DOCK, KEY_TRANSPARENCY, KEY_SYNC_WINDOW, KEY_SYNC, KEY_UNDO_SEND, KEY_UNDO_SECONDS) }
-        val STRINGS by lazy {
-            setOf(KEY_ACCENT, KEY_THEME, KEY_STYLE, KEY_SKIN, KEY_SWIPE_RIGHT, KEY_SWIPE_LEFT, KEY_SWIPE_DISTANCE, KEY_DEFAULT_ACCOUNT, KEY_ACCOUNT_ORDER, KEY_QUICK)
-        }
-        val STRING_PREFIXES by lazy { listOf(KEY_ACCOUNT_LABEL, KEY_SENDER_NAME, KEY_ACCOUNT_COLOR, "signature_") }
-
         const val KEY_MARK_SELECTION = "mark_selection_read"
         const val KEY_PUSH = "push_enabled"
         const val KEY_DEFAULT_ACCOUNT = "default_account"
