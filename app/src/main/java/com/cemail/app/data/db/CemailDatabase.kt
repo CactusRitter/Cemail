@@ -21,7 +21,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.flow.Flow
 
-/** A signed-in Google account. [id] is Google's stable subject id (not the email, which can change). */
+/** A signed-in account. [id] is stable: Google's subject id, "ms:" + Microsoft's object id, or "imap:" + the address. */
 @Entity(tableName = "accounts")
 data class AccountEntity(
     @PrimaryKey val id: String,

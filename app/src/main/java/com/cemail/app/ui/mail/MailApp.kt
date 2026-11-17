@@ -108,7 +108,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.ui.graphics.graphicsLayer
 
-/** Placeholder identity until Google sign-in (phase 1): messages "sent" in demo mode use this. */
+/** The address of the demo mode: messages "sent" while looking around without an account use it. */
 const val DEMO_ME = "me@cemail.example"
 
 private const val IMAP_PLAIN = "imap"

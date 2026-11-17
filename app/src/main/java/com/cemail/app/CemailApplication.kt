@@ -46,7 +46,7 @@ class CemailApplication : Application() {
 
     private val repositories = HashMap<String, MailRepository>()
 
-    /** The cached Gmail account with this id (created once, lives as long as the process). */
+    /** The mail of the account with this id (Gmail, Microsoft or IMAP), created once and kept as long as the process lives. */
     fun mailRepositoryFor(accountId: String): MailRepository = synchronized(repositories) {
         repositories.getOrPut(accountId) {
             val provider = kotlinx.coroutines.runBlocking(Dispatchers.IO) { accountRepository.providerOf(accountId) }
@@ -91,7 +91,7 @@ class CemailApplication : Application() {
         }
     }
 
-    /** Demo store until Gmail sync + Room arrive (phases 1-2). */
+    /** The example messages of the demo mode (looking around without an account). */
     val demoRepository: MailRepository by lazy { DemoMailRepository(DemoData.seed(this), DemoData.labels(this)) }
 
     private val unified = HashMap<String, MailRepository>()
