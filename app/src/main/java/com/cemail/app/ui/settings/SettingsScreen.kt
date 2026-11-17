@@ -62,6 +62,8 @@ import com.cemail.app.data.SettingsRepository
 import com.cemail.app.data.SwipeAction
 import com.cemail.app.data.SwipeDistance
 import com.cemail.app.data.db.AccountEntity
+import com.cemail.app.data.backup.BackupAccount
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cemail.app.ui.glass.GlassPill
 import com.cemail.app.ui.glass.PillIcon
 import com.cemail.app.ui.glass.glassSpring
@@ -149,6 +151,8 @@ fun SettingsScreen(
     onAddMicrosoft: () -> Unit,
     onAddImap: () -> Unit,
     onAddYahoo: () -> Unit,
+    /** Signs in again to an account of a restored backup. */
+    onAddRestored: (BackupAccount) -> Unit,
     onClose: () -> Unit,
 ) {
     val goBack = { SettingsRoute.parent(route)?.let(onRoute) ?: onClose() }
@@ -219,7 +223,7 @@ fun SettingsScreen(
                     target == SettingsRoute.NOTIFICATIONS -> NotificationsPage(settings, repo)
                     target == SettingsRoute.APPEARANCE -> AppearancePage(settings, repo)
                     target == SettingsRoute.DIAGNOSTICS -> DiagnosticsPage()
-                    target == SettingsRoute.BACKUP -> BackupPage(repo)
+                    target == SettingsRoute.BACKUP -> BackupPage(onAddRestored)
                     target == SettingsRoute.UPDATES -> UpdatesPage(settings, repo)
                     else -> Unit // an account that was just removed: the screen is on its way out
                 }
@@ -656,42 +660,25 @@ private fun UpdatesPage(settings: AppSettings, repo: SettingsRepository) {
 }
 
 /**
- * Settings → Backup of settings: every setting saved to a file the user picks (Drive, Downloads…) and brought back on
- * this or another device. Accounts are not in it (they are signed in again); their names, colours and signatures are.
+ * Settings → Backup: settings, signatures, the list of accounts (without any password) and the muted, pinned and
+ * snoozed messages, saved to a file the user picks (Drive, Downloads…) and brought back on this or another device
+ * (see data/backup/Backup.kt). Below, the accounts of a restored backup that still have to be signed in again.
  */
 @Composable
-private fun BackupPage(repo: SettingsRepository) {
-    val context = androidx.compose.ui.platform.LocalContext.current
+private fun BackupPage(onAddRestored: (BackupAccount) -> Unit) {
+    val backup = (androidx.compose.ui.platform.LocalContext.current.applicationContext as com.cemail.app.CemailApplication).backup
+    val toAdd by backup.accountsToAdd.collectAsStateWithLifecycle(emptyList())
     var message by remember { mutableStateOf<Int?>(null) }
-    val save = androidx.activity.compose.rememberLauncherForActivityResult(
-        androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json"),
-    ) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
-        message = runCatching {
-            context.contentResolver.openOutputStream(uri)!!.use { it.write(repo.exportJson().toByteArray()) }
-        }.fold({ R.string.backup_saved }, { R.string.backup_failed })
-    }
-    val open = androidx.activity.compose.rememberLauncherForActivityResult(
-        androidx.activity.result.contract.ActivityResultContracts.OpenDocument(),
-    ) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
-        val text = runCatching { context.contentResolver.openInputStream(uri)!!.use { it.readBytes().decodeToString() } }.getOrNull()
-        message = when {
-            text == null -> R.string.backup_failed
-            repo.importJson(text) -> R.string.backup_restored
-            else -> R.string.backup_invalid
-        }
-    }
-    val fileName = stringResource(R.string.backup_file)
+    val files = rememberBackupLaunchers { message = it }
     SettingsCard {
         Text(stringResource(R.string.backup_title), style = MaterialTheme.typography.titleSmall)
         Text(stringResource(R.string.backup_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.backup_private), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ChoiceChip(stringResource(R.string.backup_export), false) { save.launch(fileName) }
-            ChoiceChip(stringResource(R.string.backup_import), false) {
-                open.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
-            }
+            ChoiceChip(stringResource(R.string.backup_export), false, onClick = files.save)
+            ChoiceChip(stringResource(R.string.backup_import), false, onClick = files.restore)
         }
         message?.let { Text(stringResource(it), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary) }
     }
+    AccountsToAdd(toAdd, onAddRestored, backup::forgetAccountsToAdd)
 }

@@ -139,6 +139,25 @@ interface MessageDao {
     @Query("DELETE FROM muted_threads WHERE accountId = :accountId AND threadId = :threadId")
     suspend fun unmute(accountId: String, threadId: String)
 
+    /** Every muted conversation, of every account (for the backup). */
+    @Query("SELECT * FROM muted_threads")
+    suspend fun allMuted(): List<MutedThread>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun muteAll(rows: List<MutedThread>)
+
+    /** The Cemail-only marks of the messages that have one (pinned, snoozed), by their id on the server (for the backup). */
+    @Query("SELECT accountId, remoteId, pinned, snoozedUntil FROM messages WHERE remoteId IS NOT NULL AND (pinned = 1 OR snoozedUntil IS NOT NULL)")
+    suspend fun localMarks(): List<LocalMarks>
+
+    /** Puts back the Cemail-only marks of one message from a backup; returns how many rows it found (0 = not here yet). */
+    @Query("UPDATE messages SET pinned = :pinned, snoozedUntil = :snoozedUntil WHERE accountId = :accountId AND remoteId = :remoteId")
+    suspend fun restoreMarks(accountId: String, remoteId: String, pinned: Boolean, snoozedUntil: Long?): Int
+
+    /** Changes whenever the messages do (a sync brought, changed or removed some). */
+    @Query("SELECT COUNT(*) FROM messages")
+    fun changes(): Flow<Int>
+
     /** Messages brought by hand (Load more, server search): the automatic sync leaves them on the phone. */
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun keep(rows: List<KeptMessage>)
@@ -286,6 +305,9 @@ interface MessageDao {
 /** A conversation the user muted: its new messages go straight to the archive (a Cemail-only rule). */
 @Entity(tableName = "muted_threads", primaryKeys = ["accountId", "threadId"])
 data class MutedThread(val accountId: String, val threadId: String)
+
+/** The Cemail-only marks of one message, by its id on the server (what the backup keeps of it). */
+data class LocalMarks(val accountId: String, val remoteId: String, val pinned: Boolean, val snoozedUntil: Long?)
 
 /** A message the user brought by hand (Load more, server search), by its id on the server. */
 @Entity(tableName = "kept_messages", primaryKeys = ["accountId", "remoteId"])

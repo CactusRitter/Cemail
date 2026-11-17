@@ -46,11 +46,15 @@ class GoogleAuth(context: Context) {
 
     val isConfigured: Boolean get() = clientId.isNotBlank()
 
-    /** Intent that opens Google's sign-in page; deliver the result to [handleResult]. */
-    fun signInIntent(): Intent? {
+    /**
+     * Intent that opens Google's sign-in page; deliver the result to [handleResult]. [loginHint] (an address, e.g. an
+     * account of a restored backup) makes Google offer that account first.
+     */
+    fun signInIntent(loginHint: String? = null): Intent? {
         if (!isConfigured) return null
         val request = AuthorizationRequest.Builder(config, clientId, ResponseTypeValues.CODE, redirectUri)
             .setScope(SCOPES)
+            .setLoginHint(loginHint)
             .build()
         return service.getAuthorizationRequestIntent(request)
     }

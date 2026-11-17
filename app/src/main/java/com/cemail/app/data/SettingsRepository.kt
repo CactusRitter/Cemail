@@ -5,7 +5,6 @@ import com.cemail.app.ui.theme.Accent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -14,7 +13,6 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.floatOrNull
 import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.put
@@ -194,57 +192,59 @@ class SettingsRepository(context: Context) {
     }
 
     /**
-     * Every setting as a small JSON text, to carry them to another phone or tablet (Settings → Backup of settings):
-     * appearance, gestures, notifications, the per-account names, colours, intervals and folders, and the signatures
-     * (text and HTML). Never any password or access token: those live elsewhere and are not part of it.
+     * Every setting as stored, for the backup file (see `data/backup/Backup.kt`): appearance, gestures, notifications,
+     * the per-account names, colours, intervals and folders, and the text signatures. Never any password or access
+     * token: those live elsewhere and are not part of it. Each value keeps its type ({"b": true}, {"i": 5}…).
      */
-    fun exportJson(): String {
-        val values = buildJsonObject {
-            prefs.all.forEach { (key, value) ->
-                if (key == KEY_ASKED || key.startsWith(KEY_LAST_BG)) return@forEach // this device's own bookkeeping
-                when (value) {
-                    is Boolean -> put(key, buildJsonObject { put("b", value) })
-                    is Int -> put(key, buildJsonObject { put("i", value) })
-                    is Long -> put(key, buildJsonObject { put("l", value) })
-                    is Float -> put(key, buildJsonObject { put("f", value) })
-                    is String -> put(key, buildJsonObject { put("s", value) })
-                    is Set<*> -> put(key, buildJsonObject { put("set", JsonArray(value.filterIsInstance<String>().map(::JsonPrimitive))) })
-                }
+    fun backupValues(): JsonObject = buildJsonObject {
+        prefs.all.forEach { (key, value) ->
+            if (key == KEY_ASKED || key.startsWith(KEY_LAST_BG)) return@forEach // this device's own bookkeeping
+            when (value) {
+                is Boolean -> put(key, buildJsonObject { put("b", value) })
+                is Int -> put(key, buildJsonObject { put("i", value) })
+                is Long -> put(key, buildJsonObject { put("l", value) })
+                is Float -> put(key, buildJsonObject { put("f", value) })
+                is String -> put(key, buildJsonObject { put("s", value) })
+                is Set<*> -> put(key, buildJsonObject { put("set", JsonArray(value.filterIsInstance<String>().map(::JsonPrimitive))) })
             }
         }
-        val signatures = buildJsonObject {
-            signatureDir.listFiles()?.filter { it.extension == "html" }?.forEach { put(it.nameWithoutExtension, it.readText()) }
-        }
-        return buildJsonObject {
-            put("app", "cemail")
-            put("format", 1)
-            put("settings", values)
-            put("signatures", signatures)
-        }.toString()
     }
 
-    /** Applies a backup made by [exportJson]; returns false (and changes nothing) if [text] is not one. */
-    fun importJson(text: String): Boolean {
-        val root = runCatching { Json.parseToJsonElement(text).jsonObject }.getOrNull() ?: return false
-        if (root["app"]?.jsonPrimitive?.contentOrNull != "cemail") return false
-        val values = root["settings"] as? JsonObject ?: return false
+    /** The HTML signatures (imported from a message), by the file name made from the address. */
+    fun backupSignatures(): JsonObject = buildJsonObject {
+        signatureDir.listFiles()?.filter { it.extension == "html" }?.forEach { put(it.nameWithoutExtension, it.readText()) }
+    }
+
+    /**
+     * Applies the values of a backup (made by [backupValues]) on top of the current ones. A key whose value has a
+     * different type here than in the file is skipped: a backup from another version must never leave a value that
+     * [read] cannot take (an Int where a String is expected would close the app on every start).
+     */
+    fun restoreBackup(values: JsonObject, signatures: JsonObject?) {
+        val current = prefs.all
         val edit = prefs.edit()
         values.forEach { (key, entry) ->
+            if (key == KEY_ASKED || key.startsWith(KEY_LAST_BG)) return@forEach // this device's own bookkeeping
             val typed = entry as? JsonObject ?: return@forEach
-            typed["b"]?.jsonPrimitive?.booleanOrNull?.let { edit.putBoolean(key, it) }
-            typed["i"]?.jsonPrimitive?.intOrNull?.let { edit.putInt(key, it) }
-            typed["l"]?.jsonPrimitive?.longOrNull?.let { edit.putLong(key, it) }
-            typed["f"]?.jsonPrimitive?.floatOrNull?.let { edit.putFloat(key, it) }
-            typed["s"]?.jsonPrimitive?.contentOrNull?.let { edit.putString(key, it) }
-            (typed["set"] as? JsonArray)?.let { list -> edit.putStringSet(key, list.mapNotNull { it.jsonPrimitive.contentOrNull }.toSet()) }
+            // The type this version reads the key with; for a key it does not know, the type it already has here (if any).
+            val expected = typeOf(key) ?: current[key]?.let { tagOf(it) }
+            fun fits(tag: String) = expected == null || expected == tag
+            typed["b"]?.jsonPrimitive?.booleanOrNull?.let { if (fits("b")) edit.putBoolean(key, it) }
+            typed["i"]?.jsonPrimitive?.intOrNull?.let { if (fits("i")) edit.putInt(key, it) }
+            typed["l"]?.jsonPrimitive?.longOrNull?.let { if (fits("l")) edit.putLong(key, it) }
+            typed["f"]?.jsonPrimitive?.floatOrNull?.let { if (fits("f")) edit.putFloat(key, it) }
+            typed["s"]?.jsonPrimitive?.contentOrNull?.let { if (fits("s")) edit.putString(key, it) }
+            (typed["set"] as? JsonArray)?.let { list ->
+                if (fits("set")) edit.putStringSet(key, list.mapNotNull { it.jsonPrimitive.contentOrNull }.toSet())
+            }
         }
-        edit.apply()
-        (root["signatures"] as? JsonObject)?.forEach { (name, html) ->
+        edit.commit()
+        signatures?.forEach { (name, html) ->
             val safe = name.filter { it.isLetterOrDigit() || it == '@' || it == '.' }
             html.jsonPrimitive.contentOrNull?.let { signatureDir.mkdirs(); java.io.File(signatureDir, "$safe.html").writeText(it) }
         }
+        // Everything that follows the settings (theme, sync intervals, push) reacts to this new state by itself.
         _state.value = read()
-        return true
     }
 
     fun setSkin(skin: com.cemail.app.ui.theme.Skin) {
@@ -407,6 +407,39 @@ class SettingsRepository(context: Context) {
     }
 
     private companion object {
+        /** The tag a stored value has in the backup file. */
+        fun tagOf(value: Any): String? = when (value) {
+            is Boolean -> "b"
+            is Int -> "i"
+            is Long -> "l"
+            is Float -> "f"
+            is String -> "s"
+            is Set<*> -> "set"
+            else -> null
+        }
+
+        /** The type [read] expects for [key] (exact keys and per-account prefixes); null for a key it does not know. */
+        fun typeOf(key: String): String? = when {
+            key in BOOLEANS -> "b"
+            key in INTS || key.startsWith(KEY_ACCOUNT_SYNC) -> "i"
+            key == KEY_HUE -> "f"
+            key in STRINGS || STRING_PREFIXES.any { key.startsWith(it) } -> "s"
+            key.startsWith(KEY_HIDDEN_LABELS) -> "set"
+            else -> null
+        }
+
+        val BOOLEANS by lazy {
+            setOf(
+                KEY_DEPTH, KEY_LIST_RIGHT, KEY_IMAGES, KEY_DARK_MAIL, KEY_CHECK_UPDATES, KEY_GROUP, KEY_GROUP_CARDS, KEY_CIRCLE,
+                KEY_MARK_SELECTION, KEY_NOTIFICATIONS, KEY_PUSH, KEY_SWIPE_CONFIRM,
+            )
+        }
+        val INTS by lazy { setOf(KEY_SETTINGS_DOCK, KEY_TRANSPARENCY, KEY_SYNC_WINDOW, KEY_SYNC, KEY_UNDO_SEND, KEY_UNDO_SECONDS) }
+        val STRINGS by lazy {
+            setOf(KEY_ACCENT, KEY_THEME, KEY_STYLE, KEY_SKIN, KEY_SWIPE_RIGHT, KEY_SWIPE_LEFT, KEY_SWIPE_DISTANCE, KEY_DEFAULT_ACCOUNT, KEY_ACCOUNT_ORDER, KEY_QUICK)
+        }
+        val STRING_PREFIXES by lazy { listOf(KEY_ACCOUNT_LABEL, KEY_SENDER_NAME, KEY_ACCOUNT_COLOR, "signature_") }
+
         const val KEY_MARK_SELECTION = "mark_selection_read"
         const val KEY_PUSH = "push_enabled"
         const val KEY_DEFAULT_ACCOUNT = "default_account"

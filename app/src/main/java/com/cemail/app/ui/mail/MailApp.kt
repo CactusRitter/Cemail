@@ -113,6 +113,8 @@ const val DEMO_ME = "me@cemail.example"
 
 private const val IMAP_PLAIN = "imap"
 private const val IMAP_YAHOO = "yahoo"
+/** Followed by the account id: the form filled from an account of a restored backup. */
+private const val IMAP_RESTORED = "restored:"
 
 internal fun MailBox.icon(): ImageVector = when (this) {
     MailBox.INBOX -> CemailIcons.Inbox
@@ -139,10 +141,22 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
     val startSignIn = { accountVm.startSignIn()?.let { launcher.launch(it) }; Unit }
     val microsoftLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { accountVm.onMicrosoftResult(it.data) }
     val startMicrosoft = { accountVm.startMicrosoftSignIn()?.let { microsoftLauncher.launch(it) }; Unit }
-    // The form for an IMAP account: plain, or with Yahoo's steps (null = not shown).
+    // The form for an IMAP account: plain, with Yahoo's steps, or filled from a restored backup (null = not shown).
     var imapForm by rememberSaveable { mutableStateOf<String?>(null) }
+    // The accounts of a restored backup that are not here yet, and how each is signed in again (its address chosen).
+    val backup = (androidx.compose.ui.platform.LocalContext.current.applicationContext as com.cemail.app.CemailApplication).backup
+    val accountsToAdd by backup.accountsToAdd.collectAsStateWithLifecycle(emptyList())
+    val addRestored: (com.cemail.app.data.backup.BackupAccount) -> Unit = { a ->
+        when (a.provider) {
+            "MICROSOFT" -> accountVm.startMicrosoftSignIn(a.email)?.let { microsoftLauncher.launch(it) }
+            "IMAP" -> imapForm = IMAP_RESTORED + a.id
+            else -> accountVm.startSignIn(a.email)?.let { launcher.launch(it) }
+        }
+    }
     imapForm?.let { kind ->
-        com.cemail.app.ui.account.ImapSetupScreen(accountVm, yahoo = kind == IMAP_YAHOO) { imapForm = null }
+        val restored = kind.removePrefix(IMAP_RESTORED).takeIf { kind.startsWith(IMAP_RESTORED) }
+            ?.let { id -> accountsToAdd.firstOrNull { it.id == id } }
+        com.cemail.app.ui.account.ImapSetupScreen(accountVm, yahoo = kind == IMAP_YAHOO, restored = restored) { imapForm = null }
         return
     }
     if (!acc.loaded) {
@@ -150,7 +164,13 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
         return
     }
     if (acc.accounts.isEmpty() && !acc.demo) {
-        SignInScreen(acc, startSignIn, accountVm::useDemo, onMicrosoft = startMicrosoft, onImap = { imapForm = IMAP_PLAIN }, onYahoo = { imapForm = IMAP_YAHOO })
+        var restoreMessage by rememberSaveable { mutableStateOf<Int?>(null) }
+        val backupFiles = com.cemail.app.ui.settings.rememberBackupLaunchers { restoreMessage = it }
+        SignInScreen(
+            acc, startSignIn, accountVm::useDemo, onMicrosoft = startMicrosoft, onImap = { imapForm = IMAP_PLAIN }, onYahoo = { imapForm = IMAP_YAHOO },
+            onRestore = backupFiles.restore, restoreMessage = restoreMessage,
+            accountsToAdd = accountsToAdd, onAddRestored = addRestored, onForgetRestored = backup::forgetAccountsToAdd,
+        )
         return
     }
     val state by vm.state.collectAsStateWithLifecycle()
@@ -370,6 +390,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                             SettingsScreen(
                                 settings, settingsRepo, acc.accounts, settingsRoute, { settingsRoute = it }, accountVm::remove,
                                 onAddGoogle = startSignIn, onAddMicrosoft = startMicrosoft, onAddImap = { imapForm = IMAP_PLAIN }, onAddYahoo = { imapForm = IMAP_YAHOO },
+                                onAddRestored = addRestored,
                             ) { showSettings = false }
                         }
                         Screen.LIST -> if (twoPane) TwoPane(

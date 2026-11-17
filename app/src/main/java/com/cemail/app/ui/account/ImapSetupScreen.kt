@@ -63,7 +63,13 @@ import kotlinx.coroutines.launch
  * guessed (known providers) and checked; "Server settings" lets the user write them by hand.
  */
 @Composable
-fun ImapSetupScreen(accountVm: AccountViewModel, yahoo: Boolean = false, onClose: () -> Unit) {
+fun ImapSetupScreen(
+    accountVm: AccountViewModel,
+    yahoo: Boolean = false,
+    /** An account of a restored backup: its address, name and servers come filled in, only the password is missing. */
+    restored: com.cemail.app.data.backup.BackupAccount? = null,
+    onClose: () -> Unit,
+) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var name by rememberSaveable { mutableStateOf("") }
@@ -90,6 +96,20 @@ fun ImapSetupScreen(accountVm: AccountViewModel, yahoo: Boolean = false, onClose
         username = preset.username
         imapHost = preset.imapHost; imapPort = preset.imapPort.toString(); imapStartTls = preset.imapSecurity == Security.STARTTLS
         smtpHost = preset.smtpHost; smtpPort = preset.smtpPort.toString(); smtpStartTls = preset.smtpSecurity == Security.STARTTLS
+    }
+
+    // Filled once (the user may then change anything); the fields are saveable, so a rotation keeps the edits.
+    androidx.compose.runtime.LaunchedEffect(restored) {
+        val account = restored ?: return@LaunchedEffect
+        if (email.isNotEmpty()) return@LaunchedEffect
+        email = account.email
+        name = account.displayName.orEmpty()
+        account.imap?.let { s ->
+            username = s.username
+            imapHost = s.imapHost; imapPort = s.imapPort.toString(); imapStartTls = s.imapSecurity == Security.STARTTLS
+            smtpHost = s.smtpHost; smtpPort = s.smtpPort.toString(); smtpStartTls = s.smtpSecurity == Security.STARTTLS
+            advanced = true
+        }
     }
 
     fun submit() {

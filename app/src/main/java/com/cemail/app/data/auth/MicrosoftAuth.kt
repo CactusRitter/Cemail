@@ -34,11 +34,12 @@ class MicrosoftAuth(context: Context) {
 
     val isConfigured: Boolean get() = clientId.isNotBlank()
 
-    fun signInIntent(): Intent? {
+    /** [loginHint]: an address to offer first (an account of a restored backup); then the account picker is skipped. */
+    fun signInIntent(loginHint: String? = null): Intent? {
         if (!isConfigured) return null
         val request = AuthorizationRequest.Builder(config, clientId, ResponseTypeValues.CODE, redirectUri)
             .setScope(SCOPES)
-            .setPrompt(AuthorizationRequest.Prompt.SELECT_ACCOUNT)
+            .apply { if (loginHint == null) setPrompt(AuthorizationRequest.Prompt.SELECT_ACCOUNT) else setLoginHint(loginHint) }
             .build()
         return service.getAuthorizationRequestIntent(request)
     }

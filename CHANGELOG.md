@@ -6,6 +6,27 @@ Cada versión se guarda en Google Drive (`Mi unidad/Ce Apps/Cemail/Cemail-x.y.z.
 ## Sin publicar
 - La actualización se descarga dentro de la app, sin la notificación de descargas de Android: el aviso (Recibidos y Ajustes → Actualizaciones) muestra una barra de progreso con porcentaje y megas, y un botón para cancelar; al terminar abre el instalador (o deja el botón Instalar). `Updates` descarga con OkHttp a `filesDir/updates/Cemail-x.y.z.apk.part` y lo renombra al acabar, comprueba que llegó entero (Content-Length y el tamaño que da GitHub), sigue donde se cortó con `Range` y expone el estado en `download: StateFlow<DownloadState>` (inactivo, descargando, listo, error), que vive en la app y sobrevive a girar la pantalla o salir de Ajustes. Sin DownloadManager ni receptor; el instalador recibe el archivo por el FileProvider (`files-path updates/`). Al arrancar se borran los APK descargados que ya no sirven (también los que dejó DownloadManager). Barra nueva del sistema común: `GlassProgressBar` (la pista del deslizador, con la forma de cada diseño). Textos nuevos en en/es/de.
 - Selección por diseño (igual que Cenotes): tokens nuevos en `SkinLook` (`selectedEdgeWidth`, `badgeFill`, `badgeInk`, `badgeEdge`, `badgeEdgeWidth`, `badgeShadow`, `badgeBevel`) y en `Glass.kt` `Modifier.selectedOutline(shape)` y `SelectionBadge`, copiados de Cenotes. Un correo seleccionado ya no usa la superficie «pinned» (se confundía con uno no leído en tarjetas individuales): conserva la suya (leído o no leído) con el contorno del diseño y la insignia ✓ del diseño al principio de la fila (no en la esquina, donde está la hora). El correo abierto en el panel de lectura (tableta) lleva solo el contorno.
+- Copia de seguridad ampliada (Ajustes → Copia de seguridad, y «Restaurar una copia» en la pantalla de inicio de sesión de un móvil nuevo). El archivo («Copia de Cemail AAAA-MM-DD.json») pasa al formato 2, que guarda:
+  - los ajustes tal como se guardan y las firmas, igual que antes;
+  - el idioma propio de la app (Android 13+);
+  - la lista de cuentas: id, proveedor, correo, nombre y, en IMAP, los servidores sin la contraseña;
+  - las conversaciones silenciadas;
+  - los correos fijados y pospuestos, por su id en el servidor.
+
+  Nunca lleva tokens, contraseñas, claves o registros de push, la caché de correo ni la bandeja de salida.
+
+  Al restaurar:
+  - se aplican los ajustes (tema, sincronización y push los siguen solos);
+  - se guardan las silenciadas;
+  - las cuentas que faltan aparecen en «Cuentas por añadir», con el correo ya elegido en Google o Microsoft, o el formulario IMAP relleno salvo la contraseña;
+  - las marcas de fijado y pospuesto esperan en `restore.json` hasta que la sincronización trae esos correos (máximo 30 días). Una pospuesta ya vencida vuelve a la bandeja.
+
+  Compatibilidad del formato:
+  - Se leen hacia delante: campos desconocidos ignorados y secciones opcionales; `minReader` si algún día hay un cambio incompatible.
+  - Las versiones anteriores siguen leyendo los ajustes y las firmas.
+  - Al importar se saltan las claves cuyo tipo no coincide con el guardado, para que una copia de otra versión no rompa el arranque.
+
+  Código: `data/backup/Backup.kt` y `ui/settings/BackupUi.kt`. Textos en en/es/de, con el aviso de guardar el archivo en un sitio propio.
 
 ## 2.3.1 — 2026-11-16
 - Brutalista: al cambiar de cuenta, carpeta o filtro, la sombra dura de las tarjetas ya no desaparece por la derecha mientras entran (ni al salir). La animación de entrada de la lista (`listTransition`, solo de Cemail aunque vive en `Motion.kt`) bajaba la opacidad sin `CompositingStrategy.ModulateAlpha`, así que cada fila se pintaba en un búfer del tamaño de la fila y se cortaba lo que sobresale (la sombra desplazada hacia el final); al terminar la animación volvía a aparecer de golpe. Mismo arreglo que ya tenía `popIn`.

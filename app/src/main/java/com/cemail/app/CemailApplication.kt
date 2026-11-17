@@ -40,6 +40,9 @@ class CemailApplication : Application() {
     val microsoftAuth: com.cemail.app.data.auth.MicrosoftAuth by lazy { com.cemail.app.data.auth.MicrosoftAuth(this) }
     val tokenStore: TokenStore by lazy { TokenStore(this) }
     val accountRepository: AccountRepository by lazy { AccountRepository(database.accounts(), database.messages(), tokenStore, java.io.File(filesDir, "inline")) }
+    val backup: com.cemail.app.data.backup.Backup by lazy {
+        com.cemail.app.data.backup.Backup(this, settings, accountRepository, database.messages(), appScope)
+    }
 
     private val repositories = HashMap<String, MailRepository>()
 
@@ -208,6 +211,8 @@ class CemailApplication : Application() {
         appScope.launch {
             database.messages().nextSend().distinctUntilChanged().collect { com.cemail.app.sync.OutboxWorker.schedule(this@CemailApplication, it) }
         }
+        // Pinned and snoozed marks of a restored backup go back on their messages as the sync brings them.
+        appScope.launch(Dispatchers.IO) { backup.watch() }
         // Snoozed messages come back on time: the wake-up always follows the earliest pending snooze.
         appScope.launch {
             database.messages().nextSnooze().distinctUntilChanged().collect { com.cemail.app.sync.SnoozeWorker.schedule(this@CemailApplication, it) }

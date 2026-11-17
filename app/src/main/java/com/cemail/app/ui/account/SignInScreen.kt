@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
@@ -25,7 +26,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.annotation.StringRes
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import com.cemail.app.R
+import com.cemail.app.data.backup.BackupAccount
+import com.cemail.app.ui.settings.AccountsToAdd
 import com.cemail.app.ui.glass.GlassBackground
 import com.cemail.app.ui.glass.GlassKind
 import com.cemail.app.ui.glass.glass
@@ -40,13 +46,24 @@ fun SignInScreen(
     onMicrosoft: () -> Unit,
     onImap: () -> Unit,
     onYahoo: () -> Unit = onImap,
+    /** Opens a backup file (a new phone: settings first, then the accounts it lists). */
+    onRestore: () -> Unit = {},
+    /** What came of the last restore (or save), or null. */
+    @StringRes restoreMessage: Int? = null,
+    /** The accounts of a restored backup, still to be signed in again. */
+    accountsToAdd: List<BackupAccount> = emptyList(),
+    onAddRestored: (BackupAccount) -> Unit = {},
+    onForgetRestored: () -> Unit = {},
 ) {
-    GlassBackground {
+    // Centred on the screen; it scrolls when the accounts of a restored backup make it taller than the screen.
+    GlassBackground { androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
+        val screen = maxHeight
         Column(
-            Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(24.dp),
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).heightIn(min = screen).padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+            verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
         ) {
+            AccountsToAdd(accountsToAdd, onAddRestored, onForgetRestored, Modifier.widthIn(max = 560.dp))
             Column(
                 Modifier.widthIn(max = 560.dp).fillMaxWidth().glass(RoundedCornerShape(32.dp), GlassKind.Card).padding(28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -111,7 +128,16 @@ fun SignInScreen(
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                 )
+                Text(
+                    stringResource(R.string.sign_in_restore),
+                    Modifier.clickable(role = Role.Button, onClick = onRestore).padding(8.dp),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                restoreMessage?.let {
+                    Text(stringResource(it), style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
+                }
             }
         }
-    }
+    } }
 }

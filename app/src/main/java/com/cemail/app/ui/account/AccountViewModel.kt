@@ -54,15 +54,15 @@ class AccountViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AccountUiState())
 
     /** The intent to start Google's sign-in, or null (and an error shown) if the app has no client id. */
-    fun startSignIn(): Intent? {
-        val intent = auth.signInIntent()
+    fun startSignIn(loginHint: String? = null): Intent? {
+        val intent = auth.signInIntent(loginHint)
         local.update { if (intent == null) it.copy(error = R.string.sign_in_not_configured) else it.copy(signingIn = true, error = null) }
         return intent
     }
 
     /** The intent to start Microsoft's sign-in, or null (and an error shown) if the app has no client id. */
-    fun startMicrosoftSignIn(): Intent? {
-        val intent = microsoft.signInIntent()
+    fun startMicrosoftSignIn(loginHint: String? = null): Intent? {
+        val intent = microsoft.signInIntent(loginHint)
         local.update { if (intent == null) it.copy(error = R.string.sign_in_not_configured) else it.copy(signingIn = true, error = null) }
         return intent
     }
