@@ -87,3 +87,5 @@ Lee `D:\cesar\Documents\Claude Projects\Ce\docs\AHORRO.md`: subagentes para leer
 **Informar a la líder:** al cerrar cada bloque, `SendMessage` a «Ce Líder» con un resumen de máximo 6 líneas (qué hiciste y commit, decisiones de diseño que tomaste, qué no probaste, qué le pides a César). César no debe ser el único que se entera.
 
 **Consolas y cuentas:** lo ya hecho (Google Cloud, Entra, claves, webs, dispositivos) está en `D:\cesar\Documents\Claude Projects\Ce\docs\NUBE.md`; mírelo antes de abrir una consola o preguntar a César, y anota allí lo nuevo.
+
+**Reutilizar antes de inventar:** antes de decir «no se puede» o diseñar algo, busca si otra app Ce ya lo resuelve (`Ce/docs/NUBE.md`, `Ce/docs/ECOSYSTEM.md`, `docs/` de las otras apps; un subagente barato con resumen de 5 líneas). Lo que una app ya sabe hacer, las demás lo copian.
