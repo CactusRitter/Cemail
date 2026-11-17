@@ -247,7 +247,7 @@ class Updates(private val context: Context, private val client: OkHttpClient = O
 
     /**
      * Throws away downloaded APKs that are no use any more (this version or older, so already installed, or an older
-     * offer than the current one) and those that Android's download manager kept for earlier versions.
+     * offer than the current one).
      */
     private fun cleanUp() {
         val offered = _available.value?.version
@@ -255,9 +255,6 @@ class Updates(private val context: Context, private val client: OkHttpClient = O
             val version = file.name.removePrefix("Cemail-").substringBefore(".apk")
             if (version != offered) file.delete()
         }
-        context.getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS)
-            ?.listFiles { f -> f.name.startsWith("Cemail-") && f.name.endsWith(".apk") }
-            ?.forEach { it.delete() }
     }
 
     /** Whether Android already lets Cemail install apps. Granting it can restart the app, so it is asked before downloading. */
