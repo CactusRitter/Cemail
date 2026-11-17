@@ -439,15 +439,18 @@ fun ComposeScreen(
         }
 
         // Formatting toolbar, floating over the keyboard.
+        // While it fades in or out it is drawn in a layer cut to its own size, which cut away its shadow (the solid one of
+        // Brutalist, the soft one of the other looks). The 12 dp margin is inside that layer, so the shadow is too; the bar
+        // stays exactly where it was.
         AnimatedVisibility(
             visible = writingBody,
-            modifier = Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.safeDrawing).padding(12.dp),
+            modifier = Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.safeDrawing),
             enter = fadeIn(com.cemail.app.ui.glass.glassSpring()) +
                 androidx.compose.animation.scaleIn(com.cemail.app.ui.glass.bounceSpring(), initialScale = 0.9f),
             exit = fadeOut(com.cemail.app.ui.glass.glassSpring()) +
                 androidx.compose.animation.scaleOut(com.cemail.app.ui.glass.glassSpring(), targetScale = 0.9f),
         ) {
-            FormatBar(rich)
+            Box(Modifier.padding(12.dp)) { FormatBar(rich) }
         }
     }
 }
