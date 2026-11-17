@@ -320,6 +320,15 @@ fun ListScreen(
             )
         }
 
+        // Behind the status bar and the top row, once the list has scrolled: what passes below does not mix with them.
+        // As tall as the room the list leaves above its first card; drawn before the top row, so it never covers it.
+        com.cemail.app.ui.glass.TopScrim(
+            height = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() + 80.dp,
+            hazeState = haze,
+            visible = listState.canScrollBackward,
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
+
         // Top bar: glass pill over the list (menu, title or search field, search).
         // While the bars cross-fade each one is drawn cut to its own size: like the rows, the bar gets the room of the
         // solid shadow (end and bottom) inside it, taken from the margin around it, so the shadow does not blink away.

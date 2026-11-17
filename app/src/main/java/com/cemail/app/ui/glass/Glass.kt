@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -28,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -561,3 +563,45 @@ fun SelectionBadge(modifier: Modifier = Modifier, size: Dp = 26.dp) {
         )
     }
 }
+
+// ---- Top scrim ----
+
+/**
+ * A strip behind the status bar and the top row (title and round buttons) of a screen whose list scrolls under them, so
+ * what passes below does not mix with the title, the buttons and the clock. Put it in the screen's Box AFTER the list and
+ * BEFORE the top row, at the top, with [height] = the insets + the row + the gap the list leaves under it. It fades out
+ * along its last 24 dp and never takes touches. Glass blurs what is under it ([hazeState], the one of the buttons) and
+ * washes it with the background; the other looks have no blur, so they get a solid wash of their own background that
+ * fades out. [visible] false (a list at rest) fades it away, so the screen looks as before until it scrolls.
+ */
+@Composable
+fun TopScrim(height: Dp, modifier: Modifier = Modifier, hazeState: HazeState? = null, visible: Boolean = true) {
+    val glass = LocalGlass.current
+    val skin = LocalSkin.current
+    val alpha by androidx.compose.animation.core.animateFloatAsState(if (visible) 1f else 0f, glassSpring(), label = "topScrim")
+    if (alpha <= 0.01f) return
+    val shaped = modifier
+        .fillMaxWidth()
+        .height(height)
+        .graphicsLayer { this.alpha = alpha }
+    if (skin.skin == Skin.GLASS && hazeState != null) {
+        Box(
+            shaped.hazeEffect(hazeState) {
+                blurRadius = 20.dp
+                backgroundColor = glass.base
+                tints = listOf(HazeTint(glass.base.copy(alpha = 0.6f)))
+                noiseFactor = 0f
+                progressive = dev.chrisbanes.haze.HazeProgressive.verticalGradient(startIntensity = 1f, endIntensity = 0f)
+            },
+        )
+    } else {
+        val wash = if (skin.skin == Skin.GLASS) glass.gradient.first() else glass.base
+        Box(
+            shaped.drawBehind {
+                val fade = (24.dp.toPx() / size.height).coerceIn(0f, 1f)
+                drawRect(Brush.verticalGradient(colorStops = arrayOf(0f to wash, (1f - fade) to wash, 1f to wash.copy(alpha = 0f))))
+            },
+        )
+    }
+}
+
