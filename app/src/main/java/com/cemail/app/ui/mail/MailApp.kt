@@ -40,8 +40,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.core.tween
-import com.cemail.app.ui.glass.ReadTransition
-import com.cemail.app.ui.glass.expandFrom
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.fadeIn

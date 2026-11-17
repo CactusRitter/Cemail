@@ -1,6 +1,7 @@
 package com.cemail.app.ui.theme
 
 import androidx.annotation.StringRes
+import com.cemail.app.ui.glass.GlassBackground
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Shapes
@@ -33,7 +34,7 @@ import com.cemail.app.R
 // en clientes de correo conocidos. Cambian toda la app desde las piezas del sistema de diseño (glass, glassSegment,
 // GlassBackground y el tema de Material), sin tocar cada pantalla. Ver docs/DESIGN.md, «Diseños en pruebas».
 
-/** The whole look of the app. [GLASS] is the design shared with Celander and Cenotes; the others are being tried out. */
+/** The whole look of the app. [GLASS] is the design shared with Cemail and Cenotes; the others are being tried out. */
 enum class Skin(@StringRes val label: Int) {
     /** Frosted glass over soft lights (the "Ce" apps). */
     GLASS(R.string.skin_glass),

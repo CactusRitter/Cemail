@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.cemail.app.ui.theme.CemailTheme
 
 /**
- * The app's slider (docs/DESIGN.md, "Deslizador"), like Celander's: a rounded 12 dp track and a round knob with a
+ * The app's slider (docs/DESIGN.md, "Deslizador"), like the other Ce apps': a rounded 12 dp track and a round knob with a
  * white ring and a soft shadow. By default the track fills with the accent up to the knob; [track] paints the whole
  * track instead (the rainbow of "Custom colour"), and [knobColor] is the knob's centre. [value] null shows no knob.
  * Tap anywhere on it or drag along it.
@@ -44,6 +44,8 @@ fun GlassSlider(
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     track: Brush? = null,
     knobColor: Color = MaterialTheme.colorScheme.primary,
+    /** Called when the finger lifts after a tap or a drag (to save once instead of at every move). */
+    onValueChangeFinished: (() -> Unit)? = null,
 ) {
     val span = (valueRange.endInclusive - valueRange.start).takeIf { it > 0f } ?: 1f
     val fraction = value?.let { ((it - valueRange.start) / span).coerceIn(0f, 1f) }
@@ -63,8 +65,13 @@ fun GlassSlider(
         Box(
             Modifier
                 .fillMaxSize()
-                .pointerInput(width, valueRange) { detectTapGestures { pick(it.x) } }
-                .pointerInput(width, valueRange) { detectHorizontalDragGestures { change, _ -> pick(change.position.x) } },
+                .pointerInput(width, valueRange) { detectTapGestures { pick(it.x); onValueChangeFinished?.invoke() } }
+                .pointerInput(width, valueRange) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = { onValueChangeFinished?.invoke() },
+                        onDragCancel = { onValueChangeFinished?.invoke() },
+                    ) { change, _ -> pick(change.position.x) }
+                },
             contentAlignment = Alignment.CenterStart,
         ) {
             if (track != null) {

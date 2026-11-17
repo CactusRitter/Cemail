@@ -45,15 +45,57 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.addOutline
 import com.cemail.app.ui.theme.Edge
+import com.cemail.app.ui.theme.GlassColors
 import com.cemail.app.ui.theme.LocalGlass
 import com.cemail.app.ui.theme.LocalSkin
 import com.cemail.app.ui.theme.Skin
 import com.cemail.app.ui.theme.SkinLook
+import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.HazeProgressive
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.blur.HazeBlurStyle
+import dev.chrisbanes.haze.blur.HazeColorEffect
+import dev.chrisbanes.haze.blur.hazeBlur
 
-// Mismos componentes de cristal que Cenotes (ver docs/DESIGN.md). Si cambian allí, se actualizan aquí.
+// Glass components shared by the "Ce" apps (docs/DESIGN.md): the same values in Cemail, Cenotes and Celander.
+// Glass V2: Haze 2 (hazeBlur over HazeInput.Sources), source layers (GlassLayers), the opacity curve of GlassTokens and a shadow drawn
+// only outside the shape (softShadow).
+
+/**
+ * The haze state of the screen that hosts glass: every `glass()` without an explicit one blurs what that screen registered
+ * with `Modifier.hazeSource(state, zIndex = …)`. Null (a screen without sources) means translucent fills without blur.
+ */
+val LocalHazeState = androidx.compose.runtime.staticCompositionLocalOf<HazeState?> { null }
+
+/**
+ * Haze source layers of a screen. Glass inside the content (cards) only blurs layers below its own, i.e. the background;
+ * floating glass outside all sources blurs every layer.
+ */
+object GlassLayers {
+    const val BACKGROUND = 0f
+    const val CONTENT = 1f
+}
+
+/** The fill of [kind]: with the opacity the curve gives for glass that blurs ([blurred]) or only tints. */
+fun GlassColors.fill(kind: GlassKind, blurred: Boolean): Color {
+    val solid = when (kind) {
+        GlassKind.Card, GlassKind.Chrome -> cardSolid
+        GlassKind.Pinned -> pinnedSolid
+        GlassKind.Menu -> menuSolid
+    } ?: return when (kind) {
+        GlassKind.Card -> card
+        GlassKind.Chrome -> chrome
+        GlassKind.Pinned -> pinned
+        GlassKind.Menu -> menu
+    }
+    val blur = blurred && GlassTokens.blurSupported && !GlassTokens.isSolid(transparency)
+    val alpha = when (kind) {
+        GlassKind.Card, GlassKind.Chrome -> GlassTokens.fillAlpha(transparency, dark, blur)
+        GlassKind.Pinned -> GlassTokens.pinnedAlpha(transparency, dark, blur)
+        GlassKind.Menu -> GlassTokens.sheetFillAlpha(transparency, dark, blur)
+    }
+    return solid.copy(alpha = alpha)
+}
 
 /** Spring used for every state change in the UI ("springs instead of curves"). */
 fun <T> glassSpring() = spring<T>(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow)
@@ -69,17 +111,13 @@ fun Modifier.glass(
     shape: Shape,
     kind: GlassKind = GlassKind.Card,
     elevation: Dp = 0.dp,
-    hazeState: HazeState? = null,
+    hazeState: HazeState? = LocalHazeState.current,
     // Solid ground under the translucent fill, for buttons that float over the content of a message.
     opaque: Boolean = false,
 ): Modifier {
     val glass = LocalGlass.current
-    val fill = when (kind) {
-        GlassKind.Card -> glass.card
-        GlassKind.Chrome -> glass.chrome
-        GlassKind.Pinned -> glass.pinned
-        GlassKind.Menu -> glass.menu
-    }
+    val blurred = hazeState != null
+    val fill = glass.fill(kind, blurred)
     val skin = LocalSkin.current
     if (skin.skin != Skin.GLASS) return skinSurface(skin, skin.shape(shape), fill, kind, elevation, glass.shadow, if (opaque) MaterialTheme.colorScheme.surface else null)
     var m = this
@@ -87,17 +125,20 @@ fun Modifier.glass(
         // "3D" glass (Appearance → 3D shadow): a soft shadow that lifts the slab off the background.
         m = m.liftShadow(shape, skin.liftColor, liftDepth(kind, elevation))
     } else if (elevation > 0.dp) {
-        m = m.shadow(elevation, shape, ambientColor = glass.shadow, spotColor = glass.shadow)
+        m = m.softShadow(shape, glass.shadow, Elevation.layersFor(elevation))
     }
     m = m.clip(shape)
     if (opaque) m = m.background(MaterialTheme.colorScheme.surface)
-    m = if (hazeState != null) {
-        m.hazeEffect(hazeState) {
-            blurRadius = 24.dp
-            backgroundColor = glass.base
-            tints = listOf(HazeTint(fill))
-            noiseFactor = 0f
-        }
+    m = if (hazeState != null && GlassTokens.blurSupported && !GlassTokens.isSolid(glass.transparency)) {
+        m.hazeBlur(
+            input = HazeInput.Sources(hazeState),
+            style = HazeBlurStyle {
+                blurRadius(GlassTokens.blur)
+                backgroundColor(glass.base)
+                colorEffects(listOf(HazeColorEffect.tint(fill)))
+                noiseFactor(GlassTokens.NOISE)
+            },
+        )
     } else {
         m.background(fill)
     }
@@ -111,7 +152,7 @@ private fun Modifier.skinSurface(skin: SkinLook, shape: Shape, fill: Color, kind
     if (skin.hardShadow > 0.dp) {
         m = m.hardShadow(shape, skin.hardShadowColor, depthOf(skin, kind, elevation))
     } else if (skin.softShadow && elevation > 0.dp) {
-        m = m.shadow(elevation * 0.6f, shape, ambientColor = shadow, spotColor = shadow)
+        m = m.softShadow(shape, shadow, Elevation.layersFor(elevation))
     }
     m = m.clip(shape).then(if (under != null) Modifier.background(under) else Modifier).background(fill)
     return when (skin.edge) {
@@ -246,14 +287,18 @@ fun GlassBackground(modifier: Modifier = Modifier, content: @Composable BoxScope
     )
 }
 
-/** Round floating glass button (56dp), like Celander's settings button. */
+/** Round floating glass button (56dp), like the other Ce apps' settings button. */
 @Composable
 fun GlassIconButton(
-    icon: ImageVector,
+    icon: ImageVector?,
     contentDescription: String?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    hazeState: HazeState? = null,
+    hazeState: HazeState? = LocalHazeState.current,
+    /** Icon colour (the usual content colour by default). */
+    tint: Color = androidx.compose.material3.LocalContentColor.current,
+    /** Anything else inside the button instead of [icon] (a number, a badge). */
+    content: (@Composable () -> Unit)? = null,
 ) {
     Box(
         modifier
@@ -263,7 +308,7 @@ fun GlassIconButton(
             .clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, contentDescription)
+        if (content != null) content() else if (icon != null) Icon(icon, contentDescription, tint = tint)
     }
 }
 
@@ -272,7 +317,7 @@ fun GlassIconButton(
 fun GlassPill(
     modifier: Modifier = Modifier,
     height: Dp = 56.dp,
-    hazeState: HazeState? = null,
+    hazeState: HazeState? = LocalHazeState.current,
     content: @Composable RowScope.() -> Unit,
 ) {
     Row(
@@ -359,7 +404,7 @@ fun Modifier.glassSegment(
         val fill = fillOverride ?: if (pinned) skin.listPinned ?: glass.pinned else skin.listFill ?: glass.card
         return skinSegment(skin, pos, radius, fill, pinned, if (wall) wallColorFor(fill) else null)
     }
-    val fill = fillOverride ?: if (kind == GlassKind.Pinned) glass.pinned else glass.card
+    val fill = fillOverride ?: glass.fill(if (kind == GlassKind.Pinned) GlassKind.Pinned else GlassKind.Card, blurred = false)
     val wallColor = if (wall) wallColorFor(fill) else null
     val divider = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
     val shape = pos.shape(radius)
@@ -575,7 +620,7 @@ fun SelectionBadge(modifier: Modifier = Modifier, size: Dp = 26.dp) {
  * fades out. [visible] false (a list at rest) fades it away, so the screen looks as before until it scrolls.
  */
 @Composable
-fun TopScrim(height: Dp, modifier: Modifier = Modifier, hazeState: HazeState? = null, visible: Boolean = true) {
+fun TopScrim(height: Dp, modifier: Modifier = Modifier, hazeState: HazeState? = LocalHazeState.current, visible: Boolean = true) {
     val glass = LocalGlass.current
     val skin = LocalSkin.current
     val alpha by androidx.compose.animation.core.animateFloatAsState(if (visible) 1f else 0f, glassSpring(), label = "topScrim")
@@ -584,15 +629,18 @@ fun TopScrim(height: Dp, modifier: Modifier = Modifier, hazeState: HazeState? = 
         .fillMaxWidth()
         .height(height)
         .graphicsLayer { this.alpha = alpha }
-    if (skin.skin == Skin.GLASS && hazeState != null) {
+    if (skin.skin == Skin.GLASS && hazeState != null && GlassTokens.blurSupported) {
         Box(
-            shaped.hazeEffect(hazeState) {
-                blurRadius = 20.dp
-                backgroundColor = glass.base
-                tints = listOf(HazeTint(glass.base.copy(alpha = 0.6f)))
-                noiseFactor = 0f
-                progressive = dev.chrisbanes.haze.HazeProgressive.verticalGradient(startIntensity = 1f, endIntensity = 0f)
-            },
+            shaped.hazeBlur(
+                input = HazeInput.Sources(hazeState),
+                style = HazeBlurStyle {
+                    blurRadius(20.dp)
+                    backgroundColor(glass.base)
+                    colorEffects(listOf(HazeColorEffect.tint(glass.base.copy(alpha = 0.6f))))
+                    noiseFactor(GlassTokens.NOISE)
+                    progressive(HazeProgressive.verticalGradient(startIntensity = 1f, endIntensity = 0f))
+                },
+            ),
         )
     } else {
         val wash = if (skin.skin == Skin.GLASS) glass.gradient.first() else glass.base
@@ -605,3 +653,17 @@ fun TopScrim(height: Dp, modifier: Modifier = Modifier, hazeState: HazeState? = 
     }
 }
 
+
+/**
+ * A translucent tile for content inside scrolling areas (cells, rows, cards): the same glass as [glass], but it never blurs and
+ * has no edge, so a grid of them stays light. [tint] is painted over it (a selected cell, an error row).
+ */
+@Composable
+fun Modifier.glassTile(shape: Shape, tint: Color? = null): Modifier {
+    val glass = LocalGlass.current
+    val skin = LocalSkin.current
+    val tinted = if (tint != null) Modifier.background(tint) else Modifier
+    val solid = glass.cardSolid
+    if (skin.skin != Skin.GLASS || solid == null) return glass(shape, GlassKind.Card, hazeState = null).then(tinted)
+    return clip(shape).background(solid.copy(alpha = GlassTokens.tileAlpha(glass.transparency, glass.dark))).then(tinted)
+}

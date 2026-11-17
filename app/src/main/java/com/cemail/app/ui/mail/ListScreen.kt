@@ -69,7 +69,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.SideEffect
-import com.cemail.app.ui.glass.listTransition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -177,10 +176,11 @@ fun ListScreen(
     if (!selecting) labelPanel = false
     val startIsArchive = state.box != MailBox.ARCHIVE && state.box != MailBox.TRASH && state.box != MailBox.SPAM
 
+    androidx.compose.runtime.CompositionLocalProvider(com.cemail.app.ui.glass.LocalHazeState provides haze) {
     Box(Modifier.fillMaxSize()) {
         // The background is a blur source too (as in Cenotes), so the buttons over it get real frosted glass
         // instead of a flat white fill.
-        GlassBackground(Modifier.hazeSource(haze)) {}
+        GlassBackground(Modifier.hazeSource(haze, zIndex = com.cemail.app.ui.glass.GlassLayers.BACKGROUND)) {}
         val empty = state.pinned.isEmpty() && state.others.isEmpty()
         // Pull down to refresh: the indicator shows only for a refresh the user asked for, not for the automatic ones.
         val pullState = rememberPullToRefreshState()
@@ -230,7 +230,7 @@ fun ListScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer { translationY = pullState.distanceFraction.coerceAtMost(1.5f) * thresholdPx }
-                .hazeSource(haze),
+                .hazeSource(haze, zIndex = com.cemail.app.ui.glass.GlassLayers.CONTENT),
             contentPadding = PaddingValues(
                 start = 12.dp,
                 end = 12.dp - room,
@@ -400,6 +400,7 @@ fun ListScreen(
           }
         }
     }
+    }
 }
 
 @Composable
@@ -409,7 +410,7 @@ private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsA
     var pending by remember { mutableStateOf<com.cemail.app.data.SwipeAction?>(null) }
     var bounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     // Reports where this card is, so an opened mail can fold back into it.
-    androidx.compose.runtime.DisposableEffect(mail.id) { onDispose { com.cemail.app.ui.glass.ReadTransition.positions.remove(mail.id) } }
+    androidx.compose.runtime.DisposableEffect(mail.id) { onDispose { ReadTransition.positions.remove(mail.id) } }
     fun perform(action: com.cemail.app.data.SwipeAction) {
         when (action) {
             com.cemail.app.data.SwipeAction.ARCHIVE -> if (startIsArchive) vm.archive(one) else vm.moveToInbox(one)
@@ -433,7 +434,7 @@ private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsA
             } else if (mail.folder == Folder.DRAFTS || mail.folder == Folder.OUTBOX) {
                 vm.editDraft(mail)
             } else {
-                com.cemail.app.ui.glass.ReadTransition.origin = bounds // the mail grows out of this card
+                ReadTransition.origin = bounds // the mail grows out of this card
                 vm.open(mail.id)
             }
         },
@@ -448,7 +449,7 @@ private fun MailItem(mail: Mail, state: MailUiState, vm: MailViewModel, startIsA
         inGroup = groupCards,
         modifier = modifier.padding(bottom = if (pos.hasBottom) 8.dp else 0.dp).onGloballyPositioned {
             bounds = it.boundsInRoot()
-            bounds?.let { rect -> com.cemail.app.ui.glass.ReadTransition.positions[mail.id] = rect }
+            bounds?.let { rect -> ReadTransition.positions[mail.id] = rect }
         },
     )
     pending?.let { action ->

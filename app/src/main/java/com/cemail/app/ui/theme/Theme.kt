@@ -13,9 +13,10 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import com.cemail.app.R
 import com.cemail.app.data.AppSettings
+import com.cemail.app.ui.glass.GlassTokens
 
-// Diseño compartido con las apps "Ce" (Celander, Cenotes): cristal esmerilado sobre un fondo
-// suave de lavanda/índigo. Ver docs/DESIGN.md. Los valores son los mismos que en Cenotes.
+// Diseño compartido con las apps "Ce" (Cemail, Cenotes, Celander): cristal esmerilado sobre un fondo
+// suave de lavanda/índigo. Ver docs/DESIGN.md. Los valores son los mismos que en Cemail y Cenotes.
 
 /**
  * One accent colour in its four shades: the colour itself on light surfaces, a lighter one for dark surfaces, and
@@ -57,7 +58,7 @@ internal fun hslOf(color: Color): FloatArray {
 
 /**
  * A colour of the free hue bar ("custom colour"), as calm as the curated ones: yellows and cyans are naturally much
- * brighter than blues at the same lightness, so they are darkened a little (yellow turns ochre, like Celander's).
+ * brighter than blues at the same lightness, so they are darkened a little (yellow turns ochre, like the other Ce apps').
  */
 fun customPalette(hue: Float): AccentPalette {
     val h = hue.coerceIn(0f, 359.9f)
@@ -141,6 +142,14 @@ data class GlassColors(
     /** Page and surface colours of the Material scheme for this style. */
     val background: Color,
     val surface: Color,
+    /**
+     * Glass V2: the transparency setting (0–1) and the opaque colour under each fill. With [cardSolid] set, the opacity of
+     * [card], [chrome], [pinned] and [menu] comes from the curve of GlassTokens (see `GlassColors.fill`), not from a fixed alpha.
+     */
+    val transparency: Float = 0f,
+    val cardSolid: Color? = null,
+    val pinnedSolid: Color? = null,
+    val menuSolid: Color? = null,
 )
 
 /**
@@ -232,18 +241,20 @@ fun glassColors(
     style: ThemeStyle = ThemeStyle.AURORA,
 ): GlassColors {
     val t = transparency.coerceIn(0, 100) / 100f
-    val cardAlpha = 0.12f + 0.8f * (1f - t) // 65 % → 0.40
-    val chromeAlpha = (cardAlpha + 0.3f).coerceAtMost(0.92f)
-    val pinnedAlpha = (cardAlpha + 0.25f).coerceAtMost(1f)
     val tint = if (dark) accent.dark else accent.light
     val look = look(style, dark)
     val card = Color(look.card)
+    val pinned = if (dark) accent.darkContainer else accent.lightContainer
+    val menu = Color(look.menu)
+    // Glass V2: the opacity of each fill is one curve of the transparency (GlassTokens), calibrated for AA text.
+    val blur = GlassTokens.blurSupported
+    val cardAlpha = GlassTokens.fillAlpha(t, dark, blur)
     return GlassColors(
         dark = dark,
         card = card.copy(alpha = cardAlpha),
-        chrome = card.copy(alpha = chromeAlpha),
-        pinned = (if (dark) accent.darkContainer else accent.lightContainer).copy(alpha = pinnedAlpha),
-        menu = Color(look.menu).copy(alpha = 0.97f),
+        chrome = card.copy(alpha = cardAlpha),
+        pinned = pinned.copy(alpha = GlassTokens.pinnedAlpha(t, dark, blur)),
+        menu = menu.copy(alpha = GlassTokens.sheetFillAlpha(t, dark, blur)),
         base = Color(look.base),
         borderTop = Color.White.copy(alpha = if (dark) 0.16f else 0.85f),
         borderBottom = Color.White.copy(alpha = if (dark) 0.04f else 0.25f),
@@ -252,6 +263,10 @@ fun glassColors(
         blobs = look.blobs.map { Blob((it.color?.let(::Color) ?: tint).copy(alpha = it.alpha), it.x, it.y, it.radius) },
         background = Color(look.background),
         surface = Color(look.surface),
+        transparency = t,
+        cardSolid = card,
+        pinnedSolid = pinned,
+        menuSolid = menu,
     )
 }
 
@@ -282,10 +297,21 @@ fun CemailTheme(settings: AppSettings = AppSettings(), content: @Composable () -
     }
 }
 
-/** The glass design (the one shared with Celander and Cenotes) as a [SkinTheme]. */
+/** The glass design (the one shared with Cemail and Cenotes) as a [SkinTheme]. */
 private fun glassTheme(settings: AppSettings, dark: Boolean, accent: AccentPalette): SkinTheme {
     val glass = glassColors(dark, settings.transparency, accent, settings.themeStyle)
-    val colors = if (dark) {
+    val colors = glassScheme(dark, accent, glass)
+    val look = if (settings.depth3d) {
+        SkinLook(Skin.GLASS, dark, lift = true, liftColor = glassDepthColor(accent, dark))
+    } else {
+        SkinLook(Skin.GLASS, dark)
+    }
+    return SkinTheme(look, glass, colors, androidx.compose.material3.Typography(), androidx.compose.material3.Shapes())
+}
+
+/** The Material colour scheme of the glass design (also what the home screen widgets take their colours from). */
+fun glassScheme(dark: Boolean, accent: AccentPalette, glass: GlassColors): androidx.compose.material3.ColorScheme {
+    return if (dark) {
         darkColorScheme(
             primary = accent.dark,
             onPrimary = Color(0xFF11132B),
@@ -310,10 +336,4 @@ private fun glassTheme(settings: AppSettings, dark: Boolean, accent: AccentPalet
             error = Color(0xFFC62828),
         )
     }
-    val look = if (settings.depth3d) {
-        SkinLook(Skin.GLASS, dark, lift = true, liftColor = glassDepthColor(accent, dark))
-    } else {
-        SkinLook(Skin.GLASS, dark)
-    }
-    return SkinTheme(look, glass, colors, androidx.compose.material3.Typography(), androidx.compose.material3.Shapes())
 }
