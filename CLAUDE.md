@@ -80,3 +80,6 @@ powershell -File scripts/emulator.ps1 window         # arrancar CON ventana, sol
 - Identificadores, nombres de clases y comentarios de API en inglés; comentarios explicativos pueden ir en español.
 - Estilo oficial de Kotlin (`.editorconfig`). Compose: un `@Composable` sin estado por pantalla + su ViewModel; `@Preview` para los componentes.
 - Tests: lógica de dominio y parseo (MIME, respuestas de Gmail) con JUnit; DAO de Room con tests instrumentados. Para la API de Gmail usa dobles de prueba de la interfaz de `data/gmail`.
+
+## Ahorro de tokens (norma de César para todas las apps Ce)
+Lee `D:\cesar\Documents\Claude Projects\Ce\docs\AHORRO.md`: subagentes para leer/comparar/buscar (resumen de 10-15 líneas), salidas siempre recortadas, mensajes cortos entre sesiones, modelo barato en tareas mecánicas, y mantener `docs/TRASPASO.md` de esta app al día (aviso a César «conviene /clear» al cerrar un bloque grande).
