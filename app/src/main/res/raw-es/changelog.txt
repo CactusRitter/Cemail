@@ -1,3 +1,9 @@
+## 2.4.0
+- Las actualizaciones se descargan dentro de la app con una barra de progreso, y al terminar se abre el instalador.
+- Los correos seleccionados llevan un contorno y una insignia ✓ que siguen cada diseño.
+- La copia de seguridad es ahora un .zip que guarda también tu lista de cuentas, los correos silenciados, fijados y pospuestos y el idioma de la app. En un móvil nuevo, restáurala desde la pantalla de bienvenida y solo tendrás que volver a iniciar sesión en tus cuentas.
+- Atrás en el formulario de cuenta IMAP vuelve a la pantalla anterior en vez de cerrar la app.
+
 ## 2.3.1
 - Brutalista: la sombra de las tarjetas ya no parpadea por la derecha al cambiar de cuenta, archivar un correo o abrir subetiquetas en el menú.
 

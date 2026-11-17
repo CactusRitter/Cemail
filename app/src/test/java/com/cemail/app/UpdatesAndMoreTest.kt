@@ -14,6 +14,7 @@ class UpdatesAndMoreTest {
         assertTrue(Versions.isNewer("v1.10.2", "1.10.1"))
         assertTrue(Versions.isNewer("1.10.0", "1.9.9")) // by number, not by text
         assertTrue(Versions.isNewer("2.0.1", "2.0"))
+        assertTrue(Versions.isNewer("v2.4.0", "2.3.1"))
     }
 
     @Test

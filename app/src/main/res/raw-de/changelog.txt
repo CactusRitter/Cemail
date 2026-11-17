@@ -1,3 +1,9 @@
+## 2.4.0
+- Updates werden in der App mit Fortschrittsbalken heruntergeladen, danach öffnet sich die Installation.
+- Ausgewählte Nachrichten haben einen Rahmen und ein Häkchen, die zu jedem Design passen.
+- Die Sicherung ist jetzt eine .zip-Datei und enthält auch deine Kontenliste, stummgeschaltete, angeheftete und zurückgestellte Nachrichten und die App-Sprache. Auf einem neuen Handy stellst du sie im Willkommensbildschirm wieder her und meldest dich nur noch bei deinen Konten an.
+- Zurück im IMAP-Kontoformular führt zum vorherigen Bildschirm, statt die App zu schließen.
+
 ## 2.3.1
 - Brutalist: Der Schatten der Karten flackert rechts nicht mehr, wenn du das Konto wechselst, eine Mail archivierst oder Unterlabels im Menü öffnest.
 

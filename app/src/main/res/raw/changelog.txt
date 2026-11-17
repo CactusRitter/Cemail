@@ -1,3 +1,9 @@
+## 2.4.0
+- Updates download inside the app with a progress bar, and the installer opens when they finish.
+- Selected messages show an outline and a check badge that match each design.
+- The backup is now a .zip that also keeps your list of accounts, muted, pinned and snoozed messages and the app language. On a new phone, restore it from the welcome screen and just sign in to your accounts again.
+- Back on the IMAP account form returns to the previous screen instead of closing the app.
+
 ## 2.3.1
 - Brutalist: card shadows no longer flicker on the right when you switch accounts, archive a message or open sub-labels in the menu.
 
