@@ -1,3 +1,6 @@
+## 2.4.1
+- Wenn du die Liste scrollst, scheinen die Mails nicht mehr hinter der Statusleiste und der oberen Leiste durch.
+
 ## 2.4.0
 - Updates werden in der App mit Fortschrittsbalken heruntergeladen, danach öffnet sich die Installation.
 - Ausgewählte Nachrichten haben einen Rahmen und ein Häkchen, die zu jedem Design passen.

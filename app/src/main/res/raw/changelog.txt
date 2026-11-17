@@ -1,3 +1,6 @@
+## 2.4.1
+- When you scroll the list, messages no longer show through behind the status bar and the top row.
+
 ## 2.4.0
 - Updates download inside the app with a progress bar, and the installer opens when they finish.
 - Selected messages show an outline and a check badge that match each design.

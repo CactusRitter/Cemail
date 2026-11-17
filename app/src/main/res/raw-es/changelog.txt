@@ -1,3 +1,6 @@
+## 2.4.1
+- Al desplazar la lista, los correos ya no se ven por detrás de la barra de estado ni de la fila de arriba.
+
 ## 2.4.0
 - Las actualizaciones se descargan dentro de la app con una barra de progreso, y al terminar se abre el instalador.
 - Los correos seleccionados llevan un contorno y una insignia ✓ que siguen cada diseño.

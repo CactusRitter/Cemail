@@ -4,6 +4,8 @@ Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones pri
 Cada versión se guarda en Google Drive (`Mi unidad/Ce Apps/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
 ## Sin publicar
+
+## 2.4.1 — 2026-11-17
 - La lista ya no se mezcla con la barra de estado ni con la fila de arriba (menú, título, búsqueda) al desplazarla: detrás de ellas aparece una franja (`TopScrim`, componente común copiado idéntico de Cenotes 719300a a `Glass.kt`). En Cristal difumina lo que pasa por debajo con Haze, que se desvanece hacia abajo; en los demás diseños es el color de fondo del diseño, que se desvanece en los últimos 24 dp. Solo aparece con la lista desplazada, así que en reposo todo se ve igual que antes. No recibe toques. Va en `ListScreen.kt`, entre la lista y la fila superior, así que tampoco tapa los botones ni su sombra dura. Las demás pantallas no la necesitan: en Redactar y en el formulario IMAP el contenido no pasa bajo la barra de estado y la cabecera es una píldora opaca; en el lector el texto se desplaza dentro de su propia tarjeta; Ajustes pone la cabecera encima del contenido.
 
 ## 2.4.0 — 2026-11-17
