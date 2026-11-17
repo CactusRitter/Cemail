@@ -4,6 +4,7 @@ Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones pri
 Cada versión se guarda en Google Drive (`Mi unidad/Ce Apps/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
 ## Sin publicar
+- Cristal V2, igual que Celander: Haze 2.0.1 (`hazeBlur`, capas `GlassLayers`, `LocalHazeState`), curva de transparencia con contraste AA (`GlassTokens`), sombra suave `softShadow`, `glassTile`, `fadingTopEdge`. `ui/glass` es idéntico al de Celander salvo el paquete; el ajuste de transparencia (0–100 %) se conserva. Probado en el emulador (arranque y lista, claro y oscuro); sin probar los 6 diseños uno a uno ni la tableta.
 - La sombra de la barra de formato de Redactar (negrita, cursiva…) ya no se recorta mientras la barra aparece o desaparece: en Brutalista quedaba una raya y la sombra entera saltaba al final. `AnimatedVisibility` dibuja el fundido en una capa del tamaño de su contenido; el margen de 12 dp alrededor de la barra ahora va dentro de esa capa, así que la sombra (dura o suave) cabe y la barra queda exactamente en el mismo sitio. Probado a cámara lenta en Brutalista claro y oscuro, Cristal claro y oscuro, Moderno, Retro 98, Papel oscuro y AMOLED.
 
 ## 2.4.1 — 2026-11-17
