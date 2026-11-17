@@ -132,6 +132,8 @@ internal fun MailBox.icon(): ImageVector = when (this) {
 fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSettings, settingsRepo: SettingsRepository) {
     var showSettings by rememberSaveable { mutableStateOf(false) }
     var settingsRoute by rememberSaveable { mutableStateOf(SettingsRoute.MAIN) }
+    // How many accounts there were last time (-1 = not known yet); kept out here so it survives the IMAP form.
+    var knownAccounts by rememberSaveable { mutableStateOf(-1) }
     val acc by accountVm.state.collectAsStateWithLifecycle()
     // New messages are written from the selected account; in the unified view, from the default one of Settings.
     val defaultFrom = acc.accounts.firstOrNull { it.id == acc.selectedId }
@@ -153,15 +155,31 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
             else -> accountVm.startSignIn(a.email)?.let { launcher.launch(it) }
         }
     }
-    imapForm?.let { kind ->
+    // The IMAP form grows in over the screen it was opened from (sign-in, Accounts to add, Settings) and Back (the
+    // arrow, the key or the gesture) shrinks it away to that screen again, like the app's other screens.
+    AnimatedContent(
+        targetState = imapForm,
+        contentKey = { it != null },
+        transitionSpec = {
+            if (targetState != null) {
+                (fadeIn(glassSpring()) + scaleIn(softBounceSpring(), initialScale = 0.9f)) togetherWith
+                    (fadeOut(glassSpring()) + scaleOut(glassSpring(), targetScale = 1.04f))
+            } else {
+                (fadeIn(glassSpring()) + scaleIn(softBounceSpring(), initialScale = 1.06f)) togetherWith
+                    (fadeOut(glassSpring()) + scaleOut(glassSpring(), targetScale = 0.9f))
+            }.using(SizeTransform(clip = false))
+        },
+        label = "imapForm",
+    ) { kind ->
+    if (kind != null) {
         val restored = kind.removePrefix(IMAP_RESTORED).takeIf { kind.startsWith(IMAP_RESTORED) }
             ?.let { id -> accountsToAdd.firstOrNull { it.id == id } }
         com.cemail.app.ui.account.ImapSetupScreen(accountVm, yahoo = kind == IMAP_YAHOO, restored = restored) { imapForm = null }
-        return
+        return@AnimatedContent
     }
     if (!acc.loaded) {
         GlassBackground {}
-        return
+        return@AnimatedContent
     }
     if (acc.accounts.isEmpty() && !acc.demo) {
         var restoreMessage by rememberSaveable { mutableStateOf<Int?>(null) }
@@ -171,7 +189,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
             onRestore = backupFiles.restore, restoreMessage = restoreMessage,
             accountsToAdd = accountsToAdd, onAddRestored = addRestored, onForgetRestored = backup::forgetAccountsToAdd,
         )
-        return
+        return@AnimatedContent
     }
     val state by vm.state.collectAsStateWithLifecycle()
     val draft = state.draft
@@ -251,9 +269,13 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
         Launches.pending.value = null
     }
 
-    // A new account shows up in the list: leave the "add" screen for the accounts.
+    // A new account shows up in the list: leave the "add" screen for the accounts. Only when the number really grows:
+    // this screen is composed again on coming back from the IMAP form, and that must stay on the "add" screen.
     val accountCount = acc.accounts.size
-    LaunchedEffect(accountCount) { if (settingsRoute == SettingsRoute.ADD) settingsRoute = SettingsRoute.ACCOUNTS }
+    LaunchedEffect(accountCount) {
+        if (knownAccounts in 0 until accountCount && settingsRoute == SettingsRoute.ADD) settingsRoute = SettingsRoute.ACCOUNTS
+        knownAccounts = accountCount
+    }
 
     // In the unified inbox every message carries a thin line in the colour of its account.
     val unifiedView = acc.accounts.size > 1 && acc.selectedId == null
@@ -417,6 +439,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
     }
 
     state.snoozeTargets?.let { SnoozeDialog(onPick = vm::snooze, onDismiss = vm::dismissSnooze) }
+    }
 }
 
 @Composable

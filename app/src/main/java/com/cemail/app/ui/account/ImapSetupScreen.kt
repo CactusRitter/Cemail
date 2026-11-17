@@ -98,6 +98,9 @@ fun ImapSetupScreen(
         smtpHost = preset.smtpHost; smtpPort = preset.smtpPort.toString(); smtpStartTls = preset.smtpSecurity == Security.STARTTLS
     }
 
+    // Back (key or gesture) leaves the form like its arrow does, without asking: nothing is saved until "Add account".
+    androidx.activity.compose.BackHandler(onBack = onClose)
+
     // Filled once (the user may then change anything); the fields are saveable, so a rotation keeps the edits.
     androidx.compose.runtime.LaunchedEffect(restored) {
         val account = restored ?: return@LaunchedEffect
