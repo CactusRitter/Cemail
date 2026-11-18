@@ -10,8 +10,7 @@ Lo que necesita una sesión nueva (o tras `/clear`) además de `CLAUDE.md`. Mant
 ## En curso
 - **Cierre libhwui (SIGSEGV ~7 s tras abrir, Cristal con transparencia 65/99 %)**, encontrado por Cenotes: tarjetas con fuente Haze CONTENT dentro de la fuente BACKGROUND (se desenfocaban a su padre). Orden de Ce Líder: comprobar Cemail.
   - Código revisado: **no hay anidado**. Solo `ui/mail/ListScreen.kt` declara fuentes (fondo = `GlassBackground` vacío con `BACKGROUND`, `LazyColumn` con `CONTENT`, hermanos). Lector, Ajustes, Redactar y menú no declaran fuentes.
-  - Prueba 65 %: 16 s en lista + 16 s en lector, sin SIGSEGV. **Falta la prueba al 99 %** (lista y lector 15 s, mirar `adb logcat -d | grep -i 'SIGSEGV\|Fatal signal'`). Ruta: demo → menú (105,228) → engranaje (664,265) → Apariencia (350,640) → deslizar → barra de transparencia y=1827 (x=995 ≈ 99 %) → Atrás ×2.
-  - Al acabar: resumen de 4 líneas a Ce Líder. Si hubiera anidado: arreglar con hermanos, commit, push, nota en «Sin publicar».
+  - **Resuelto (2026-11-18):** pruebas al 65 % y al 99 % (lista 16 s + lector 16 s cada una), sin SIGSEGV ni excepciones en logcat. Sin cambios de código. Ruta de prueba: demo → menú (105,228) → engranaje (664,265) → Apariencia (350,640) → deslizar → barra y≈1885 (x=995 ≈ 99 %).
 - El emulador se cae solo a veces (dos veces hoy). Arrancarlo con `scripts/emulator.ps1 start` en segundo plano; se perdió el modo demo al parar la app (hay que volver a pulsar «Look around»).
 
 ## Pendiente
