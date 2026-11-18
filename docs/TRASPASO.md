@@ -4,8 +4,8 @@ Lo que necesita una sesión nueva (o tras `/clear`) además de `CLAUDE.md`. Mant
 Última actualización: 2026-11-18.
 
 ## Estado
-- Última versión publicada: **2.4.1** (versionCode 97), release `v2.4.1` en GitHub con APK; también en `G:\Mi unidad\Ce Apps\Cemail\`.
-- `main` limpio y subido. Lo hecho después de 2.4.1 está en `CHANGELOG.md` → «Sin publicar».
+- Última versión publicada: **2.5.0** (versionCode 98, Cristal V2 + sombra barra de formato), release `v2.5.0` en GitHub con APK; también en `G:Mi unidadCe AppsCemail`.
+- `main` limpio y subido. Nada pendiente de publicar.
 
 ## En curso
 - **Cierre libhwui (SIGSEGV ~7 s tras abrir, Cristal con transparencia 65/99 %)**, encontrado por Cenotes: tarjetas con fuente Haze CONTENT dentro de la fuente BACKGROUND (se desenfocaban a su padre). Orden de Ce Líder: comprobar Cemail.
@@ -14,7 +14,6 @@ Lo que necesita una sesión nueva (o tras `/clear`) además de `CLAUDE.md`. Mant
 - El emulador se cae solo a veces (dos veces hoy). Arrancarlo con `scripts/emulator.ps1 start` en segundo plano; se perdió el modo demo al parar la app (hay que volver a pulsar «Look around»).
 
 ## Pendiente
-- «Sin publicar»: sombra de la barra de formato de Redactar (edd4798) y **Cristal V2** (b2f2b8b, 616f849: Haze 2.0.1, `ui/glass` idéntico al de Celander, `ui/mail/MailMotion.kt`; lo hizo una sesión lateral). Se publica cuando César lo ordene.
 - Revisión Cristal V2 (2026-11-18, emulador): lista y lector de los 6 diseños (claro), Ajustes → Apariencia en Cristal, transparencia 0/99 % en Cristal, y oscuro en Cristal y Brutalista (lista y lector): sin fallos. NO probado: Ajustes en los otros 5 diseños, transparencia en otro diseño. **Pendiente de César: probar la tableta.**
 
 ## Cómo se trabaja (decisiones de César que no están en el código)
