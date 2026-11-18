@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Ce Apps/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
+## Sin publicar
+- Redactar: De, Para, Cc y Asunto quedan fijos bajo la barra superior y solo el mensaje (con su firma, el correo citado y los adjuntos) hace scroll, así que los campos ya no pasan por debajo de la barra de cristal ni se leen a través de ella (captura de César en el OPPO). Antes todo iba en un único `verticalScroll`. Ahora son dos tarjetas: la de los campos (fija) y la del mensaje, en una columna con `weight(1f)` que se desplaza; el margen lateral de 12 dp va dentro de esa columna para que no recorte las sombras y, ya desplazada, el texto se difumina al subir con `fadingTopEdge(20.dp)` (sin colores ni radios nuevos). Con teclado y un mensaje de 30 líneas el cursor y la última línea siguen visibles sobre la barra de formato. Probado en el emulador (Cristal 65 %, claro); sin probar oscuro, 99 % ni los demás diseños. El lector no necesita cambio: su texto se desplaza dentro de su propia tarjeta, bajo una cabecera fija.
+
 ## 2.5.1 — 2026-11-18
 - Arreglo grave del menú lateral (cajón) en Cristal: el `HazeState` se creaba dentro de `ListScreen`, así que el cajón (hermano de la lista en `MailApp`) tenía `LocalHazeState` nulo: sin desenfoque y con el relleno bajo de «sin blur», y la lista se veía a través del texto. Ahora `MailApp` crea el estado (`listHaze`), se lo pasa a `ListScreen` (parámetro `haze`) y lo provee al contenido del cajón. Probado en el emulador con el cajón abierto en Cristal al 65 %.
 

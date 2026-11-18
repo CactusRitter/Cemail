@@ -5,7 +5,7 @@ Lo que necesita una sesión nueva (o tras `/clear`) además de `CLAUDE.md`. Mant
 
 ## Estado
 - Última versión publicada: **2.5.1** (versionCode 99; 2.5.0 = Cristal V2, 2.5.1 = arreglo del cajón sin desenfoque), release `v2.5.1` en GitHub con APK; también en `G:\Mi unidad\Ce Apps\Cemail\`.
-- `main` limpio y subido. Nada pendiente de publicar.
+- Sin publicar: Redactar con campos fijos y solo el mensaje con scroll (ver `CHANGELOG.md`). Pendiente de probar: oscuro, 99 % y los otros diseños.
 
 ## En curso
 - **Cierre libhwui (SIGSEGV ~7 s tras abrir, Cristal con transparencia 65/99 %)**, encontrado por Cenotes: tarjetas con fuente Haze CONTENT dentro de la fuente BACKGROUND (se desenfocaban a su padre). Orden de Ce Líder: comprobar Cemail.

@@ -33,6 +33,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import com.cemail.app.ui.glass.fadingTopEdge
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -221,11 +222,12 @@ fun ComposeScreen(
             Modifier
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.safeDrawing)
-                .verticalScroll(rememberScrollState())
-                .padding(start = 12.dp, end = 12.dp, top = 80.dp, bottom = 84.dp),
+                .padding(top = 80.dp, bottom = 84.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Column(Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card)) {
+            // From, To, Cc and Subject stay fixed under the top bar; only the message (below) scrolls, so the fields never
+            // pass under the bar.
+            Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp).glass(RoundedCornerShape(24.dp), GlassKind.Card)) {
                 if (from != null) {
                     FromField(from, accounts) { picked ->
                         if (picked.id == from.id) return@FromField
@@ -305,7 +307,19 @@ fun ComposeScreen(
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, autoCorrectEnabled = true, keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
                     colors = colors,
                 )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            }
+            // The message, its signature, the quoted mail and the attachments: the part that scrolls.
+            // The 12 dp side margin is inside the scrolling area so the cards' shadows are not cut at its sides; once scrolled,
+            // the text fades out at the top instead of ending in a hard line under the fields.
+            val bodyScroll = rememberScrollState()
+            Column(
+                Modifier.weight(1f)
+                    .then(if (bodyScroll.canScrollBackward) Modifier.fadingTopEdge(20.dp) else Modifier)
+                    .verticalScroll(bodyScroll)
+                    .padding(horizontal = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+            Column(Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card)) {
                 RichTextEditor(
                     state = rich,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 240.dp)
@@ -397,6 +411,7 @@ fun ComposeScreen(
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            }
             }
         }
 
