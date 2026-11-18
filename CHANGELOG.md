@@ -3,6 +3,9 @@
 Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones principales.
 Cada versión se guarda en Google Drive (`Mi unidad/Ce Apps/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
+## 2.5.1 — 2026-11-18
+- Arreglo grave del menú lateral (cajón) en Cristal: el `HazeState` se creaba dentro de `ListScreen`, así que el cajón (hermano de la lista en `MailApp`) tenía `LocalHazeState` nulo: sin desenfoque y con el relleno bajo de «sin blur», y la lista se veía a través del texto. Ahora `MailApp` crea el estado (`listHaze`), se lo pasa a `ListScreen` (parámetro `haze`) y lo provee al contenido del cajón. Probado en el emulador con el cajón abierto en Cristal al 65 %.
+
 ## 2.5.0 — 2026-11-18
 - Cristal V2, igual que Celander: Haze 2.0.1 (`hazeBlur`, capas `GlassLayers`, `LocalHazeState`), curva de transparencia con contraste AA (`GlassTokens`), sombra suave `softShadow`, `glassTile`, `fadingTopEdge`. `ui/glass` es idéntico al de Celander salvo el paquete; el ajuste de transparencia (0–100 %) se conserva. Probado en el emulador (arranque y lista, claro y oscuro); sin probar los 6 diseños uno a uno ni la tableta.
 - La sombra de la barra de formato de Redactar (negrita, cursiva…) ya no se recorta mientras la barra aparece o desaparece: en Brutalista quedaba una raya y la sombra entera saltaba al final. `AnimatedVisibility` dibuja el fundido en una capa del tamaño de su contenido; el margen de 12 dp alrededor de la barra ahora va dentro de esa capa, así que la sombra (dura o suave) cabe y la barra queda exactamente en el mismo sitio. Probado a cámara lenta en Brutalista claro y oscuro, Cristal claro y oscuro, Moderno, Retro 98, Papel oscuro y AMOLED.

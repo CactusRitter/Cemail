@@ -327,6 +327,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
             !state.searching && (state.box != MailBox.INBOX || state.labelId != null),
     ) { vm.selectBox(MailBox.INBOX) }
 
+    val listHaze = dev.chrisbanes.haze.rememberHazeState()
     GlassBackground {
         // With the list on the right (wide screens), the menu slides in from the right too: the drawer is laid out
         // mirrored, and the menu and the screens inside it get the real direction back.
@@ -344,7 +345,9 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                     drawerContainerColor = Color.Transparent,
                     windowInsets = WindowInsets(0),
                 ) {
-                    CompositionLocalProvider(LocalLayoutDirection provides direction) {
+                    // The menu is outside ListScreen: without the list's haze state its glass neither blurs nor gets the
+                    // blurred fill, and the list shows through it. As floating glass (no source of its own) it blurs every layer.
+                    CompositionLocalProvider(LocalLayoutDirection provides direction, com.cemail.app.ui.glass.LocalHazeState provides listHaze) {
                     DrawerContent(state, acc, unified = unifiedView, revealed = drawer.targetValue == DrawerValue.Open, onOpenSettings = {
                         settingsRoute = SettingsRoute.MAIN
                         showSettings = true
@@ -371,7 +374,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
             var lastOpen by remember { mutableStateOf(open) }
             if (open != null) lastOpen = open
             val listScreen: @Composable () -> Unit = {
-                ListScreen(state, vm, filter = listFilter, quickButton = { haze -> QuickButton(settings.quickAction, listFilter, { listFilter = it }, acc, { id -> accountVm.select(id) }, { vm.setSearching(true) }, haze) }, grouped = settings.groupByDate && state.query.isBlank(), groupCards = settings.groupCards, stripeOf = stripeOf, showSenderCircle = settings.showSenderCircle, swipe = settings.swipe, listState = listState, onOpenDrawer = { scope.launch { drawer.open() } })
+                ListScreen(state, vm, filter = listFilter, quickButton = { haze -> QuickButton(settings.quickAction, listFilter, { listFilter = it }, acc, { id -> accountVm.select(id) }, { vm.setSearching(true) }, haze) }, grouped = settings.groupByDate && state.query.isBlank(), groupCards = settings.groupCards, stripeOf = stripeOf, showSenderCircle = settings.showSenderCircle, swipe = settings.swipe, listState = listState, haze = listHaze, onOpenDrawer = { scope.launch { drawer.open() } })
             }
             // Tablets and open foldables (wide windows): the list and the open message side by side, like Gmail.
             val twoPane = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= TWO_PANE_MIN_WIDTH

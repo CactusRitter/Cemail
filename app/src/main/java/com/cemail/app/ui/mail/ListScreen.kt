@@ -132,6 +132,8 @@ fun ListScreen(
     filter: ListFilter = ListFilter.NONE,
     /** Draws the quick button (it needs the list's haze state); drawn just above "write". */
     quickButton: @Composable (dev.chrisbanes.haze.HazeState) -> Unit = {},
+    /** Owned by MailApp so the menu (a sibling of the list inside the drawer) blurs the same sources. */
+    haze: dev.chrisbanes.haze.HazeState = rememberHazeState(),
 ) {
     val live = remember(fullState, filter) { fullState.copy(pinned = fullState.pinned.filteredBy(filter), others = fullState.others.filteredBy(filter)) }
     // Changing account, folder or filter swaps the list with an animation: the old rows leave one by one (the list is held
@@ -164,7 +166,6 @@ fun ListScreen(
     }
     // The new rows can arrive a moment after the swap; the list stays at the top meanwhile.
     LaunchedEffect(epoch, live.pinned, live.others) { if (entering) listState.scrollToItem(0) }
-    val haze = rememberHazeState()
     val selecting = state.selection.isNotEmpty()
     // Labelling the selection: the labels of each account among the chosen messages (only Gmail has labels).
     val chosenMails = (state.pinned + state.others).filter { it.id in state.selection }

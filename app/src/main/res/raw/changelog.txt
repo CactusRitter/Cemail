@@ -1,3 +1,6 @@
+## 2.5.1
+- Fixed the side menu: it was see-through and the list showed behind its text. It is frosted glass again.
+
 ## 2.5.0
 - New Glass look, shared with Celander: smoother blur, softer shadows and better text contrast at every transparency level.
 - Writing a message: the shadow of the formatting bar no longer gets cut off when it appears or disappears.

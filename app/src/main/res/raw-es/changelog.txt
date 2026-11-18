@@ -1,3 +1,6 @@
+## 2.5.1
+- Arreglado el menú lateral: era transparente y se veía la lista detrás del texto. Vuelve a ser de cristal esmerilado.
+
 ## 2.5.0
 - Nuevo aspecto Cristal, compartido con Celander: desenfoque más suave, sombras más delicadas y mejor contraste del texto con cualquier transparencia.
 - Redactar: la sombra de la barra de formato ya no se recorta cuando aparece o desaparece.

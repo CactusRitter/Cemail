@@ -1,3 +1,6 @@
+## 2.5.1
+- Seitenmenü repariert: Es war durchsichtig und die Liste schien hinter dem Text durch. Es ist wieder Milchglas.
+
 ## 2.5.0
 - Neuer Glas-Look, gemeinsam mit Celander: weicherer Weichzeichner, sanftere Schatten und besserer Textkontrast bei jeder Transparenz.
 - Schreiben: Der Schatten der Formatierungsleiste wird nicht mehr abgeschnitten, wenn sie ein- oder ausgeblendet wird.
