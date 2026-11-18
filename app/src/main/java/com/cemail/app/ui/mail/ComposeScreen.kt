@@ -13,6 +13,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -217,17 +218,73 @@ fun ComposeScreen(
     var writingBody by remember { mutableStateOf(false) }
     var showCopies by rememberSaveable { mutableStateOf(draft.cc.isNotBlank() || draft.bcc.isNotBlank()) }
 
+    // The fixed card of fields shrinks to a small pill (To and Subject) while the message is being written or scrolled, so
+    // the message gets the room; it opens again on a tap on the pill or when the message is scrolled back to the top.
+    val bodyScroll = rememberScrollState()
+    var scrolled by remember { mutableStateOf(false) }
+    var headerOpen by remember { mutableStateOf(false) }
+    LaunchedEffect(writingBody) { if (writingBody) headerOpen = false }
+    LaunchedEffect(bodyScroll) {
+        snapshotFlow { bodyScroll.isScrollInProgress to bodyScroll.value }.collect { (moving, value) ->
+            if (moving) {
+                scrolled = value > 0
+                headerOpen = value == 0
+            }
+        }
+    }
+    val collapsed = !headerOpen && (writingBody || scrolled)
+
     Box(Modifier.fillMaxSize().imePadding()) {
         Column(
             Modifier
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.safeDrawing)
                 .padding(top = 80.dp, bottom = 84.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             // From, To, Cc and Subject stay fixed under the top bar; only the message (below) scrolls, so the fields never
-            // pass under the bar.
-            Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp).glass(RoundedCornerShape(24.dp), GlassKind.Card)) {
+            // pass under the bar. The margin (and the room of the shadow) is inside the animated layer, which cuts to its size.
+            androidx.compose.animation.AnimatedContent(
+                targetState = collapsed,
+                modifier = Modifier.fillMaxWidth(),
+                transitionSpec = {
+                    (fadeIn(com.cemail.app.ui.glass.glassSpring()) + androidx.compose.animation.scaleIn(com.cemail.app.ui.glass.glassSpring(), initialScale = 0.94f)) togetherWith
+                        fadeOut(com.cemail.app.ui.glass.glassSpring()) using
+                        androidx.compose.animation.SizeTransform(clip = false) { _, _ -> com.cemail.app.ui.glass.glassSpring() }
+                },
+                label = "composeHeader",
+            ) { isCollapsed ->
+            if (isCollapsed) {
+                Box(Modifier.padding(start = 12.dp, end = 12.dp, bottom = 8.dp)) {
+                    Column(
+                        Modifier.fillMaxWidth().glass(CircleShape, GlassKind.Card)
+                            .clickable(role = Role.Button) {
+                                scrolled = false
+                                headerOpen = true
+                                scope.launch { bodyScroll.animateScrollTo(0) }
+                            }
+                            .padding(horizontal = 24.dp, vertical = 10.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        Text(
+                            draft.to.ifBlank { stringResource(R.string.compose_to) },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (draft.to.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            draft.subject.ifBlank { stringResource(R.string.compose_subject) },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+            } else {
+            Box(Modifier.padding(start = 12.dp, end = 12.dp, bottom = 8.dp)) {
+            Column(Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card)) {
                 if (from != null) {
                     FromField(from, accounts) { picked ->
                         if (picked.id == from.id) return@FromField
@@ -308,10 +365,12 @@ fun ComposeScreen(
                     colors = colors,
                 )
             }
+            }
+            }
+            }
             // The message, its signature, the quoted mail and the attachments: the part that scrolls.
             // The 12 dp side margin is inside the scrolling area so the cards' shadows are not cut at its sides; once scrolled,
             // the text fades out at the top instead of ending in a hard line under the fields.
-            val bodyScroll = rememberScrollState()
             Column(
                 Modifier.weight(1f)
                     .then(if (bodyScroll.canScrollBackward) Modifier.fadingTopEdge(20.dp) else Modifier)
