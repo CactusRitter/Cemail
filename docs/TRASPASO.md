@@ -4,7 +4,7 @@ Lo que necesita una sesión nueva (o tras `/clear`) además de `CLAUDE.md`. Mant
 Última actualización: 2026-11-18.
 
 ## Estado
-- Última versión publicada: **2.5.0** (versionCode 98, Cristal V2 + sombra barra de formato), release `v2.5.0` en GitHub con APK; también en `G:Mi unidadCe AppsCemail`.
+- Última versión publicada: **2.5.0** (versionCode 98, Cristal V2 + sombra barra de formato), release `v2.5.0` en GitHub con APK; también en `G:\Mi unidad\Ce Apps\Cemail\`.
 - `main` limpio y subido. Nada pendiente de publicar.
 
 ## En curso
