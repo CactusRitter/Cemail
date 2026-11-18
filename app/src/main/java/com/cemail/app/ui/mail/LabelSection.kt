@@ -31,10 +31,10 @@ import androidx.compose.ui.unit.dp
 import com.cemail.app.R
 import com.cemail.app.data.mail.LabelNode
 import com.cemail.app.data.mail.buildLabelTree
-import com.cemail.app.ui.glass.GlassKind
-import com.cemail.app.ui.glass.glass
-import com.cemail.app.ui.glass.popIn
-import com.cemail.app.ui.glass.pressScale
+import com.ce.kit.ui.glass.GlassKind
+import com.ce.kit.ui.glass.glass
+import com.ce.kit.ui.glass.popIn
+import com.ce.kit.ui.glass.pressScale
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.layout
@@ -121,7 +121,7 @@ private fun LabelRow(
     // While it opens or closes, the block is drawn cut to its own size, which took away the solid shadow (Brutalist) of
     // the sub-labels on the end side and under the last one. The block holds that room inside it and is laid out as if
     // it did not: the rows stay where they were and their shadow is inside what is cut. The room is 0 in other looks.
-    val room = com.cemail.app.ui.theme.LocalSkin.current.hardShadow
+    val room = com.ce.kit.ui.theme.LocalSkin.current.hardShadow
     AnimatedVisibility(
         expanded,
         modifier = Modifier.layout { measurable, constraints ->

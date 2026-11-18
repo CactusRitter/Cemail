@@ -1,7 +1,7 @@
 package com.cemail.app.data
 
 import android.content.Context
-import com.cemail.app.ui.theme.Accent
+import com.ce.kit.ui.theme.Accent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,19 +22,19 @@ data class AppSettings(
     /** A colour of the free hue bar (0–360) instead of [accent]; null = the chosen accent. */
     val customHue: Float? = null,
     /** Light or dark: following the phone, or always one of them. */
-    val themeMode: com.cemail.app.ui.theme.ThemeMode = com.cemail.app.ui.theme.ThemeMode.SYSTEM,
+    override val themeMode: com.ce.kit.ui.theme.ThemeMode = com.ce.kit.ui.theme.ThemeMode.SYSTEM,
     /** Background and glass look (Classic, Neutral, Aurora). */
-    val themeStyle: com.cemail.app.ui.theme.ThemeStyle = com.cemail.app.ui.theme.ThemeStyle.AURORA,
+    override val themeStyle: com.ce.kit.ui.theme.ThemeStyle = com.ce.kit.ui.theme.ThemeStyle.AURORA,
     /** The whole look of the app (glass, or one of the looks being tried out). */
-    val skin: com.cemail.app.ui.theme.Skin = com.cemail.app.ui.theme.Skin.GLASS,
+    override val skin: com.ce.kit.ui.theme.Skin = com.ce.kit.ui.theme.Skin.GLASS,
     /** Glass with a soft shadow that lifts every surface off the background (the "3D shadow"). */
-    val depth3d: Boolean = false,
+    override val depth3d: Boolean = false,
     /** Left-handed: floating buttons on the left and, on tablets, the list on the right. */
     val listOnRight: Boolean = false,
     /** Where Settings sits on a wide screen: -1 start, 0 centre, 1 end (moved by dragging beside it). */
     val settingsDock: Int = 0,
     /** 0 = solid glass, 100 = fully see-through. */
-    val transparency: Int = 65,
+    override val transparency: Int = 65,
     /** Load remote images in messages without asking (off by default: they can be tracking pixels). */
     val alwaysShowImages: Boolean = false,
     // In a dark theme, messages are shown with dark colours (the WebView darkens them) instead of on a white page.
@@ -72,12 +72,12 @@ data class AppSettings(
     val accountOrder: List<String> = emptyList(),
     /** What the small button above "write" does. */
     val quickAction: QuickAction = QuickAction.UNREAD,
-) {
+) : com.ce.kit.ui.theme.CeAppearance {
     fun lookOf(accountId: String): AccountLook = accountLooks[accountId] ?: AccountLook()
 
     /** The app's colour in its four shades: the custom one, or the chosen accent. */
-    val accentPalette: com.cemail.app.ui.theme.AccentPalette
-        get() = customHue?.let { com.cemail.app.ui.theme.customPalette(it) } ?: accent.palette
+    override val accentPalette: com.ce.kit.ui.theme.AccentPalette
+        get() = customHue?.let { com.ce.kit.ui.theme.customPalette(it) } ?: accent.palette
     /** The interval that applies to this account: its own, or the general one. */
     fun syncMinutesFor(accountId: String): Int = accountSync[accountId] ?: syncMinutes
 }
@@ -108,10 +108,10 @@ class SettingsRepository(context: Context) {
             ?.let { name -> Accent.entries.firstOrNull { it.name == name } } ?: Accent.INDIGO,
         customHue = prefs.getFloat(KEY_HUE, -1f).takeIf { it >= 0f },
         themeStyle = prefs.getString(KEY_STYLE, null)
-            ?.let { n -> com.cemail.app.ui.theme.ThemeStyle.entries.firstOrNull { it.name == n } } ?: com.cemail.app.ui.theme.ThemeStyle.AURORA,
+            ?.let { n -> com.ce.kit.ui.theme.ThemeStyle.entries.firstOrNull { it.name == n } } ?: com.ce.kit.ui.theme.ThemeStyle.AURORA,
         themeMode = prefs.getString(KEY_THEME, null)
-            ?.let { n -> com.cemail.app.ui.theme.ThemeMode.entries.firstOrNull { it.name == n } } ?: com.cemail.app.ui.theme.ThemeMode.SYSTEM,
-        skin = prefs.getString(KEY_SKIN, null)?.let { n -> com.cemail.app.ui.theme.Skin.entries.firstOrNull { it.name == n } } ?: com.cemail.app.ui.theme.Skin.GLASS,
+            ?.let { n -> com.ce.kit.ui.theme.ThemeMode.entries.firstOrNull { it.name == n } } ?: com.ce.kit.ui.theme.ThemeMode.SYSTEM,
+        skin = prefs.getString(KEY_SKIN, null)?.let { n -> com.ce.kit.ui.theme.Skin.entries.firstOrNull { it.name == n } } ?: com.ce.kit.ui.theme.Skin.GLASS,
         depth3d = prefs.getBoolean(KEY_DEPTH, false),
         listOnRight = prefs.getBoolean(KEY_LIST_RIGHT, false),
         settingsDock = prefs.getInt(KEY_SETTINGS_DOCK, 0).coerceIn(-1, 1),
@@ -186,7 +186,7 @@ class SettingsRepository(context: Context) {
         _state.value = _state.value.copy(customHue = hue)
     }
 
-    fun setThemeStyle(style: com.cemail.app.ui.theme.ThemeStyle) {
+    fun setThemeStyle(style: com.ce.kit.ui.theme.ThemeStyle) {
         prefs.edit().putString(KEY_STYLE, style.name).apply()
         _state.value = _state.value.copy(themeStyle = style)
     }
@@ -240,7 +240,7 @@ class SettingsRepository(context: Context) {
         _state.value = read()
     }
 
-    fun setSkin(skin: com.cemail.app.ui.theme.Skin) {
+    fun setSkin(skin: com.ce.kit.ui.theme.Skin) {
         prefs.edit().putString(KEY_SKIN, skin.name).apply()
         _state.value = _state.value.copy(skin = skin)
     }
@@ -260,7 +260,7 @@ class SettingsRepository(context: Context) {
         _state.value = _state.value.copy(listOnRight = value)
     }
 
-    fun setThemeMode(mode: com.cemail.app.ui.theme.ThemeMode) {
+    fun setThemeMode(mode: com.ce.kit.ui.theme.ThemeMode) {
         prefs.edit().putString(KEY_THEME, mode.name).apply()
         _state.value = _state.value.copy(themeMode = mode)
     }

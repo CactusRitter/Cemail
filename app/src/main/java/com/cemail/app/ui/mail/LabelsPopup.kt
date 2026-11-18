@@ -40,13 +40,13 @@ import com.cemail.app.data.mail.Label
 import com.cemail.app.data.mail.LabelNode
 import com.cemail.app.data.mail.Mail
 import com.cemail.app.data.mail.buildLabelTree
-import com.cemail.app.ui.glass.GlassKind
-import com.cemail.app.ui.glass.LocalListOnRight
-import com.cemail.app.ui.glass.floatingCorner
-import com.cemail.app.ui.glass.glass
-import com.cemail.app.ui.glass.popIn
+import com.ce.kit.ui.glass.GlassKind
+import com.ce.kit.ui.glass.LocalListOnRight
+import com.ce.kit.ui.glass.floatingCorner
+import com.ce.kit.ui.glass.glass
+import com.ce.kit.ui.glass.popIn
 import com.cemail.app.ui.icons.CemailIcons
-import com.cemail.app.ui.theme.LocalSkin
+import com.ce.kit.ui.theme.LocalSkin
 
 /**
  * The user's labels with a check for each one the messages have; a tap puts it on or takes it off.

@@ -32,9 +32,9 @@ import androidx.compose.foundation.verticalScroll
 import com.cemail.app.R
 import com.cemail.app.data.backup.BackupAccount
 import com.cemail.app.ui.settings.AccountsToAdd
-import com.cemail.app.ui.glass.GlassBackground
-import com.cemail.app.ui.glass.GlassKind
-import com.cemail.app.ui.glass.glass
+import com.ce.kit.ui.glass.GlassBackground
+import com.ce.kit.ui.glass.GlassKind
+import com.ce.kit.ui.glass.glass
 import com.cemail.app.ui.icons.CemailIcons
 
 /** First screen when there is no account: one button to sign in with Google, or try the demo. */

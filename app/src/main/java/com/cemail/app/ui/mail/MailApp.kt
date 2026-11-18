@@ -50,11 +50,11 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.ui.graphics.TransformOrigin
-import com.cemail.app.ui.glass.bounceSpring
-import com.cemail.app.ui.glass.glassSpring
-import com.cemail.app.ui.glass.softBounceSpring
-import com.cemail.app.ui.glass.popIn
-import com.cemail.app.ui.glass.pressScale
+import com.ce.kit.ui.glass.bounceSpring
+import com.ce.kit.ui.glass.glassSpring
+import com.ce.kit.ui.glass.softBounceSpring
+import com.ce.kit.ui.glass.popIn
+import com.ce.kit.ui.glass.pressScale
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
@@ -95,9 +95,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.cemail.app.data.mail.Mail
 import com.cemail.app.data.mail.MailBox
-import com.cemail.app.ui.glass.GlassBackground
-import com.cemail.app.ui.glass.GlassKind
-import com.cemail.app.ui.glass.glass
+import com.ce.kit.ui.glass.GlassBackground
+import com.ce.kit.ui.glass.GlassKind
+import com.ce.kit.ui.glass.glass
 import com.cemail.app.ui.icons.CemailIcons
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -332,7 +332,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
         // With the list on the right (wide screens), the menu slides in from the right too: the drawer is laid out
         // mirrored, and the menu and the screens inside it get the real direction back.
         val direction = LocalLayoutDirection.current
-        val drawerDirection = if (!com.cemail.app.ui.glass.LocalListOnRight.current) direction
+        val drawerDirection = if (!com.ce.kit.ui.glass.LocalListOnRight.current) direction
             else if (direction == LayoutDirection.Ltr) LayoutDirection.Rtl else LayoutDirection.Ltr
         CompositionLocalProvider(LocalLayoutDirection provides drawerDirection) {
         ModalNavigationDrawer(
@@ -347,7 +347,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
                 ) {
                     // The menu is outside ListScreen: without the list's haze state its glass neither blurs nor gets the
                     // blurred fill, and the list shows through it. As floating glass (no source of its own) it blurs every layer.
-                    CompositionLocalProvider(LocalLayoutDirection provides direction, com.cemail.app.ui.glass.LocalHazeState provides listHaze) {
+                    CompositionLocalProvider(LocalLayoutDirection provides direction, com.ce.kit.ui.glass.LocalHazeState provides listHaze) {
                     DrawerContent(state, acc, unified = unifiedView, revealed = drawer.targetValue == DrawerValue.Open, onOpenSettings = {
                         settingsRoute = SettingsRoute.MAIN
                         showSettings = true
@@ -624,7 +624,7 @@ private fun TwoPane(list: @Composable () -> Unit, open: Mail?, reading: @Composa
     androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
         val listWidth = (maxWidth * 0.36f).coerceIn(360.dp, 480.dp)
         // "Message list: right" (Settings): mirrored, the list on the end side.
-        val listOnRight = com.cemail.app.ui.glass.LocalListOnRight.current
+        val listOnRight = com.ce.kit.ui.glass.LocalListOnRight.current
         Row(Modifier.fillMaxSize()) {
             if (!listOnRight) Box(Modifier.width(listWidth).fillMaxHeight()) { list() }
             Box(Modifier.weight(1f).fillMaxHeight()) {
@@ -645,7 +645,7 @@ private fun TwoPane(list: @Composable () -> Unit, open: Mail?, reading: @Composa
                                 Text(
                                     stringResource(R.string.pane_empty),
                                     style = MaterialTheme.typography.bodyLarge,
-                                    color = com.cemail.app.ui.glass.onBackdrop(MaterialTheme.colorScheme.onSurfaceVariant),
+                                    color = com.ce.kit.ui.glass.onBackdrop(MaterialTheme.colorScheme.onSurfaceVariant),
                                 )
                             }
                         }
@@ -680,7 +680,7 @@ private fun Dockable(dock: Int, onDock: (Int) -> Unit, content: @Composable () -
         val x = remember { androidx.compose.animation.core.Animatable(restX(dock)) }
         var pulled by remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
         val scope = androidx.compose.runtime.rememberCoroutineScope()
-        LaunchedEffect(dock, freePx) { x.animateTo(restX(dock), com.cemail.app.ui.glass.bounceSpring()) }
+        LaunchedEffect(dock, freePx) { x.animateTo(restX(dock), com.ce.kit.ui.glass.bounceSpring()) }
         // The empty space: the column lies on top of it, so a drag that starts on a card never reaches it.
         Box(
             Modifier.fillMaxSize().pointerInput(dock, freePx) {
@@ -693,11 +693,11 @@ private fun Dockable(dock: Int, onDock: (Int) -> Unit, content: @Composable () -
                             else -> dock
                         }
                         pulled = 0f
-                        if (next != dock) onDock(next) else scope.launch { x.animateTo(restX(dock), com.cemail.app.ui.glass.bounceSpring()) }
+                        if (next != dock) onDock(next) else scope.launch { x.animateTo(restX(dock), com.ce.kit.ui.glass.bounceSpring()) }
                     },
                     onDragCancel = {
                         pulled = 0f
-                        scope.launch { x.animateTo(restX(dock), com.cemail.app.ui.glass.bounceSpring()) }
+                        scope.launch { x.animateTo(restX(dock), com.ce.kit.ui.glass.bounceSpring()) }
                     },
                 ) { change, amount ->
                     change.consume()

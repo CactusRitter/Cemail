@@ -29,10 +29,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.cemail.app.R
 import com.cemail.app.ui.account.AccountUiState
-import com.cemail.app.ui.glass.GlassKind
-import com.cemail.app.ui.glass.glass
-import com.cemail.app.ui.glass.popIn
-import com.cemail.app.ui.glass.pressScale
+import com.ce.kit.ui.glass.GlassKind
+import com.ce.kit.ui.glass.glass
+import com.ce.kit.ui.glass.popIn
+import com.ce.kit.ui.glass.pressScale
 
 /**
  * Top of the drawer: every account is always in sight, one row each with its colour, and "All accounts" (the unified

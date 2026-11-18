@@ -17,8 +17,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.cemail.app.ui.account.AccountViewModel
 import com.cemail.app.ui.mail.MailApp
 import com.cemail.app.ui.mail.MailViewModel
-import com.cemail.app.ui.theme.CemailTheme
-import com.cemail.app.ui.theme.isDarkNow
+import com.ce.kit.ui.theme.CeTheme
+import com.ce.kit.ui.theme.isDarkNow
 
 class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
@@ -53,7 +53,7 @@ class MainActivity : ComponentActivity() {
                 }
                 enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
             }
-            CemailTheme(settings) {
+            CeTheme(settings) {
                 // Built once: a flow operator must not run in composition (it would make a new flow on every recomposition).
                 val accountOrder = androidx.compose.runtime.remember(app) { app.settings.state.map { it.accountOrder }.distinctUntilChanged() }
                 val accountVm: AccountViewModel = viewModel(factory = AccountViewModel.Factory(app.accountRepository, app.googleAuth, app.microsoftAuth, accountOrder))
@@ -79,7 +79,7 @@ class MainActivity : ComponentActivity() {
                 androidx.compose.runtime.CompositionLocalProvider(
                     com.cemail.app.ui.mail.LocalAccountLooks provides settings.accountLooks,
                     // Only where there are two panes: on a phone (or a closed foldable) the option is not shown nor applied.
-                    com.cemail.app.ui.glass.LocalListOnRight provides (settings.listOnRight && androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= com.cemail.app.ui.mail.TWO_PANE_MIN_WIDTH),
+                    com.ce.kit.ui.glass.LocalListOnRight provides (settings.listOnRight && androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= com.cemail.app.ui.mail.TWO_PANE_MIN_WIDTH),
                 ) {
                     MailApp(vm, accountVm, settings, app.settings)
                 }

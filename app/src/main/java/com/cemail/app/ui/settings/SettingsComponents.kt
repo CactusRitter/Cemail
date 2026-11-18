@@ -34,10 +34,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.cemail.app.R
 import com.cemail.app.sync.SyncWorker
-import com.cemail.app.ui.glass.GlassKind
-import com.cemail.app.ui.glass.glass
-import com.cemail.app.ui.glass.popIn
-import com.cemail.app.ui.glass.pressScale
+import com.ce.kit.ui.glass.GlassKind
+import com.ce.kit.ui.glass.glass
+import com.ce.kit.ui.glass.popIn
+import com.ce.kit.ui.glass.pressScale
 
 @Composable
 internal fun SectionTitle(text: Int) {
@@ -84,7 +84,7 @@ internal fun SwitchRow(title: Int, body: Int, checked: Boolean, onChange: (Boole
             Text(stringResource(title), style = MaterialTheme.typography.titleSmall)
             Text(stringResource(body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        com.cemail.app.ui.glass.GlassSwitch(checked = checked, onCheckedChange = null) // the row is the touch target
+        com.ce.kit.ui.glass.GlassSwitch(checked = checked, onCheckedChange = null) // the row is the touch target
     }
 }
 
@@ -115,7 +115,7 @@ internal fun syncIntervalLabel(minutes: Int): String = when {
 /** A round icon on the theme's container colour. */
 @Composable
 internal fun IconBubble(size: Dp = 48.dp, background: Color = MaterialTheme.colorScheme.primaryContainer, content: @Composable () -> Unit) {
-    Box(Modifier.size(size).clip(com.cemail.app.ui.theme.LocalSkin.current.shape(CircleShape)).background(background), contentAlignment = Alignment.Center) { content() }
+    Box(Modifier.size(size).clip(com.ce.kit.ui.theme.LocalSkin.current.shape(CircleShape)).background(background), contentAlignment = Alignment.Center) { content() }
 }
 
 /**

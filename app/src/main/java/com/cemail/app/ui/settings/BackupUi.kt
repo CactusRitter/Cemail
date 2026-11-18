@@ -29,7 +29,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import kotlinx.serialization.json.JsonObject
-import com.cemail.app.ui.theme.CemailTheme
+import com.ce.kit.ui.theme.CeTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -146,7 +146,7 @@ fun AccountsToAdd(accounts: List<BackupAccount>, onAdd: (BackupAccount) -> Unit,
 @Preview
 @Composable
 private fun AccountsToAddPreview() {
-    CemailTheme {
+    CeTheme {
         AccountsToAdd(
             listOf(
                 BackupAccount("1", "GMAIL", "ana@example.com", "Ana"),

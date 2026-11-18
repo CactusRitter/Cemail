@@ -64,10 +64,10 @@ import com.cemail.app.data.SwipeDistance
 import com.cemail.app.data.db.AccountEntity
 import com.cemail.app.data.backup.BackupAccount
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.cemail.app.ui.glass.GlassPill
-import com.cemail.app.ui.glass.PillIcon
-import com.cemail.app.ui.glass.glassSpring
-import com.cemail.app.ui.glass.softBounceSpring
+import com.ce.kit.ui.glass.GlassPill
+import com.ce.kit.ui.glass.PillIcon
+import com.ce.kit.ui.glass.glassSpring
+import com.ce.kit.ui.glass.softBounceSpring
 import com.cemail.app.ui.icons.CemailIcons
 import com.cemail.app.ui.mail.swipeIcon
 import java.text.NumberFormat
@@ -97,13 +97,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
-import com.cemail.app.ui.glass.GlassKind
-import com.cemail.app.ui.glass.bounceSpring
-import com.cemail.app.ui.glass.glass
-import com.cemail.app.ui.glass.pressScale
+import com.ce.kit.ui.glass.GlassKind
+import com.ce.kit.ui.glass.bounceSpring
+import com.ce.kit.ui.glass.glass
+import com.ce.kit.ui.glass.pressScale
 import com.cemail.app.ui.mail.shade
-import com.cemail.app.ui.theme.Accent
-import com.cemail.app.ui.theme.ThemeMode
+import com.ce.kit.ui.theme.Accent
+import com.ce.kit.ui.theme.ThemeMode
 
 /**
  * The screens of Settings. A route is a plain string so it survives a rotation (the caller keeps it) and the system
@@ -437,12 +437,12 @@ private fun NotificationsPage(settings: AppSettings, repo: SettingsRepository) {
 @Composable
 private fun AppearancePage(settings: AppSettings, repo: SettingsRepository) {
     // Like Celander's "Design": light or dark, the colour (eight, or any hue), and the glass.
-    val glassLook = settings.skin == com.cemail.app.ui.theme.Skin.GLASS
+    val glassLook = settings.skin == com.ce.kit.ui.theme.Skin.GLASS
     SettingsCard {
         Text(stringResource(R.string.skin_title), style = MaterialTheme.typography.titleSmall)
         Text(stringResource(R.string.skin_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            com.cemail.app.ui.theme.Skin.entries.forEach { skin ->
+            com.ce.kit.ui.theme.Skin.entries.forEach { skin ->
                 ChoiceChip(stringResource(skin.label), settings.skin == skin) { repo.setSkin(skin) }
             }
         }
@@ -478,7 +478,7 @@ private fun AppearancePage(settings: AppSettings, repo: SettingsRepository) {
             Text(stringResource(R.string.style_title), style = MaterialTheme.typography.titleSmall)
             Text(stringResource(R.string.style_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                com.cemail.app.ui.theme.ThemeStyle.entries.forEach { style ->
+                com.ce.kit.ui.theme.ThemeStyle.entries.forEach { style ->
                     ChoiceChip(stringResource(style.label), settings.themeStyle == style) { repo.setThemeStyle(style) }
                 }
             }
@@ -513,14 +513,14 @@ private fun AppearancePage(settings: AppSettings, repo: SettingsRepository) {
             )
         }
         Text(stringResource(R.string.settings_transparency_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        com.cemail.app.ui.glass.GlassSlider(
+        com.ce.kit.ui.glass.GlassSlider(
             value = settings.transparency.toFloat(),
             onValueChange = { repo.setTransparency(it.roundToInt()) },
             valueRange = 0f..100f,
         )
         // How the glass looks right now: coloured bars behind a floating pill.
         Box(
-            Modifier.fillMaxWidth().height(120.dp).clip(com.cemail.app.ui.theme.LocalSkin.current.shape(RoundedCornerShape(20.dp))).background(MaterialTheme.colorScheme.background)
+            Modifier.fillMaxWidth().height(120.dp).clip(com.ce.kit.ui.theme.LocalSkin.current.shape(RoundedCornerShape(20.dp))).background(MaterialTheme.colorScheme.background)
                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)) // tinted like the app's background
                 .padding(horizontal = 14.dp, vertical = 12.dp),
         ) {
@@ -566,13 +566,13 @@ private fun AccentDot(color: Color, name: String, selected: Boolean, onClick: ()
 @Composable
 private fun HueBar(hue: Float?, onHue: (Float) -> Unit) {
     // The same colours the custom accent will have, so the bar shows exactly what each point gives.
-    val stops = remember { (0..24).map { com.cemail.app.ui.theme.customPalette((it * 15f).coerceAtMost(359.9f)).light } }
-    com.cemail.app.ui.glass.GlassSlider(
+    val stops = remember { (0..24).map { com.ce.kit.ui.theme.customPalette((it * 15f).coerceAtMost(359.9f)).light } }
+    com.ce.kit.ui.glass.GlassSlider(
         value = hue,
         onValueChange = onHue,
         valueRange = 0f..359.9f,
         track = Brush.horizontalGradient(stops),
-        knobColor = hue?.let { com.cemail.app.ui.theme.customPalette(it).light } ?: Color.Transparent,
+        knobColor = hue?.let { com.ce.kit.ui.theme.customPalette(it).light } ?: Color.Transparent,
     )
 }
 

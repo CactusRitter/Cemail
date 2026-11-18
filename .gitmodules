@@ -1,0 +1,3 @@
+[submodule "CeKit"]
+	path = CeKit
+	url = https://github.com/CactusRitter/CeKit.git

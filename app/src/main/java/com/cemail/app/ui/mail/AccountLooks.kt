@@ -26,9 +26,9 @@ import androidx.compose.ui.unit.dp
 import com.cemail.app.data.AccountLook
 import com.cemail.app.data.auth.AccountPhotos
 import com.cemail.app.data.db.AccountEntity
-import com.cemail.app.ui.theme.Accent
+import com.ce.kit.ui.theme.Accent
 import com.cemail.app.ui.theme.AccountColor
-import com.cemail.app.ui.theme.LocalGlass
+import com.ce.kit.ui.theme.LocalGlass
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

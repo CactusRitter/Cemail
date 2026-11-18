@@ -34,7 +34,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import com.cemail.app.ui.glass.fadingTopEdge
+import com.ce.kit.ui.glass.fadingTopEdge
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -88,10 +88,10 @@ import com.cemail.app.data.gmail.HtmlSanitizer
 import androidx.compose.foundation.layout.height
 import com.cemail.app.R
 import com.cemail.app.data.gmail.OutAttachment
-import com.cemail.app.ui.glass.GlassKind
-import com.cemail.app.ui.glass.GlassPill
-import com.cemail.app.ui.glass.PillIcon
-import com.cemail.app.ui.glass.glass
+import com.ce.kit.ui.glass.GlassKind
+import com.ce.kit.ui.glass.GlassPill
+import com.ce.kit.ui.glass.PillIcon
+import com.ce.kit.ui.glass.glass
 import com.cemail.app.ui.icons.CemailIcons
 import com.mohamedrejeb.richeditor.model.RichTextState
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
@@ -248,9 +248,9 @@ fun ComposeScreen(
                 targetState = collapsed,
                 modifier = Modifier.fillMaxWidth(),
                 transitionSpec = {
-                    (fadeIn(com.cemail.app.ui.glass.glassSpring()) + androidx.compose.animation.scaleIn(com.cemail.app.ui.glass.glassSpring(), initialScale = 0.94f)) togetherWith
-                        fadeOut(com.cemail.app.ui.glass.glassSpring()) using
-                        androidx.compose.animation.SizeTransform(clip = false) { _, _ -> com.cemail.app.ui.glass.glassSpring() }
+                    (fadeIn(com.ce.kit.ui.glass.glassSpring()) + androidx.compose.animation.scaleIn(com.ce.kit.ui.glass.glassSpring(), initialScale = 0.94f)) togetherWith
+                        fadeOut(com.ce.kit.ui.glass.glassSpring()) using
+                        androidx.compose.animation.SizeTransform(clip = false) { _, _ -> com.ce.kit.ui.glass.glassSpring() }
                 },
                 label = "composeHeader",
             ) { isCollapsed ->
@@ -404,7 +404,7 @@ fun ComposeScreen(
                             contentAlignment = Alignment.Center,
                         ) { Icon(Icons.Filled.Close, stringResource(R.string.compose_signature_remove), Modifier.size(20.dp)) }
                     }
-                    Box(Modifier.fillMaxWidth().height(170.dp).clip(com.cemail.app.ui.theme.LocalSkin.current.shape(RoundedCornerShape(24.dp)))) {
+                    Box(Modifier.fillMaxWidth().height(170.dp).clip(com.ce.kit.ui.theme.LocalSkin.current.shape(RoundedCornerShape(24.dp)))) {
                         HtmlBody(HtmlSanitizer.page(signature, 0, ""), true, Modifier.fillMaxSize()) { }
                     }
                 }
@@ -437,7 +437,7 @@ fun ComposeScreen(
                             contentAlignment = Alignment.Center,
                         ) { Icon(Icons.Filled.Close, stringResource(R.string.compose_quote_remove), Modifier.size(20.dp)) }
                     }
-                    Box(Modifier.fillMaxWidth().height(320.dp).clip(com.cemail.app.ui.theme.LocalSkin.current.shape(RoundedCornerShape(24.dp)))) {
+                    Box(Modifier.fillMaxWidth().height(320.dp).clip(com.ce.kit.ui.theme.LocalSkin.current.shape(RoundedCornerShape(24.dp)))) {
                         HtmlBody(HtmlSanitizer.page(quote, 0, draft.quoteCss), draft.quoteShowImages, Modifier.fillMaxSize()) { }
                     }
                 }
@@ -519,10 +519,10 @@ fun ComposeScreen(
         AnimatedVisibility(
             visible = writingBody,
             modifier = Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.safeDrawing),
-            enter = fadeIn(com.cemail.app.ui.glass.glassSpring()) +
-                androidx.compose.animation.scaleIn(com.cemail.app.ui.glass.bounceSpring(), initialScale = 0.9f),
-            exit = fadeOut(com.cemail.app.ui.glass.glassSpring()) +
-                androidx.compose.animation.scaleOut(com.cemail.app.ui.glass.glassSpring(), targetScale = 0.9f),
+            enter = fadeIn(com.ce.kit.ui.glass.glassSpring()) +
+                androidx.compose.animation.scaleIn(com.ce.kit.ui.glass.bounceSpring(), initialScale = 0.9f),
+            exit = fadeOut(com.ce.kit.ui.glass.glassSpring()) +
+                androidx.compose.animation.scaleOut(com.ce.kit.ui.glass.glassSpring(), targetScale = 0.9f),
         ) {
             Box(Modifier.padding(12.dp)) { FormatBar(rich) }
         }

@@ -26,7 +26,7 @@ import com.cemail.app.data.SwipeAction
 import com.cemail.app.data.SwipeConfig
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import com.cemail.app.ui.glass.bumpOn
+import com.ce.kit.ui.glass.bumpOn
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
@@ -57,12 +57,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.cemail.app.R
 import com.cemail.app.data.mail.Mail
-import com.cemail.app.ui.glass.GlassKind
-import com.cemail.app.ui.glass.GroupPos
-import com.cemail.app.ui.glass.glassSegment
-import com.cemail.app.ui.glass.glassSpring
-import com.cemail.app.ui.glass.unreadFill
-import com.cemail.app.ui.glass.selectedOutline
+import com.ce.kit.ui.glass.GlassKind
+import com.ce.kit.ui.glass.GroupPos
+import com.ce.kit.ui.glass.glassSegment
+import com.ce.kit.ui.glass.glassSpring
+import com.ce.kit.ui.glass.unreadFill
+import com.ce.kit.ui.glass.selectedOutline
 import com.cemail.app.ui.icons.CemailIcons
 
 /** "14:32" for today, "Nov 9" otherwise: formatted by the platform for the current locale. */
@@ -112,7 +112,7 @@ fun MailRow(
         },
         positionalThreshold = { total -> total * swipe.distance.fraction },
     )
-    val skin = com.cemail.app.ui.theme.LocalSkin.current
+    val skin = com.ce.kit.ui.theme.LocalSkin.current
     val radius = skin.radius(20.dp)
     val shape = pos.shape(radius)
     SwipeToDismissBox(
@@ -172,7 +172,7 @@ fun MailRow(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                         // At the start of the row, not over its top end corner: that is where the time is.
-                        if (selected) com.cemail.app.ui.glass.SelectionBadge(Modifier.padding(end = 6.dp), size = 22.dp)
+                        if (selected) com.ce.kit.ui.glass.SelectionBadge(Modifier.padding(end = 6.dp), size = 22.dp)
                         SenderTag(mail.senderName, mail.read, showCircle)
                     }
                     if (mail.hasAttachment) {
@@ -236,7 +236,7 @@ private fun SenderTag(name: String, read: Boolean, asLabel: Boolean) {
     Text(
         name,
         Modifier
-            .background(if (read) c.surfaceVariant.copy(alpha = 0.6f) else c.primary.copy(alpha = 0.16f), com.cemail.app.ui.theme.LocalSkin.current.shape(RoundedCornerShape(8.dp)))
+            .background(if (read) c.surfaceVariant.copy(alpha = 0.6f) else c.primary.copy(alpha = 0.16f), com.ce.kit.ui.theme.LocalSkin.current.shape(RoundedCornerShape(8.dp)))
             .padding(horizontal = 8.dp, vertical = 1.dp),
         style = MaterialTheme.typography.labelMedium,
         fontWeight = FontWeight.Bold,

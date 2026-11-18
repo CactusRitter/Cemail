@@ -39,8 +39,8 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import com.cemail.app.R
 import com.cemail.app.data.gmail.AttachmentInfo
-import com.cemail.app.ui.glass.GlassKind
-import com.cemail.app.ui.glass.glass
+import com.ce.kit.ui.glass.GlassKind
+import com.ce.kit.ui.glass.glass
 import com.cemail.app.ui.icons.CemailIcons
 import java.io.File
 import kotlinx.coroutines.launch

@@ -39,12 +39,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.cemail.app.R
-import com.cemail.app.ui.glass.GlassKind
-import com.cemail.app.ui.glass.glass
-import com.cemail.app.ui.glass.glassSpring
-import com.cemail.app.ui.glass.popIn
-import com.cemail.app.ui.glass.softBounceSpring
-import com.cemail.app.ui.theme.LocalSkin
+import com.ce.kit.ui.glass.GlassKind
+import com.ce.kit.ui.glass.glass
+import com.ce.kit.ui.glass.glassSpring
+import com.ce.kit.ui.glass.popIn
+import com.ce.kit.ui.glass.softBounceSpring
+import com.ce.kit.ui.theme.LocalSkin
 import java.util.Calendar
 import java.util.TimeZone
 

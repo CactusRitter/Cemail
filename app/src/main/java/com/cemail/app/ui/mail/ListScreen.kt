@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import com.cemail.app.ui.glass.GroupPos
+import com.ce.kit.ui.glass.GroupPos
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,7 +37,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.foundation.layout.height
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import com.cemail.app.ui.glass.GlassIconButton
+import com.ce.kit.ui.glass.GlassIconButton
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.filled.Refresh
@@ -46,16 +46,16 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.togetherWith
-import com.cemail.app.ui.glass.bounceSpring
-import com.cemail.app.ui.glass.glassSpring
-import com.cemail.app.ui.glass.softBounceSpring
-import com.cemail.app.ui.glass.popIn
-import com.cemail.app.ui.glass.pressScale
+import com.ce.kit.ui.glass.bounceSpring
+import com.ce.kit.ui.glass.glassSpring
+import com.ce.kit.ui.glass.softBounceSpring
+import com.ce.kit.ui.glass.popIn
+import com.ce.kit.ui.glass.pressScale
 import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import kotlinx.coroutines.delay
-import com.cemail.app.ui.theme.LocalGlass
+import com.ce.kit.ui.theme.LocalGlass
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -95,11 +95,11 @@ import androidx.compose.ui.graphics.Color
 import com.cemail.app.data.mail.dateSectionOf
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import com.cemail.app.ui.glass.GlassBackground
-import com.cemail.app.ui.glass.GlassKind
-import com.cemail.app.ui.glass.GlassPill
-import com.cemail.app.ui.glass.PillIcon
-import com.cemail.app.ui.glass.glass
+import com.ce.kit.ui.glass.GlassBackground
+import com.ce.kit.ui.glass.GlassKind
+import com.ce.kit.ui.glass.GlassPill
+import com.ce.kit.ui.glass.PillIcon
+import com.ce.kit.ui.glass.glass
 import com.cemail.app.ui.icons.CemailIcons
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
@@ -177,11 +177,11 @@ fun ListScreen(
     if (!selecting) labelPanel = false
     val startIsArchive = state.box != MailBox.ARCHIVE && state.box != MailBox.TRASH && state.box != MailBox.SPAM
 
-    androidx.compose.runtime.CompositionLocalProvider(com.cemail.app.ui.glass.LocalHazeState provides haze) {
+    androidx.compose.runtime.CompositionLocalProvider(com.ce.kit.ui.glass.LocalHazeState provides haze) {
     Box(Modifier.fillMaxSize()) {
         // The background is a blur source too (as in Cenotes), so the buttons over it get real frosted glass
         // instead of a flat white fill.
-        GlassBackground(Modifier.hazeSource(haze, zIndex = com.cemail.app.ui.glass.GlassLayers.BACKGROUND)) {}
+        GlassBackground(Modifier.hazeSource(haze, zIndex = com.ce.kit.ui.glass.GlassLayers.BACKGROUND)) {}
         val empty = state.pinned.isEmpty() && state.others.isEmpty()
         // Pull down to refresh: the indicator shows only for a refresh the user asked for, not for the automatic ones.
         val pullState = rememberPullToRefreshState()
@@ -223,7 +223,7 @@ fun ListScreen(
         // A row that fades (a message archived, deleted or put back) is drawn in a layer cut to its own size, so a solid
         // shadow sticking out to the end (Brutalist) blinked away while it faded. Each row is that much wider on the end
         // side and the list's own margin that much narrower: the cards stay where they were, with the shadow inside the row.
-        val room = com.cemail.app.ui.theme.LocalSkin.current.hardShadow
+        val room = com.ce.kit.ui.theme.LocalSkin.current.hardShadow
         val edge = Modifier.padding(end = room)
         androidx.compose.runtime.key(vm, state.box, state.labelId) {
         LazyColumn(
@@ -231,7 +231,7 @@ fun ListScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer { translationY = pullState.distanceFraction.coerceAtMost(1.5f) * thresholdPx }
-                .hazeSource(haze, zIndex = com.cemail.app.ui.glass.GlassLayers.CONTENT),
+                .hazeSource(haze, zIndex = com.ce.kit.ui.glass.GlassLayers.CONTENT),
             contentPadding = PaddingValues(
                 start = 12.dp,
                 end = 12.dp - room,
@@ -323,7 +323,7 @@ fun ListScreen(
 
         // Behind the status bar and the top row, once the list has scrolled: what passes below does not mix with them.
         // As tall as the room the list leaves above its first card; drawn before the top row, so it never covers it.
-        com.cemail.app.ui.glass.TopScrim(
+        com.ce.kit.ui.glass.TopScrim(
             height = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() + 80.dp,
             hazeState = haze,
             visible = listState.canScrollBackward,
@@ -333,7 +333,7 @@ fun ListScreen(
         // Top bar: glass pill over the list (menu, title or search field, search).
         // While the bars cross-fade each one is drawn cut to its own size: like the rows, the bar gets the room of the
         // solid shadow (end and bottom) inside it, taken from the margin around it, so the shadow does not blink away.
-        val barRoom = com.cemail.app.ui.theme.LocalSkin.current.hardShadow
+        val barRoom = com.ce.kit.ui.theme.LocalSkin.current.hardShadow
         Box(
             Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing)
                 .padding(start = 12.dp, end = 12.dp - barRoom, top = 8.dp, bottom = 8.dp - barRoom),
@@ -361,7 +361,7 @@ fun ListScreen(
                                 ?: stringResource(state.box.labelRes()),
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
-                            color = com.cemail.app.ui.glass.onBackdrop(MaterialTheme.colorScheme.onSurface),
+                            color = com.ce.kit.ui.glass.onBackdrop(MaterialTheme.colorScheme.onSurface),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -382,7 +382,7 @@ fun ListScreen(
         // Compose button (Thunderbird has a floating "write" button).
         if (!selecting && !state.searching) {
           androidx.compose.foundation.layout.Column(
-            Modifier.align(com.cemail.app.ui.glass.floatingCorner()).windowInsetsPadding(WindowInsets.safeDrawing).padding(16.dp),
+            Modifier.align(com.ce.kit.ui.glass.floatingCorner()).windowInsetsPadding(WindowInsets.safeDrawing).padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
           ) {
@@ -392,11 +392,11 @@ fun ListScreen(
                     .popIn(delayMillis = 220, initialScale = 0.3f)
                     .pressScale(0.88f)
                     .size(60.dp)
-                    .glass(com.cemail.app.ui.theme.LocalSkin.current.fabCorner?.let { RoundedCornerShape(it) } ?: CircleShape, com.cemail.app.ui.glass.fabKind(), elevation = 10.dp, hazeState = haze)
+                    .glass(com.ce.kit.ui.theme.LocalSkin.current.fabCorner?.let { RoundedCornerShape(it) } ?: CircleShape, com.ce.kit.ui.glass.fabKind(), elevation = 10.dp, hazeState = haze)
                     .clickable(role = Role.Button, onClickLabel = stringResource(R.string.compose)) { vm.newDraft() },
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Filled.Create, stringResource(R.string.compose), tint = com.cemail.app.ui.glass.fabTint())
+                Icon(Icons.Filled.Create, stringResource(R.string.compose), tint = com.ce.kit.ui.glass.fabTint())
             }
           }
         }
@@ -487,7 +487,7 @@ private fun SectionHeader(text: String) {
         text,
         Modifier.padding(start = 8.dp, top = 8.dp, bottom = 8.dp),
         style = MaterialTheme.typography.labelLarge,
-        color = com.cemail.app.ui.glass.onBackdrop(MaterialTheme.colorScheme.primary),
+        color = com.ce.kit.ui.glass.onBackdrop(MaterialTheme.colorScheme.primary),
     )
 }
 
@@ -575,14 +575,14 @@ private fun DateHeader(section: DateSection, count: Int, collapsed: Boolean, onC
             stringResource(label),
             Modifier.weight(1f),
             style = MaterialTheme.typography.labelLarge,
-            color = com.cemail.app.ui.glass.onBackdrop(MaterialTheme.colorScheme.primary),
+            color = com.ce.kit.ui.glass.onBackdrop(MaterialTheme.colorScheme.primary),
         )
-        Text(count.toString(), style = MaterialTheme.typography.labelMedium, color = com.cemail.app.ui.glass.onBackdrop(MaterialTheme.colorScheme.onSurfaceVariant))
+        Text(count.toString(), style = MaterialTheme.typography.labelMedium, color = com.ce.kit.ui.glass.onBackdrop(MaterialTheme.colorScheme.onSurfaceVariant))
         Icon(
             if (collapsed) Icons.Filled.KeyboardArrowDown else Icons.Filled.KeyboardArrowUp,
             stringResource(if (collapsed) R.string.label_expand else R.string.label_collapse),
             Modifier.padding(horizontal = 8.dp),
-            tint = com.cemail.app.ui.glass.onBackdrop(MaterialTheme.colorScheme.primary),
+            tint = com.ce.kit.ui.glass.onBackdrop(MaterialTheme.colorScheme.primary),
         )
     }
 }
@@ -605,7 +605,7 @@ private fun MoreButton(state: MailUiState, search: Boolean, onClick: () -> Unit)
                     else -> androidx.compose.ui.res.pluralStringResource(R.plurals.load_more_found, result, result)
                 },
                 style = MaterialTheme.typography.bodySmall,
-                color = com.cemail.app.ui.glass.onBackdrop(MaterialTheme.colorScheme.onSurfaceVariant),
+                color = com.ce.kit.ui.glass.onBackdrop(MaterialTheme.colorScheme.onSurfaceVariant),
                 textAlign = TextAlign.Center,
             )
         }

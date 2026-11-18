@@ -4,14 +4,6 @@
     <string name="app_name" translatable="false">Cemail</string>
 
     <!-- Accent colours -->
-    <string name="accent_indigo">Indigo</string>
-    <string name="accent_violet">Violet</string>
-    <string name="accent_blue">Blue</string>
-    <string name="accent_green">Green</string>
-    <string name="accent_coral">Rust</string>
-    <string name="accent_amber">Ochre</string>
-    <string name="accent_teal">Teal</string>
-    <string name="accent_pink">Raspberry</string>
     <string name="style_title">Style</string>
     <string name="style_body">The background and the tint of the glass.</string>
     <string name="pane_empty">Choose a message to read it here.</string>
@@ -47,18 +39,6 @@
     <string name="skin_always_dark">This design is always dark.</string>
     <string name="depth_title">3D shadow</string>
     <string name="depth_body">A soft shadow that lifts cards and buttons off the background, like glass standing above it.</string>
-    <string name="skin_glass">Glass</string>
-    <string name="skin_modern">Modern</string>
-    <string name="skin_amoled">AMOLED</string>
-    <string name="skin_retro">Retro 98</string>
-    <string name="skin_paper">Paper</string>
-    <string name="skin_brutal">Brutalist</string>
-    <string name="style_classic">Classic</string>
-    <string name="style_neutral">Neutral</string>
-    <string name="style_aurora">Aurora</string>
-    <string name="style_sunset">Sunset</string>
-    <string name="style_ocean">Ocean</string>
-    <string name="style_neon">Neon</string>
     <string name="theme_mode_title">Light or dark</string>
     <string name="theme_system">System</string>
     <string name="theme_light">Light</string>

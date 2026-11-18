@@ -50,12 +50,12 @@ import com.cemail.app.R
 import com.cemail.app.data.imap.ImapConfig
 import com.cemail.app.data.imap.ImapPresets
 import com.cemail.app.data.imap.Security
-import com.cemail.app.ui.glass.GlassBackground
-import com.cemail.app.ui.glass.GlassKind
-import com.cemail.app.ui.glass.GlassPill
-import com.cemail.app.ui.glass.PillIcon
-import com.cemail.app.ui.glass.glass
-import com.cemail.app.ui.glass.pressScale
+import com.ce.kit.ui.glass.GlassBackground
+import com.ce.kit.ui.glass.GlassKind
+import com.ce.kit.ui.glass.GlassPill
+import com.ce.kit.ui.glass.PillIcon
+import com.ce.kit.ui.glass.glass
+import com.ce.kit.ui.glass.pressScale
 import kotlinx.coroutines.launch
 
 /**

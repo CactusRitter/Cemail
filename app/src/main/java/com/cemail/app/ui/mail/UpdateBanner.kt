@@ -25,12 +25,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cemail.app.CemailApplication
 import com.cemail.app.R
-import com.cemail.app.ui.glass.GlassKind
-import com.cemail.app.ui.glass.GlassProgressBar
-import com.cemail.app.ui.glass.glass
-import com.cemail.app.ui.glass.glassSpring
-import com.cemail.app.ui.glass.popIn
-import com.cemail.app.ui.glass.pressScale
+import com.ce.kit.ui.glass.GlassKind
+import com.ce.kit.ui.glass.GlassProgressBar
+import com.ce.kit.ui.glass.glass
+import com.ce.kit.ui.glass.glassSpring
+import com.ce.kit.ui.glass.popIn
+import com.ce.kit.ui.glass.pressScale
 import com.cemail.app.update.DownloadState
 
 /**

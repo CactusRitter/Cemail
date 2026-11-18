@@ -2,14 +2,6 @@
 <!-- German strings. Every key of values/strings.xml must exist here too. -->
 <resources>
     <!-- Accent colours -->
-    <string name="accent_indigo">Indigo</string>
-    <string name="accent_violet">Violett</string>
-    <string name="accent_blue">Blau</string>
-    <string name="accent_green">Grün</string>
-    <string name="accent_coral">Rost</string>
-    <string name="accent_amber">Ocker</string>
-    <string name="accent_teal">Petrol</string>
-    <string name="accent_pink">Himbeere</string>
     <string name="style_title">Stil</string>
     <string name="style_body">Der Hintergrund und die Tönung des Glases.</string>
     <string name="pane_empty">Wähle eine Nachricht, um sie hier zu lesen.</string>
@@ -45,18 +37,6 @@
     <string name="skin_always_dark">Dieses Design ist immer dunkel.</string>
     <string name="depth_title">3D-Schatten</string>
     <string name="depth_body">Ein weicher Schatten, der Karten und Schaltflächen vom Hintergrund abhebt, wie Glas darüber.</string>
-    <string name="skin_glass">Glas</string>
-    <string name="skin_modern">Modern</string>
-    <string name="skin_amoled">AMOLED</string>
-    <string name="skin_retro">Retro 98</string>
-    <string name="skin_paper">Papier</string>
-    <string name="skin_brutal">Brutalist</string>
-    <string name="style_classic">Klassisch</string>
-    <string name="style_neutral">Neutral</string>
-    <string name="style_aurora">Polarlicht</string>
-    <string name="style_sunset">Sonnenuntergang</string>
-    <string name="style_ocean">Ozean</string>
-    <string name="style_neon">Neon</string>
     <string name="theme_mode_title">Hell oder dunkel</string>
     <string name="theme_system">System</string>
     <string name="theme_light">Hell</string>

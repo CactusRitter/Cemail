@@ -32,8 +32,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import kotlinx.coroutines.delay
-import com.cemail.app.ui.glass.bounceSpring
-import com.cemail.app.ui.glass.glassSpring
+import com.ce.kit.ui.glass.bounceSpring
+import com.ce.kit.ui.glass.glassSpring
 
 // Movimiento propio de Cemail (no se comparte con las otras apps): el lector que se despliega desde la tarjeta y el cambio de lista.
 /**
@@ -74,7 +74,7 @@ fun Modifier.expandFrom(origin: Rect?, mailId: Long, closing: Boolean): Modifier
         }
     }
     // The corner of this look (square in Retro 98, small in Paper…), so the card does not turn round while it grows.
-    val corner = with(LocalDensity.current) { com.cemail.app.ui.theme.LocalSkin.current.radius(22.dp).toPx() }
+    val corner = with(LocalDensity.current) { com.ce.kit.ui.theme.LocalSkin.current.radius(22.dp).toPx() }
     return this.graphicsLayer {
         val p = progress.value
         val open = p.coerceIn(0f, 1f) // the spring may overshoot a little: the window never goes beyond the screen

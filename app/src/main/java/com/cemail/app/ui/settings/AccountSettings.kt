@@ -63,9 +63,9 @@ import com.cemail.app.data.gmail.HtmlSanitizer
 import com.cemail.app.data.gmail.ParsedEml
 import com.cemail.app.data.gmail.SignatureHtml
 import com.cemail.app.sync.SyncWorker
-import com.cemail.app.ui.glass.GlassKind
-import com.cemail.app.ui.glass.glass
-import com.cemail.app.ui.glass.pressScale
+import com.ce.kit.ui.glass.GlassKind
+import com.ce.kit.ui.glass.glass
+import com.ce.kit.ui.glass.pressScale
 import com.cemail.app.ui.icons.CemailIcons
 import com.cemail.app.ui.icons.GoogleLogo
 import com.cemail.app.ui.icons.MicrosoftLogo
@@ -353,7 +353,7 @@ private fun FolderSyncRow(
         Modifier
             .fillMaxWidth()
             .heightIn(min = 48.dp)
-            .clip(com.cemail.app.ui.theme.LocalSkin.current.shape(RoundedCornerShape(16.dp)))
+            .clip(com.ce.kit.ui.theme.LocalSkin.current.shape(RoundedCornerShape(16.dp)))
             .toggleable(value = checked == true, enabled = toggles, role = Role.Switch, onValueChange = { onToggle() })
             .padding(start = (depth * 24).dp, top = 2.dp, bottom = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -370,7 +370,7 @@ private fun FolderSyncRow(
         )
         // Same switch as the rest of Settings (SwitchRow); the row itself is the touch target. A fixed one (the Inbox)
         // still looks on: it is simply not touchable.
-        if (checked != null) com.cemail.app.ui.glass.GlassSwitch(checked = checked, onCheckedChange = null)
+        if (checked != null) com.ce.kit.ui.glass.GlassSwitch(checked = checked, onCheckedChange = null)
     }
 }
 
@@ -541,7 +541,7 @@ private fun SignatureCard(email: String, repo: SettingsRepository) {
     }
     SettingsCard {
         if (html != null) {
-            Box(Modifier.fillMaxWidth().height(170.dp).clip(com.cemail.app.ui.theme.LocalSkin.current.shape(RoundedCornerShape(16.dp)))) {
+            Box(Modifier.fillMaxWidth().height(170.dp).clip(com.ce.kit.ui.theme.LocalSkin.current.shape(RoundedCornerShape(16.dp)))) {
                 HtmlBody(HtmlSanitizer.page(html, 0, ""), true, Modifier.fillMaxSize()) { }
             }
         } else {

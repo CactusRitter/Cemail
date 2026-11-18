@@ -34,8 +34,8 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import com.cemail.app.ui.glass.popIn
-import com.cemail.app.ui.glass.pressScale
+import com.ce.kit.ui.glass.popIn
+import com.ce.kit.ui.glass.pressScale
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -97,11 +97,11 @@ import com.cemail.app.data.mail.Label
 import com.cemail.app.data.mail.Mail
 import com.cemail.app.data.mail.MailBox
 import androidx.compose.foundation.horizontalScroll
-import com.cemail.app.ui.glass.GlassIconButton
-import com.cemail.app.ui.glass.GlassKind
-import com.cemail.app.ui.glass.GlassPill
-import com.cemail.app.ui.glass.PillIcon
-import com.cemail.app.ui.glass.glass
+import com.ce.kit.ui.glass.GlassIconButton
+import com.ce.kit.ui.glass.GlassKind
+import com.ce.kit.ui.glass.GlassPill
+import com.ce.kit.ui.glass.PillIcon
+import com.ce.kit.ui.glass.glass
 import com.cemail.app.ui.icons.CemailIcons
 
 @Composable
@@ -143,7 +143,7 @@ fun ReadScreen(
     var showImages by remember(mail.id, alwaysShowImages) { mutableStateOf(alwaysShowImages) }
     // With a dark theme the message is darkened too (Settings → Messages), unless it is switched to its original colours
     // from the menu (only for this message). Needs a WebView that can darken pages (any recent one).
-    val darkTheme = com.cemail.app.ui.theme.LocalGlass.current.dark
+    val darkTheme = com.ce.kit.ui.theme.LocalGlass.current.dark
     val canDarken = remember { WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING) }
     var darkChoice by remember(mail.id) { mutableStateOf<Boolean?>(null) }
     val darken = darkTheme && canDarken && (darkChoice ?: darkMail)
@@ -255,7 +255,7 @@ fun ReadScreen(
                 Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .clip(com.cemail.app.ui.theme.LocalSkin.current.shape(RoundedCornerShape(24.dp))),
+                    .clip(com.ce.kit.ui.theme.LocalSkin.current.shape(RoundedCornerShape(24.dp))),
             ) {
                 val page = cleanPage
                 when {
@@ -266,7 +266,7 @@ fun ReadScreen(
                     html.isNotBlank() -> {
                         var shown by remember(mail.id) { mutableStateOf(false) }
                         val alpha by androidx.compose.animation.core.animateFloatAsState(
-                            if (shown) 1f else 0f, com.cemail.app.ui.glass.glassSpring(), label = "page",
+                            if (shown) 1f else 0f, com.ce.kit.ui.glass.glassSpring(), label = "page",
                         )
                         Box(Modifier.fillMaxSize().glass(RoundedCornerShape(24.dp), GlassKind.Card))
                         if (page != null && settled) {
@@ -328,7 +328,7 @@ fun ReadScreen(
 
         // Bottom corner: the menu button over the reply button.
         Column(
-            Modifier.align(com.cemail.app.ui.glass.floatingCorner()).windowInsetsPadding(WindowInsets.safeDrawing).padding(16.dp),
+            Modifier.align(com.ce.kit.ui.glass.floatingCorner()).windowInsetsPadding(WindowInsets.safeDrawing).padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -348,11 +348,11 @@ fun ReadScreen(
                     .popIn(delayMillis = 60, initialScale = 0.3f)
                     .pressScale(0.88f)
                     .size(60.dp)
-                    .glass(CircleShape, com.cemail.app.ui.glass.fabKind(), opaque = true)
+                    .glass(CircleShape, com.ce.kit.ui.glass.fabKind(), opaque = true)
                     .clickable(role = Role.Button) { reply() },
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(CemailIcons.Reply, stringResource(R.string.action_reply), tint = com.cemail.app.ui.glass.fabTint())
+                Icon(CemailIcons.Reply, stringResource(R.string.action_reply), tint = com.ce.kit.ui.glass.fabTint())
             }
         }
 
@@ -443,10 +443,10 @@ private fun ActionGrid(onDismiss: () -> Unit, items: List<PanelItem>) {
     ) {
         Column(
             Modifier
-                .align(com.cemail.app.ui.glass.floatingCorner())
+                .align(com.ce.kit.ui.glass.floatingCorner())
                 .windowInsetsPadding(WindowInsets.safeDrawing)
                 .padding(bottom = 156.dp, start = 16.dp, end = 16.dp)
-                .popIn(initialScale = 0.3f, origin = TransformOrigin(if (com.cemail.app.ui.glass.LocalListOnRight.current) 0f else 1f, 1f))
+                .popIn(initialScale = 0.3f, origin = TransformOrigin(if (com.ce.kit.ui.glass.LocalListOnRight.current) 0f else 1f, 1f))
                 // Swallows taps so only the area around the window closes it.
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
                 .glass(RoundedCornerShape(28.dp), GlassKind.Menu, elevation = 12.dp)
@@ -477,7 +477,7 @@ private fun ActionGrid(onDismiss: () -> Unit, items: List<PanelItem>) {
                                 .popIn(delayMillis = 70 + (rowIndex * 4 + column) * 28, initialScale = 0.4f)
                                 .pressScale(0.88f)
                                 .size(60.dp)
-                                .clip(com.cemail.app.ui.theme.LocalSkin.current.shape(RoundedCornerShape(18.dp)))
+                                .clip(com.ce.kit.ui.theme.LocalSkin.current.shape(RoundedCornerShape(18.dp)))
                                 .background(
                                     if (item.selected) MaterialTheme.colorScheme.primaryContainer
                                     else MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),

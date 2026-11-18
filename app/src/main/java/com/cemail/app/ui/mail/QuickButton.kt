@@ -20,10 +20,10 @@ import androidx.compose.ui.unit.dp
 import com.cemail.app.R
 import com.cemail.app.data.QuickAction
 import com.cemail.app.ui.account.AccountUiState
-import com.cemail.app.ui.glass.GlassKind
-import com.cemail.app.ui.glass.glass
-import com.cemail.app.ui.glass.popIn
-import com.cemail.app.ui.glass.pressScale
+import com.ce.kit.ui.glass.GlassKind
+import com.ce.kit.ui.glass.glass
+import com.ce.kit.ui.glass.popIn
+import com.ce.kit.ui.glass.pressScale
 import com.cemail.app.ui.icons.CemailIcons
 import dev.chrisbanes.haze.HazeState
 
