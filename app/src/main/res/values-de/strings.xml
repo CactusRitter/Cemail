@@ -210,6 +210,7 @@
     <string name="quick_action_none">Keine</string>
     <string name="account_order_title">Reihenfolge der Konten</string>
     <string name="account_order_body">Die Reihenfolge im Menü und beim schnellen Kontowechsel.</string>
+    <string name="account_default_use">Als Standardkonto verwenden</string>
     <string name="move_up">Nach oben</string>
     <string name="move_down">Nach unten</string>
     <string name="settings_group_title">Nachrichten nach Datum gruppieren</string>

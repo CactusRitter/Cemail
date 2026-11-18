@@ -210,6 +210,7 @@
     <string name="quick_action_none">Ninguno</string>
     <string name="account_order_title">Orden de las cuentas</string>
     <string name="account_order_body">El orden del menú y del cambio rápido de cuenta.</string>
+    <string name="account_default_use">Usar como cuenta predeterminada</string>
     <string name="move_up">Subir</string>
     <string name="move_down">Bajar</string>
     <string name="settings_group_title">Agrupar mensajes por fecha</string>

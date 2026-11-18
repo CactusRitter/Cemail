@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -78,31 +79,47 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.compose.foundation.background
 import kotlinx.coroutines.launch
 
+/** The account new messages are sent from in the unified inbox: the chosen one, or the first. */
+private fun defaultAccountOf(accounts: List<AccountEntity>, settings: AppSettings): AccountEntity? =
+    accounts.firstOrNull { it.id == settings.defaultAccountId } ?: accounts.firstOrNull()
+
 /**
- * The accounts, one big row each (tap for its own settings), and a single "Add" button after them. With several
- * accounts, a card on top picks the one new messages are sent from in the unified inbox.
+ * The accounts, one big row each (tap for its own settings; with several, the default one carries a star), the "Add"
+ * button after them, and with several accounts, the order of the accounts last. The default account is chosen inside
+ * the screen of each account.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun AccountsPage(accounts: List<AccountEntity>, settings: AppSettings, repo: SettingsRepository, onRoute: (String) -> Unit) {
-    if (accounts.size > 1) {
-        val current = accounts.firstOrNull { it.id == settings.defaultAccountId } ?: accounts.first()
-        SettingsCard {
-            Text(stringResource(R.string.settings_default_account_title), style = MaterialTheme.typography.titleSmall)
-            Text(
-                stringResource(R.string.settings_default_account_body),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                accounts.forEach { account ->
-                    val name = account.shownName()
-                    // A name the user gave says enough; otherwise the address (owners often share one name).
-                    val label = if (settings.lookOf(account.id).label != null) name else account.email
-                    ChoiceChip(label, account.id == current.id) { repo.setDefaultAccount(account.id) }
-                }
-            }
-        }
+    if (accounts.isEmpty()) {
+        Text(
+            stringResource(R.string.settings_no_accounts),
+            Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card).padding(18.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+    val default = defaultAccountOf(accounts, settings)
+    accounts.forEachIndexed { index, account ->
+        BigRow(
+            title = account.shownName(),
+            body = stringResource(R.string.account_row_body, account.email, providerName(account)),
+            index = index,
+            onClick = { onRoute(SettingsRoute.account(account.id)) },
+            starred = accounts.size > 1 && account.id == default?.id,
+        ) { AccountAvatar(account, accounts, size = 52, ring = true) }
+    }
+    Row(
+        Modifier
+            .pressScale(0.95f)
+            .glass(CircleShape, GlassKind.Pinned, elevation = 8.dp)
+            .clickable(role = Role.Button) { onRoute(SettingsRoute.ADD) }
+            .padding(horizontal = 22.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(Icons.Filled.Add, null, tint = MaterialTheme.colorScheme.primary)
+        Text(stringResource(R.string.accounts_add_button), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
     }
     if (accounts.size > 1) {
         SettingsCard {
@@ -131,33 +148,41 @@ internal fun AccountsPage(accounts: List<AccountEntity>, settings: AppSettings, 
             }
         }
     }
-    if (accounts.isEmpty()) {
-        Text(
-            stringResource(R.string.settings_no_accounts),
-            Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card).padding(18.dp),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-    accounts.forEachIndexed { index, account ->
-        BigRow(
-            title = account.shownName(),
-            body = stringResource(R.string.account_row_body, account.email, providerName(account)),
-            index = index,
-            onClick = { onRoute(SettingsRoute.account(account.id)) },
-        ) { AccountAvatar(account, accounts, size = 52, ring = true) }
-    }
+}
+
+/**
+ * "Use as default account": a row that marks this account as the one new messages are sent from in the unified inbox.
+ * Not marked, it shows an empty star and a tap marks it; marked (pinned look, filled star) it is the default already, so
+ * the row has nothing left to do and does not react.
+ */
+@Composable
+private fun DefaultAccountRow(isDefault: Boolean, onSet: () -> Unit) {
     Row(
         Modifier
-            .pressScale(0.95f)
-            .glass(CircleShape, GlassKind.Pinned, elevation = 8.dp)
-            .clickable(role = Role.Button) { onRoute(SettingsRoute.ADD) }
-            .padding(horizontal = 22.dp, vertical = 12.dp),
+            .fillMaxWidth()
+            .glass(RoundedCornerShape(24.dp), if (isDefault) GlassKind.Pinned else GlassKind.Card)
+            .clickable(enabled = !isDefault, role = Role.Button, onClick = onSet)
+            .padding(horizontal = 18.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Icon(Icons.Filled.Add, null, tint = MaterialTheme.colorScheme.primary)
-        Text(stringResource(R.string.accounts_add_button), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                stringResource(if (isDefault) R.string.settings_default_account_title else R.string.account_default_use),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            Text(
+                stringResource(R.string.settings_default_account_body),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Icon(
+            if (isDefault) Icons.Filled.Star else CemailIcons.StarOutline,
+            null,
+            Modifier.size(26.dp),
+            tint = if (isDefault) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -212,6 +237,11 @@ internal fun AccountDetailPage(
                 Text(providerName(account), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
             }
         }
+    }
+
+    // --- Default account (only with several accounts) ---
+    if (accounts.size > 1) {
+        DefaultAccountRow(isDefault = defaultAccountOf(accounts, settings)?.id == account.id) { repo.setDefaultAccount(account.id) }
     }
 
     // --- Picture, names and colour ---
