@@ -1,3 +1,7 @@
+## 2.5.0
+- New Glass look, shared with Celander: smoother blur, softer shadows and better text contrast at every transparency level.
+- Writing a message: the shadow of the formatting bar no longer gets cut off when it appears or disappears.
+
 ## 2.4.1
 - When you scroll the list, messages no longer show through behind the status bar and the top row.
 

@@ -1,3 +1,7 @@
+## 2.5.0
+- Nuevo aspecto Cristal, compartido con Celander: desenfoque más suave, sombras más delicadas y mejor contraste del texto con cualquier transparencia.
+- Redactar: la sombra de la barra de formato ya no se recorta cuando aparece o desaparece.
+
 ## 2.4.1
 - Al desplazar la lista, los correos ya no se ven por detrás de la barra de estado ni de la fila de arriba.
 

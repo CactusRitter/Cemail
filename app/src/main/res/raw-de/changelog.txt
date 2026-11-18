@@ -1,3 +1,7 @@
+## 2.5.0
+- Neuer Glas-Look, gemeinsam mit Celander: weicherer Weichzeichner, sanftere Schatten und besserer Textkontrast bei jeder Transparenz.
+- Schreiben: Der Schatten der Formatierungsleiste wird nicht mehr abgeschnitten, wenn sie ein- oder ausgeblendet wird.
+
 ## 2.4.1
 - Wenn du die Liste scrollst, scheinen die Mails nicht mehr hinter der Statusleiste und der oberen Leiste durch.
 
