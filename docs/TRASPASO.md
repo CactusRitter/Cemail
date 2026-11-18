@@ -4,8 +4,8 @@ Lo que necesita una sesión nueva (o tras `/clear`) además de `CLAUDE.md`. Mant
 Última actualización: 2026-11-18.
 
 ## Estado
-- Última versión publicada: **2.5.1** (versionCode 99; 2.5.0 = Cristal V2, 2.5.1 = arreglo del cajón sin desenfoque), release `v2.5.1` en GitHub con APK; también en `G:\Mi unidad\Ce Apps\Cemail\`.
-- Sin publicar: Redactar con campos fijos que se comprimen a una píldora (Para + Asunto) al escribir o hacer scroll (ver `CHANGELOG.md`). Pendiente de probar: 99 % y los otros diseños.
+- Última versión publicada: **2.6.0** (versionCode 100: Redactar con campos fijos y píldora, Cuentas reordenada con predeterminada por cuenta), release `v2.6.0` en GitHub con APK; también en `G:Mi unidadCe AppsCemail`.
+- Nada pendiente de publicar. Sin probar: Redactar y Cuentas en oscuro, Cristal 99 % y los otros diseños.
 
 ## En curso
 - **Cierre libhwui (SIGSEGV ~7 s tras abrir, Cristal con transparencia 65/99 %)**, encontrado por Cenotes: tarjetas con fuente Haze CONTENT dentro de la fuente BACKGROUND (se desenfocaban a su padre). Orden de Ce Líder: comprobar Cemail.

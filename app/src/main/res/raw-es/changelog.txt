@@ -1,3 +1,7 @@
+## 2.6.0
+- Redactar: el Para, el Asunto y los demás campos quedan fijos bajo la barra superior y solo el mensaje hace scroll. Al escribir o desplazar, los campos se reducen a una píldora con el destinatario y el asunto; tócala, o vuelve arriba, para abrirlos de nuevo.
+- Cuentas: primero la lista, luego Añadir y después el orden de las cuentas. La cuenta predeterminada se elige ahora dentro de cada cuenta, con una estrella; la predeterminada lleva una estrella en la lista.
+
 ## 2.5.1
 - Arreglado el menú lateral: era transparente y se veía la lista detrás del texto. Vuelve a ser de cristal esmerilado.
 

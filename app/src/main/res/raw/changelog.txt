@@ -1,3 +1,7 @@
+## 2.6.0
+- Writing a message: To, Subject and the other fields stay fixed under the top bar and only the message scrolls. While you write or scroll, the fields shrink to a small pill with the recipient and the subject; tap it, or scroll back to the top, to open them again.
+- Accounts: the list comes first, then Add, then the order of the accounts. The default account is now chosen inside each account, with a star; the default one shows a star in the list.
+
 ## 2.5.1
 - Fixed the side menu: it was see-through and the list showed behind its text. It is frosted glass again.
 
