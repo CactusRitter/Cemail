@@ -4,7 +4,7 @@ Lo que necesita una sesión nueva (o tras `/clear`) además de `CLAUDE.md`. Mant
 Última actualización: 2026-11-18.
 
 ## Estado
-- Última versión publicada: **2.6.0** (versionCode 100: Redactar con campos fijos y píldora, Cuentas reordenada con predeterminada por cuenta), release `v2.6.0` en GitHub con APK; también en `G:Mi unidadCe AppsCemail`.
+- Última versión publicada: **2.6.0** (versionCode 100: Redactar con campos fijos y píldora, Cuentas reordenada con predeterminada por cuenta), release `v2.6.0` en GitHub con APK; también en `G:\Mi unidad\Ce Apps\Cemail\`.
 - Nada pendiente de publicar. Sin probar: Redactar y Cuentas en oscuro, Cristal 99 % y los otros diseños.
 
 ## En curso
