@@ -1,14 +1,18 @@
 # Traspaso de Cemail
 
 Lo que necesita una sesión nueva (o tras `/clear`) además de `CLAUDE.md`. Mantener al día al cerrar cada bloque.
-Última actualización: 2026-11-17.
+Última actualización: 2026-11-18.
 
 ## Estado
 - Última versión publicada: **2.4.1** (versionCode 97), release `v2.4.1` en GitHub con APK; también en `G:\Mi unidad\Ce Apps\Cemail\`.
 - `main` limpio y subido. Lo hecho después de 2.4.1 está en `CHANGELOG.md` → «Sin publicar».
 
 ## En curso
-- Nada.
+- **Cierre libhwui (SIGSEGV ~7 s tras abrir, Cristal con transparencia 65/99 %)**, encontrado por Cenotes: tarjetas con fuente Haze CONTENT dentro de la fuente BACKGROUND (se desenfocaban a su padre). Orden de Ce Líder: comprobar Cemail.
+  - Código revisado: **no hay anidado**. Solo `ui/mail/ListScreen.kt` declara fuentes (fondo = `GlassBackground` vacío con `BACKGROUND`, `LazyColumn` con `CONTENT`, hermanos). Lector, Ajustes, Redactar y menú no declaran fuentes.
+  - Prueba 65 %: 16 s en lista + 16 s en lector, sin SIGSEGV. **Falta la prueba al 99 %** (lista y lector 15 s, mirar `adb logcat -d | grep -i 'SIGSEGV\|Fatal signal'`). Ruta: demo → menú (105,228) → engranaje (664,265) → Apariencia (350,640) → deslizar → barra de transparencia y=1827 (x=995 ≈ 99 %) → Atrás ×2.
+  - Al acabar: resumen de 4 líneas a Ce Líder. Si hubiera anidado: arreglar con hermanos, commit, push, nota en «Sin publicar».
+- El emulador se cae solo a veces (dos veces hoy). Arrancarlo con `scripts/emulator.ps1 start` en segundo plano; se perdió el modo demo al parar la app (hay que volver a pulsar «Look around»).
 
 ## Pendiente
 - «Sin publicar»: sombra de la barra de formato de Redactar (edd4798) y **Cristal V2** (b2f2b8b, 616f849: Haze 2.0.1, `ui/glass` idéntico al de Celander, `ui/mail/MailMotion.kt`; lo hizo una sesión lateral). Se publica cuando César lo ordene.
