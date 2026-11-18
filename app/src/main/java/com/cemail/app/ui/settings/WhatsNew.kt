@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.cemail.app.BuildConfig
 import com.cemail.app.CemailApplication
 import com.cemail.app.R
-import com.cemail.app.update.ReleaseNotes
+import com.ce.kit.update.ReleaseNotes
 
 /** Settings → Updates: what this version brought, what the next one will bring, and the earlier ones. */
 @Composable

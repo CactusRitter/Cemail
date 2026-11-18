@@ -341,7 +341,7 @@ class MailViewModel(
     }
     fun undo() {
         val u = ui.value.undo ?: return
-        com.cemail.app.AppLog.i("undo", "restoring ${u.previous.size} message(s), folder before: ${u.previous.map { it.folder }}")
+        com.ce.kit.log.AppLog.i("undo", "restoring ${u.previous.size} message(s), folder before: ${u.previous.map { it.folder }}")
         if (u.previous.isNotEmpty()) repo.restore(u.previous)
         u.cancelSend?.let { id ->
             sender(u.restore?.fromAccountId).cancelScheduled(id)

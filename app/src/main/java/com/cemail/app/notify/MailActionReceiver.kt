@@ -4,7 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationManagerCompat
-import com.cemail.app.AppLog
+import com.ce.kit.log.AppLog
 import com.cemail.app.CemailApplication
 import com.cemail.app.data.mail.Folder
 import kotlinx.coroutines.delay

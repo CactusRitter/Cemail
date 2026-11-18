@@ -24,11 +24,11 @@ class AccountRepository(
         }
         tokens.save(result.accountId, merged)
         dao.upsert(AccountEntity(result.accountId, result.email, result.name, System.currentTimeMillis(), provider))
-        com.cemail.app.AppLog.i("account", "added ...${result.accountId.takeLast(4)} (refresh token: ${merged.refreshToken != null})")
+        com.ce.kit.log.AppLog.i("account", "added ...${result.accountId.takeLast(4)} (refresh token: ${merged.refreshToken != null})")
     }
 
     suspend fun remove(accountId: String) {
-        com.cemail.app.AppLog.i("account", "removed ...${accountId.takeLast(4)}")
+        com.ce.kit.log.AppLog.i("account", "removed ...${accountId.takeLast(4)}")
         tokens.clear(accountId)
         messages.deleteAccount(accountId)
         messages.forgetKept(accountId)
@@ -43,7 +43,7 @@ class AccountRepository(
         val id = "imap:" + config.email.lowercase()
         tokens.saveSecret(id, config.toJson())
         dao.upsert(AccountEntity(id, config.email, config.displayName, System.currentTimeMillis(), "IMAP"))
-        com.cemail.app.AppLog.i("account", "added IMAP account ...${id.takeLast(4)}")
+        com.ce.kit.log.AppLog.i("account", "added IMAP account ...${id.takeLast(4)}")
     }
 
     fun imapConfig(accountId: String): com.cemail.app.data.imap.ImapConfig? =

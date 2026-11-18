@@ -1,7 +1,7 @@
 package com.cemail.app
 
 import com.cemail.app.data.mail.combineCounts
-import com.cemail.app.update.Versions
+import com.ce.kit.update.Versions
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

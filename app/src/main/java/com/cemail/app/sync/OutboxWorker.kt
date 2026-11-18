@@ -8,7 +8,7 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.cemail.app.AppLog
+import com.ce.kit.log.AppLog
 import com.cemail.app.CemailApplication
 import java.util.concurrent.TimeUnit
 

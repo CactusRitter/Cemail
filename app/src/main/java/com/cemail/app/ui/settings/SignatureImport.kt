@@ -2,7 +2,7 @@ package com.cemail.app.ui.settings
 
 import android.content.Context
 import android.net.Uri
-import com.cemail.app.AppLog
+import com.ce.kit.log.AppLog
 import com.cemail.app.data.gmail.EmlParser
 import com.cemail.app.data.gmail.ParsedEml
 import com.cemail.app.data.gmail.SignatureHtml

@@ -1,5 +1,7 @@
 package com.cemail.app
 
+import com.ce.kit.log.CrashLog
+import com.ce.kit.log.AppLog
 import android.app.Application
 import com.cemail.app.data.SettingsRepository
 import com.cemail.app.data.auth.AccountRepository
@@ -33,7 +35,7 @@ import com.cemail.app.notify.MailNotifier
  */
 class CemailApplication : Application() {
     val settings: SettingsRepository by lazy { SettingsRepository(this) }
-    val updates: com.cemail.app.update.Updates by lazy { com.cemail.app.update.Updates(this) }
+    val updates: com.ce.kit.update.Updates get() = com.ce.kit.CeKit.updates
 
     val database: CemailDatabase by lazy { CemailDatabase.create(this) }
     val googleAuth: GoogleAuth by lazy { GoogleAuth(this) }
@@ -153,9 +155,8 @@ class CemailApplication : Application() {
     @OptIn(kotlinx.coroutines.FlowPreview::class) // debounce, for the widgets
     override fun onCreate() {
         super.onCreate()
-        AppLog.init(this)
+        com.ce.kit.CeKit.init(this, com.ce.kit.CeAppConfig("Cemail", BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE, "CactusRitter/Cemail"))
         com.cemail.app.data.mail.Outbox.init(java.io.File(filesDir, "outbox"))
-        CrashLog.install(this)
         com.cemail.app.data.push.Push.initFirebase(this)
         // The first web view of the process is slow to create (it starts the browser engine): one is made now, when the app
         // is idle after starting, so the first message with pictures does not stall its opening animation.

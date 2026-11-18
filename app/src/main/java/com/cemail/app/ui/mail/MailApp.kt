@@ -205,7 +205,7 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
-                com.cemail.app.AppLog.e("update", "could not check", e)
+                com.ce.kit.log.AppLog.e("update", "could not check", e)
             }
         }
     }

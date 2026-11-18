@@ -4,7 +4,7 @@ import android.app.LocaleManager
 import android.content.Context
 import android.os.Build
 import android.os.LocaleList
-import com.cemail.app.AppLog
+import com.ce.kit.log.AppLog
 import com.cemail.app.BuildConfig
 import com.cemail.app.data.SettingsRepository
 import com.cemail.app.data.auth.AccountRepository

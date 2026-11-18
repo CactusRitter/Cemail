@@ -83,7 +83,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.cemail.app.AppLog
+import com.ce.kit.log.AppLog
 import com.cemail.app.data.gmail.HtmlSanitizer
 import androidx.compose.foundation.layout.height
 import com.cemail.app.R

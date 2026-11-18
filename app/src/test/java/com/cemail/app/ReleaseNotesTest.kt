@@ -1,6 +1,6 @@
 package com.cemail.app
 
-import com.cemail.app.update.ReleaseNotes
+import com.ce.kit.update.ReleaseNotes
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test

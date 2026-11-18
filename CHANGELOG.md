@@ -4,6 +4,7 @@ Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones pri
 Cada versión se guarda en Google Drive (`Mi unidad/Ce Apps/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
 ## Sin publicar
+- Actualizador y Diagnóstico pasan al kit (CeKit F2a): `AppLog`, `CrashLog`, `Updates` (ahora con org.json, ya sin kotlinx.serialization para esto) y `ReleaseNotes`, con el FileProvider del kit (`${applicationId}.kit`). La app solo da nombre, versión y repositorio (`CeKit.init`). Probado en emulador: comprobar actualización y compartir registro.
 - Módulo común CeKit (submódulo git `CeKit/`, módulo `:kit`, paquete `com.ce.kit`): `ui/glass`, `Skin`, `Theme` (`CeTheme`, `CeAppearance`: `AppSettings` la implementa) y los textos de acento/estilo/diseño pasan al kit; se borran las copias locales. Mismo comportamiento (tests y arranque en emulador comprobados).
 
 ## 2.6.1 — 2026-11-18

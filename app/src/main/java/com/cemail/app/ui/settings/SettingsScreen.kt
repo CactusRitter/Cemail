@@ -54,8 +54,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
-import com.cemail.app.AppLog
-import com.cemail.app.CrashLog
+import com.ce.kit.log.AppLog
+import com.ce.kit.log.CrashLog
 import com.cemail.app.R
 import com.cemail.app.data.AppSettings
 import com.cemail.app.data.SettingsRepository

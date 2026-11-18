@@ -13,7 +13,7 @@ import com.cemail.app.data.gmail.GmailParser
 import com.cemail.app.data.gmail.InlineImages
 import com.cemail.app.data.gmail.MimeBuilder
 import java.io.File
-import com.cemail.app.AppLog
+import com.ce.kit.log.AppLog
 import com.cemail.app.data.gmail.AttachmentFinder
 import com.cemail.app.data.gmail.AttachmentInfo
 import com.cemail.app.data.gmail.ReplyInfo

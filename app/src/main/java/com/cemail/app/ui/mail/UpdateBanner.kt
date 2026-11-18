@@ -31,7 +31,7 @@ import com.ce.kit.ui.glass.glass
 import com.ce.kit.ui.glass.glassSpring
 import com.ce.kit.ui.glass.popIn
 import com.ce.kit.ui.glass.pressScale
-import com.cemail.app.update.DownloadState
+import com.ce.kit.update.DownloadState
 
 /**
  * At the top of the Inbox (and in Settings → Updates) when GitHub has a newer Cemail: download it, with its progress

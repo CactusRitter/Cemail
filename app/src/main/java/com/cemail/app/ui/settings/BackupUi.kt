@@ -53,7 +53,7 @@ fun rememberBackupLaunchers(onResult: (Int) -> Unit): BackupLaunchers {
         if (uri == null) return@rememberLauncherForActivityResult
         app.appScope.launch(Dispatchers.Main) {
             val ok = runCatching { app.backup.export(app.contentResolver.openOutputStream(uri)!!) }
-                .onFailure { com.cemail.app.AppLog.e("backup", "the backup could not be saved", it) }.isSuccess
+                .onFailure { com.ce.kit.log.AppLog.e("backup", "the backup could not be saved", it) }.isSuccess
             report(if (ok) R.string.backup_saved else R.string.backup_failed)
         }
     }
@@ -63,7 +63,7 @@ fun rememberBackupLaunchers(onResult: (Int) -> Unit): BackupLaunchers {
             val backup = try {
                 withContext(Dispatchers.IO) { app.contentResolver.openInputStream(uri)!!.use { app.backup.read(it) } }
             } catch (e: Exception) {
-                com.cemail.app.AppLog.e("backup", "the backup could not be read", e)
+                com.ce.kit.log.AppLog.e("backup", "the backup could not be read", e)
                 report(R.string.backup_failed)
                 return@launch
             }
@@ -80,7 +80,7 @@ fun rememberBackupLaunchers(onResult: (Int) -> Unit): BackupLaunchers {
                     picked = null
                     app.appScope.launch(Dispatchers.Main) {
                         val ok = runCatching { app.backup.restore(backup) }
-                            .onFailure { com.cemail.app.AppLog.e("backup", "the backup could not be restored", it) }.isSuccess
+                            .onFailure { com.ce.kit.log.AppLog.e("backup", "the backup could not be restored", it) }.isSuccess
                         report(if (ok) R.string.backup_restored else R.string.backup_failed)
                     }
                 }) { Text(stringResource(R.string.backup_restore_confirm)) }

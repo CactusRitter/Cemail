@@ -4,7 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import com.cemail.app.AppLog
+import com.ce.kit.log.AppLog
 import com.cemail.app.CemailApplication
 import com.cemail.app.data.db.AccountEntity
 import java.io.File

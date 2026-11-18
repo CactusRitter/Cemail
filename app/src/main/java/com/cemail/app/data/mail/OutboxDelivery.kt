@@ -1,6 +1,6 @@
 package com.cemail.app.data.mail
 
-import com.cemail.app.AppLog
+import com.ce.kit.log.AppLog
 import com.cemail.app.data.db.MessageDao
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext

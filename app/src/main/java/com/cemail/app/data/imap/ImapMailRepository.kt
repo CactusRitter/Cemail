@@ -1,6 +1,6 @@
 package com.cemail.app.data.imap
 
-import com.cemail.app.AppLog
+import com.ce.kit.log.AppLog
 import com.cemail.app.data.db.LabelDao
 import com.cemail.app.data.db.MessageDao
 import com.cemail.app.data.db.KeptMessage

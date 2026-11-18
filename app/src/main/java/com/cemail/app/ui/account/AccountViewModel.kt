@@ -111,7 +111,7 @@ class AccountViewModel(
         } catch (e: javax.mail.MessagingException) {
             R.string.imap_error_connect
         } catch (e: Exception) {
-            com.cemail.app.AppLog.e("account", "could not check the IMAP account", e)
+            com.ce.kit.log.AppLog.e("account", "could not check the IMAP account", e)
             R.string.imap_error_other
         }
     }
