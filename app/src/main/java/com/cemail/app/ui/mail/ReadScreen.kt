@@ -200,6 +200,12 @@ fun ReadScreen(
     val folderBox = mail.folder.takeIf { it != Folder.INBOX }?.toBox()
     val mailLabels = accountLabels.filter { it.id in mail.labelIds }.sortedBy { it.name.lowercase() }
 
+    var panel by remember { mutableStateOf(false) }
+    var attachPanel by remember { mutableStateOf(false) }
+    // The page is a native WebView: on some phones it is drawn above the Compose popups (menu, attachments, labels)
+    // that open over it, so while one is open the page is hidden (the empty glass card shows) instead of mixing with it.
+    val popupOpen = panel || attachPanel || labelPanel
+
     Box(Modifier.fillMaxSize()) {
         Column(
             Modifier
@@ -270,7 +276,7 @@ fun ReadScreen(
                         )
                         Box(Modifier.fillMaxSize().glass(RoundedCornerShape(24.dp), GlassKind.Card))
                         if (page != null && settled) {
-                            HtmlBody(page, showImages, Modifier.fillMaxSize().graphicsLayer { this.alpha = alpha }, darken = darken, onShown = { shown = true }) { }
+                            HtmlBody(page, showImages, Modifier.fillMaxSize().graphicsLayer { this.alpha = alpha }, darken = darken, hidden = popupOpen, onShown = { shown = true }) { }
                         }
                     }
                     else -> Box(
@@ -285,14 +291,12 @@ fun ReadScreen(
         }
 
         // Top: one floating pill with the back button, the subject over the sender, and the menu button.
-        var panel by remember { mutableStateOf(false) }
         // Looked up when the menu opens (a connection may be needed), so opening a message costs nothing extra.
         val unsubscribe by produceState<com.cemail.app.data.mail.UnsubscribeInfo?>(null, summary.id, panel) {
             value = if (panel) vm.unsubscribeInfo(summary.id) else null
         }
         val muted by produceState(false, summary.id, panel) { value = panel && vm.isMuted(summary.id) }
         var unsubscribing by remember { mutableStateOf(false) }
-        var attachPanel by remember { mutableStateOf(false) }
         Box(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 12.dp, vertical = 8.dp)) {
             GlassPill(Modifier.fillMaxWidth(), height = 64.dp) {
                 PillIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), vm::closeMail)
@@ -580,7 +584,7 @@ private fun AttachmentsPopup(messageId: Long, attachments: List<com.cemail.app.d
  */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier, darken: Boolean = false, onShown: () -> Unit = {}, onScroll: (Int) -> Unit) {
+fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier, darken: Boolean = false, hidden: Boolean = false, onShown: () -> Unit = {}, onScroll: (Int) -> Unit) {
     val currentOnScroll by rememberUpdatedState(onScroll)
     val currentOnShown by rememberUpdatedState(onShown)
     val darkPage = MaterialTheme.colorScheme.surface.toArgb()
@@ -628,6 +632,8 @@ fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier, darken: Bool
         },
         update = { web ->
             web.settings.blockNetworkImage = !showImages
+            // [hidden]: a Compose popup is open over the page, which the native view would otherwise paint above.
+            web.visibility = if (hidden) android.view.View.INVISIBLE else android.view.View.VISIBLE
             val key = "$showImages|$page"
             if (web.tag != key) {
                 web.tag = key

@@ -1,3 +1,7 @@
+## 2.6.1
+- Lesen: Wenn du das Aktionsmenü (oder das Fenster mit Anhängen oder Labels) öffnest, erscheint die Seite einer HTML-Mail nicht mehr darüber.
+- Wenn du beim Schreiben auf eine Benachrichtigung tippst, öffnet sich jetzt diese Nachricht; was du geschrieben hast, bleibt in den Entwürfen.
+
 ## 2.6.0
 - Schreiben: An, Betreff und die übrigen Felder bleiben fest unter der oberen Leiste, nur die Nachricht scrollt. Beim Schreiben oder Scrollen schrumpfen die Felder zu einer kleinen Pille mit Empfänger und Betreff; tippe darauf oder scrolle nach oben, um sie wieder zu öffnen.
 - Konten: zuerst die Liste, dann Hinzufügen, dann die Reihenfolge der Konten. Das Standardkonto wählst du jetzt im jeweiligen Konto, mit einem Stern; in der Liste trägt das Standardkonto einen Stern.

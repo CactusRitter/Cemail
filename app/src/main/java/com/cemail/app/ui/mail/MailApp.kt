@@ -234,6 +234,10 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
             return@LaunchedEffect
         }
         showSettings = false
+        // The compose screen is drawn above everything else: with a message open on it, a request that wants another screen
+        // (a notification that opens a message, the Inbox, a search, a snooze) would stay hidden behind it. The message
+        // being written is kept in Drafts first, never lost (Write does the same below).
+        if (state.draft != null && r !is LaunchRequest.Write) vm.closeCompose(me)
         when (r) {
             is LaunchRequest.Compose -> vm.newDraft()
             is LaunchRequest.OpenBox -> { vm.closeMail(); vm.selectBox(r.box) }
