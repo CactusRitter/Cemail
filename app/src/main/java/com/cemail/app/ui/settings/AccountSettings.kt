@@ -426,16 +426,15 @@ private fun AccountLookCard(account: AccountEntity, look: AccountLook, repo: Set
         // The name in the lists.
         Text(stringResource(R.string.account_label_title), style = MaterialTheme.typography.titleSmall)
         Text(stringResource(R.string.account_label_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        TextField(
+        com.ce.kit.ui.GlassTextField(
             value = label,
             onValueChange = {
                 label = it
                 repo.setAccountLook(account.id, look.copy(label = it, senderName = sender))
             },
-            placeholder = { Text(account.displayName ?: account.email) },
+            placeholder = account.displayName ?: account.email,
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            colors = fieldColors,
         )
     }
     SettingsCard {
@@ -446,16 +445,15 @@ private fun AccountLookCard(account: AccountEntity, look: AccountLook, repo: Set
             return@SettingsCard
         }
         Text(stringResource(R.string.account_sender_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        TextField(
+        com.ce.kit.ui.GlassTextField(
             value = sender,
             onValueChange = {
                 sender = it
                 repo.setAccountLook(account.id, look.copy(label = label, senderName = it))
             },
-            placeholder = { Text(account.displayName ?: stringResource(R.string.account_sender_hint)) },
+            placeholder = account.displayName ?: stringResource(R.string.account_sender_hint),
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            colors = fieldColors,
         )
     }
     SettingsCard {
@@ -548,18 +546,12 @@ private fun SignatureCard(email: String, repo: SettingsRepository) {
                 HtmlBody(HtmlSanitizer.page(html, 0, ""), true, Modifier.fillMaxSize()) { }
             }
         } else {
-            TextField(
+            com.ce.kit.ui.GlassTextField(
                 value = text,
                 onValueChange = { text = it; repo.setSignature(email, it) },
-                placeholder = { Text(stringResource(R.string.settings_signature_hint)) },
+                placeholder = stringResource(R.string.settings_signature_hint),
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 2,
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                ),
             )
         }
         TextAction(R.string.settings_signature_paste, MaterialTheme.colorScheme.primary) { paste() }

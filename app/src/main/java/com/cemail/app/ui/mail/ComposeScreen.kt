@@ -234,12 +234,17 @@ fun ComposeScreen(
     }
     val collapsed = !headerOpen && (writingBody || scrolled)
 
+    // Room under the message for the formatting bar: only while the bar is shown, so no empty gap is left above the
+    // keyboard when the focus is in To, Cc or Subject.
+    val barRoom by androidx.compose.animation.core.animateDpAsState(
+        if (writingBody) 84.dp else 12.dp, com.ce.kit.ui.glass.glassSpring(), label = "formatBarRoom",
+    )
     Box(Modifier.fillMaxSize().imePadding()) {
         Column(
             Modifier
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(top = 80.dp, bottom = 84.dp),
+                .padding(top = 80.dp, bottom = barRoom),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             // From, To, Cc and Subject stay fixed under the top bar; only the message (below) scrolls, so the fields never
@@ -355,14 +360,13 @@ fun ComposeScreen(
                     }
                 }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                TextField(
+                com.ce.kit.ui.GlassTextField(
                     value = draft.subject,
                     onValueChange = { vm.editDraft { d -> d.copy(subject = it) } },
-                    label = { Text(stringResource(R.string.compose_subject)) },
+                    label = stringResource(R.string.compose_subject),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, autoCorrectEnabled = true, keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
-                    colors = colors,
                 )
             }
             }

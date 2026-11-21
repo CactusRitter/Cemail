@@ -175,26 +175,24 @@ fun ImapSetupScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                Column(Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card)) {
-                    TextField(
-                        value = email, onValueChange = { email = it }, singleLine = true, colors = colors,
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    com.ce.kit.ui.GlassTextField(
+                        value = email, onValueChange = { email = it }, singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text(stringResource(if (yahoo) R.string.yahoo_email else R.string.imap_email)) },
+                        label = stringResource(if (yahoo) R.string.yahoo_email else R.string.imap_email),
                         keyboardOptions = KeyboardOptions(autoCorrectEnabled = false, keyboardType = KeyboardType.Email),
                     )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    TextField(
-                        value = password, onValueChange = { password = it }, singleLine = true, colors = colors,
+                    com.ce.kit.ui.GlassTextField(
+                        value = password, onValueChange = { password = it }, singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text(stringResource(if (yahoo) R.string.yahoo_password else R.string.imap_password)) },
+                        label = stringResource(if (yahoo) R.string.yahoo_password else R.string.imap_password),
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(autoCorrectEnabled = false, keyboardType = KeyboardType.Password),
                     )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    TextField(
-                        value = name, onValueChange = { name = it }, singleLine = true, colors = colors,
+                    com.ce.kit.ui.GlassTextField(
+                        value = name, onValueChange = { name = it }, singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text(stringResource(R.string.imap_name)) },
+                        label = stringResource(R.string.imap_name),
                     )
                 }
                 if (unknownProvider) {
@@ -212,11 +210,11 @@ fun ImapSetupScreen(
                     color = MaterialTheme.colorScheme.primary,
                 )
                 if (advanced) {
-                    Column(Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card)) {
-                        TextField(
-                            value = username, onValueChange = { username = it }, singleLine = true, colors = colors,
+                    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        com.ce.kit.ui.GlassTextField(
+                            value = username, onValueChange = { username = it }, singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
-                            label = { Text(stringResource(R.string.imap_username)) },
+                            label = stringResource(R.string.imap_username),
                             keyboardOptions = KeyboardOptions(autoCorrectEnabled = false, keyboardType = KeyboardType.Email),
                         )
                         ServerBlock(R.string.imap_server_in, imapHost, { imapHost = it }, imapPort, { imapPort = it }, imapStartTls, { imapStartTls = it }, colors)
@@ -258,7 +256,7 @@ fun ImapSetupScreen(
 private fun YahooSteps() {
     val context = androidx.compose.ui.platform.LocalContext.current
     Column(
-        Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), GlassKind.Card).padding(horizontal = 18.dp, vertical = 16.dp),
+        Modifier.fillMaxWidth().padding(vertical = 4.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -316,18 +314,17 @@ private fun ServerBlock(
     onStartTls: (Boolean) -> Unit,
     colors: androidx.compose.material3.TextFieldColors,
 ) {
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     Text(stringResource(title), Modifier.padding(start = 16.dp, top = 10.dp), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
     Row(verticalAlignment = Alignment.CenterVertically) {
-        TextField(
-            value = host, onValueChange = onHost, singleLine = true, colors = colors, modifier = Modifier.weight(1f),
-            label = { Text(stringResource(R.string.imap_host)) },
+        com.ce.kit.ui.GlassTextField(
+            value = host, onValueChange = onHost, singleLine = true, modifier = Modifier.weight(1f),
+            label = stringResource(R.string.imap_host),
             keyboardOptions = KeyboardOptions(autoCorrectEnabled = false, keyboardType = KeyboardType.Uri),
         )
-        TextField(
-            value = port, onValueChange = { onPort(it.filter(Char::isDigit).take(5)) }, singleLine = true, colors = colors,
+        com.ce.kit.ui.GlassTextField(
+            value = port, onValueChange = { onPort(it.filter(Char::isDigit).take(5)) }, singleLine = true,
             modifier = Modifier.width(96.dp),
-            label = { Text(stringResource(R.string.imap_port)) },
+            label = stringResource(R.string.imap_port),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         )
     }

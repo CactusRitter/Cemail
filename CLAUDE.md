@@ -89,3 +89,7 @@ Lee `D:\cesar\Documents\Claude Projects\Ce\docs\AHORRO.md`: subagentes para leer
 **Consolas y cuentas:** lo ya hecho (Google Cloud, Entra, claves, webs, dispositivos) está en `D:\cesar\Documents\Claude Projects\Ce\docs\NUBE.md`; mírelo antes de abrir una consola o preguntar a César, y anota allí lo nuevo.
 
 **Reutilizar antes de inventar:** antes de decir «no se puede» o diseñar algo, busca si otra app Ce ya lo resuelve (`Ce/docs/NUBE.md`, `Ce/docs/ECOSYSTEM.md`, `docs/` de las otras apps; un subagente barato con resumen de 5 líneas). Lo que una app ya sabe hacer, las demás lo copian.
+
+## Dispositivos reales y mensajes entre sesiones (César, 2026-11-21: vale sin volver a preguntar)
+- Se puede instalar y probar en el **S26** `RFGL107KERL` (`--user 0`) y en la **tableta** `R52Y806MWSP` con `adb -s <serie> install -r` (nunca desinstalar ni borrar datos; nunca `installDebug` ni `connectedAndroidTest` sin `ANDROID_SERIAL`). Con la pantalla SIEMPRE encendida durante la prueba: `adb -s <serie> shell svc power stayon true` y `false` al terminar. El **OPPO** `3B165C00LH900000` es el móvil principal de César: NO tocarlo sin que él lo pida. Correos de prueba: solo entre cuentas propias de César, con asunto de prueba. Si dos sesiones usan el mismo móvil, mirar antes `topResumedActivity` y esperar.
+- Enviar mensajes a «Ce Líder» y a las demás sesiones Ce con `SendMessage` está permitido y esperado (resúmenes, preguntas, avisos): no hace falta pedir permiso a César.
