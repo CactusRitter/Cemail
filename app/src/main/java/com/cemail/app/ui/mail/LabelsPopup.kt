@@ -67,12 +67,7 @@ internal fun LabelsPopup(
 ) {
     val accounts = labelsByAccount.filterValues { it.isNotEmpty() }
     val origin = TransformOrigin(if (LocalListOnRight.current) 0f else 1f, if (fromTop) 0f else 1f)
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.2f))
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss),
-    ) {
+    com.ce.kit.ui.GlassOverlayWindow(onDismiss) {
         Column(
             Modifier
                 .align(if (fromTop) Alignment.TopEnd else floatingCorner())

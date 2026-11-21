@@ -1,7 +1,5 @@
 package com.cemail.app.ui.mail
 
-import androidx.core.view.drawToBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
@@ -205,8 +203,7 @@ fun ReadScreen(
     var panel by remember { mutableStateOf(false) }
     var attachPanel by remember { mutableStateOf(false) }
     // The page is a native WebView: on some phones it is drawn above the Compose popups (menu, attachments, labels)
-    // that open over it, so while one is open the page is hidden (the empty glass card shows) instead of mixing with it.
-    val popupOpen = panel || attachPanel || labelPanel
+    // that open over it: so they are drawn in their own window (GlassOverlayWindow), which is always above the page..
 
     Box(Modifier.fillMaxSize()) {
         Column(
@@ -278,7 +275,7 @@ fun ReadScreen(
                         )
                         Box(Modifier.fillMaxSize().glass(RoundedCornerShape(24.dp), GlassKind.Card))
                         if (page != null && settled) {
-                            HtmlBody(page, showImages, Modifier.fillMaxSize().graphicsLayer { this.alpha = alpha }, darken = darken, hidden = popupOpen, onShown = { shown = true }) { }
+                            HtmlBody(page, showImages, Modifier.fillMaxSize().graphicsLayer { this.alpha = alpha }, darken = darken, onShown = { shown = true }) { }
                         }
                     }
                     else -> Box(
@@ -441,12 +438,7 @@ private class PanelItem(
 private fun ActionGrid(onDismiss: () -> Unit, items: List<PanelItem>) {
     var hint by remember { mutableStateOf<Int?>(null) }
     val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.2f))
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss),
-    ) {
+    com.ce.kit.ui.GlassOverlayWindow(onDismiss) {
         Column(
             Modifier
                 .align(com.ce.kit.ui.glass.floatingCorner())
@@ -558,12 +550,7 @@ private fun ThreadCard(thread: List<Mail>, vm: MailViewModel) {
 /** The attached files of the open message, in a small glass card that drops down from the paperclip. */
 @Composable
 private fun AttachmentsPopup(messageId: Long, attachments: List<com.cemail.app.data.gmail.AttachmentInfo>, vm: MailViewModel, onDismiss: () -> Unit) {
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.2f))
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss),
-    ) {
+    com.ce.kit.ui.GlassOverlayWindow(onDismiss) {
         Column(
             Modifier
                 .align(Alignment.TopEnd)
@@ -592,14 +579,9 @@ fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier, darken: Bool
     val darkPage = MaterialTheme.colorScheme.surface.toArgb()
     // The WebView only darkens a page when its own theme is a dark one, so it gets one that says so (whatever the
     // system is set to), and is made again when this changes.
-    // While a popup is open the native page is hidden (it would paint above the popup on some phones); a picture of it takes its
-    // place so the message does not vanish. If the picture cannot be taken, the empty card shows as before.
-    var snapshot by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
-    if (!hidden) snapshot = null
-    Box(modifier) {
     key(darken) {
     AndroidView(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier,
         factory = { ctx ->
             val theme = if (darken) android.R.style.Theme_Material_NoActionBar else android.R.style.Theme_Material_Light_NoActionBar
             WebView(android.view.ContextThemeWrapper(ctx, theme)).apply {
@@ -640,9 +622,6 @@ fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier, darken: Bool
         update = { web ->
             web.settings.blockNetworkImage = !showImages
             // [hidden]: a Compose popup is open over the page, which the native view would otherwise paint above.
-            if (hidden && web.visibility == android.view.View.VISIBLE && web.width > 0 && web.height > 0) {
-                snapshot = try { web.drawToBitmap() } catch (_: Throwable) { null }
-            }
             web.visibility = if (hidden) android.view.View.INVISIBLE else android.view.View.VISIBLE
             val key = "$showImages|$page"
             if (web.tag != key) {
@@ -653,15 +632,6 @@ fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier, darken: Bool
         },
         onRelease = { it.destroy() },
     )
-    }
-    snapshot?.let { shot ->
-        androidx.compose.foundation.Image(
-            shot.asImageBitmap(),
-            null,
-            Modifier.fillMaxSize(),
-            contentScale = androidx.compose.ui.layout.ContentScale.FillBounds,
-        )
-    }
     }
 }
 

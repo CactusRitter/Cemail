@@ -342,12 +342,10 @@ fun ListScreen(
         ) {
             // Selecting, searching and the normal header swap with a little pop instead of changing at once.
             val barMode = if (selecting) 0 else if (state.searching) 1 else 2
-            AnimatedContent(
-                targetState = barMode,
-                transitionSpec = { (fadeIn(glassSpring()) + scaleIn(bounceSpring(), initialScale = 0.92f)) togetherWith fadeOut(glassSpring()) using androidx.compose.animation.SizeTransform(clip = false) }, // clip = false: the soft shadow of the pill reaches past its bounds
-                label = "topBar",
-            ) { mode ->
-            Box(Modifier.padding(end = barRoom, bottom = barRoom)) {
+            // No AnimatedContent here: it drew the bar into a buffer the size of its content and cut the soft shadow of the pill to a rectangle (seen on a real phone).
+            androidx.compose.runtime.key(barMode) {
+            val mode = barMode
+            Box(Modifier.popIn(initialScale = 0.92f).padding(end = barRoom, bottom = barRoom)) {
             when (mode) {
                 0 -> SelectionBar(state, vm, haze, onLabel = if (selectionLabels.values.any { it.isNotEmpty() }) ({ labelPanel = true }) else null)
                 1 -> SearchBar(state, vm, haze)

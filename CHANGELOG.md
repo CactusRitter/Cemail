@@ -4,6 +4,7 @@ Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones pri
 Cada versión se guarda en Google Drive (`Mi unidad/Ce Apps/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
 ## Sin publicar
+- Arreglos (informe de César en el OPPO, 2.7.0): el menú ⋮, adjuntos y etiquetas del lector van en su propia ventana (siempre por encima del WebView; el correo ya no se vacía, encoge ni parpadea); el cajón vuelve a ser cristal con desenfoque (con 2.7.0 quedó blanco opaco por el suelo de opacidad de los menús, que ahora solo vale sin desenfoque); la cabecera (búsqueda/selección/normal) ya no usa AnimatedContent, que recortaba la sombra de la píldora a un rectángulo. Probado en emulador (cajón, menú del lector); sin probar en el OPPO.
 
 ## 2.7.0 — 2026-11-21
 - Pasada de temas: menús de Redactar (GlassMenu), botones (inicio de sesión, IMAP, fecha y hora, cargar más, deshacer) y chips (SSL/STARTTLS, destinatarios) del kit. Arreglo: la sombra de la píldora de búsqueda (Glass claro) ya no se recorta en un rectángulo (el cambio animado del encabezado recortaba al borde). Sin probar a fondo en todos los temas.
