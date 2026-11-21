@@ -4,6 +4,7 @@ Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones pri
 Cada versión se guarda en Google Drive (`Mi unidad/Ce Apps/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
 ## Sin publicar
+- R8 (minify + shrinkResources) en la versión release, con reglas de Glance, Android Mail (IMAP/SMTP), workers y serialización. Probado en emulador: arranque, modo ejemplo, lector, Ajustes. NO probado: inicio de sesión Google/Microsoft, IMAP/SMTP reales, push de Gmail, widgets, envío programado.
 - Pasada de temas: menús de Redactar (GlassMenu), botones (inicio de sesión, IMAP, fecha y hora, cargar más, deshacer) y chips (SSL/STARTTLS, destinatarios) del kit. Arreglo: la sombra de la píldora de búsqueda (Glass claro) ya no se recorta en un rectángulo (el cambio animado del encabezado recortaba al borde). Sin probar a fondo en todos los temas.
 - Inicio de sesión (Google, Microsoft) y almacén de tokens pasan al kit (CeKit F4): mismo cifrado, mismo alias del Keystore (`cemail_tokens`), mismas preferencias (`tokens`) y claves: las sesiones existentes no se cierran. Sin probar con un inicio de sesión real tras el cambio.
 - Actualizaciones (aviso, Novedades, página) y Diagnóstico pasan al kit (CeKit F3b). Lector: al abrir un menú sobre el correo, en vez de vaciar la tarjeta se muestra una foto de la página (si no se puede tomar, queda como antes); sin probar con HTML real en un móvil.
