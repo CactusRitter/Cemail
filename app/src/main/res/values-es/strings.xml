@@ -2,8 +2,6 @@
 <!-- Textos en español. Mantener las mismas claves que values/strings.xml. -->
 <resources>
     <!-- Colores de acento -->
-    <string name="style_title">Estilo</string>
-    <string name="style_body">El fondo y el tinte del cristal.</string>
     <string name="pane_empty">Elige un mensaje para leerlo aquí.</string>
     <string name="recipient_remove">Quitar a %1$s</string>
     <string name="a11y_unread">No leído</string>
@@ -32,19 +30,6 @@
     <string name="list_side_body">En tabletas, el lado donde va la lista. Con la lista a la derecha, los botones flotantes pasan a la izquierda.</string>
     <string name="list_side_left">Izquierda</string>
     <string name="list_side_right">Derecha</string>
-    <string name="skin_title">Diseño</string>
-    <string name="skin_body">El aspecto de toda la app. Cristal es el que comparte con Celander y Cenotes; los demás están en pruebas.</string>
-    <string name="skin_always_dark">Este diseño siempre es oscuro.</string>
-    <string name="depth_title">Sombra 3D</string>
-    <string name="depth_body">Una sombra suave que eleva tarjetas y botones sobre el fondo, como un cristal por encima.</string>
-    <string name="theme_mode_title">Claro u oscuro</string>
-    <string name="theme_system">Sistema</string>
-    <string name="theme_light">Claro</string>
-    <string name="theme_dark">Oscuro</string>
-    <string name="accent_title">Color</string>
-    <string name="accent_body">Para botones, selecciones y el fondo.</string>
-    <string name="accent_custom">Color personalizado</string>
-    <string name="preview">Vista previa</string>
 
     <!-- Carpetas -->
     <string name="box_inbox">Recibidos</string>
@@ -200,8 +185,6 @@
     <string name="section_last_week">Última semana</string>
     <string name="section_older">Antiguos</string>
     <string name="settings_section_appearance">Apariencia</string>
-    <string name="settings_transparency_title">Transparencia del cristal</string>
-    <string name="settings_transparency_body">Cuánto se transparentan las tarjetas y las barras.</string>
     <string name="account_all">Todas las cuentas</string>
     <string name="account_all_body">Bandeja unificada</string>
     <string name="settings_section_accounts">Cuentas</string>

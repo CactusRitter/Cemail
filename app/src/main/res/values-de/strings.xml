@@ -2,8 +2,6 @@
 <!-- German strings. Every key of values/strings.xml must exist here too. -->
 <resources>
     <!-- Accent colours -->
-    <string name="style_title">Stil</string>
-    <string name="style_body">Der Hintergrund und die Tönung des Glases.</string>
     <string name="pane_empty">Wähle eine Nachricht, um sie hier zu lesen.</string>
     <string name="recipient_remove">%1$s entfernen</string>
     <string name="a11y_unread">Ungelesen</string>
@@ -32,19 +30,6 @@
     <string name="list_side_body">Auf Tablets die Seite, auf der die Liste steht. Ist die Liste rechts, wandern die schwebenden Schaltflächen nach links.</string>
     <string name="list_side_left">Links</string>
     <string name="list_side_right">Rechts</string>
-    <string name="skin_title">Design</string>
-    <string name="skin_body">Das Aussehen der ganzen App. Glas ist das gemeinsame Design mit Celander und Cenotes; die anderen werden noch ausprobiert.</string>
-    <string name="skin_always_dark">Dieses Design ist immer dunkel.</string>
-    <string name="depth_title">3D-Schatten</string>
-    <string name="depth_body">Ein weicher Schatten, der Karten und Schaltflächen vom Hintergrund abhebt, wie Glas darüber.</string>
-    <string name="theme_mode_title">Hell oder dunkel</string>
-    <string name="theme_system">System</string>
-    <string name="theme_light">Hell</string>
-    <string name="theme_dark">Dunkel</string>
-    <string name="accent_title">Farbe</string>
-    <string name="accent_body">Für Schaltflächen, Auswahl und Hintergrund.</string>
-    <string name="accent_custom">Eigene Farbe</string>
-    <string name="preview">Vorschau</string>
 
     <!-- Folders -->
     <string name="box_inbox">Posteingang</string>
@@ -200,8 +185,6 @@
     <string name="section_last_week">Letzte Woche</string>
     <string name="section_older">Älter</string>
     <string name="settings_section_appearance">Aussehen</string>
-    <string name="settings_transparency_title">Glastransparenz</string>
-    <string name="settings_transparency_body">Wie durchsichtig Karten und Leisten sind.</string>
     <string name="account_all">Alle Konten</string>
     <string name="account_all_body">Gemeinsamer Posteingang</string>
     <string name="settings_section_accounts">Konten</string>

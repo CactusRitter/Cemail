@@ -174,6 +174,7 @@ fun ListScreen(
         value = chosenAccounts.associateWith { vm.userLabels(it) }
     }
     var labelPanel by remember { mutableStateOf(false) }
+    var emptyConfirm by remember { mutableStateOf(false) }
     if (!selecting) labelPanel = false
     val startIsArchive = state.box != MailBox.ARCHIVE && state.box != MailBox.TRASH && state.box != MailBox.SPAM
 
@@ -276,7 +277,7 @@ fun ListScreen(
                 }
             }
             if ((state.box == MailBox.TRASH || state.box == MailBox.SPAM) && state.labelId == null && state.query.isBlank() && !empty) {
-                item(key = "empty-folder") { Box(edge) { EmptyFolderButton(state.box, vm) } }
+                item(key = "empty-folder") { Box(edge) { EmptyFolderButton(state.box) { emptyConfirm = true } } }
             }
             if (state.pinned.isNotEmpty()) {
                 val pinBase = n
@@ -400,6 +401,17 @@ fun ListScreen(
             }
           }
         }
+
+        // Confirmation of "empty trash/spam": here, at the screen's root, so its scrim covers the whole screen.
+        com.ce.kit.ui.GlassDialog(
+            visible = emptyConfirm,
+            title = stringResource(R.string.empty_confirm_title),
+            message = stringResource(R.string.empty_confirm_body, stringResource(state.box.labelRes())),
+            confirmLabel = stringResource(R.string.delete_forever),
+            onConfirm = { emptyConfirm = false; vm.emptyFolder(state.box) },
+            onDismiss = { emptyConfirm = false },
+            destructive = true,
+        )
     }
     }
 }
@@ -629,33 +641,16 @@ private fun MoreButton(state: MailUiState, search: Boolean, onClick: () -> Unit)
 }
 
 @Composable
-private fun EmptyFolderButton(box: MailBox, vm: MailViewModel) {
-    var confirm by remember { mutableStateOf(false) }
-    val name = stringResource(box.labelRes())
+private fun EmptyFolderButton(box: MailBox, onClick: () -> Unit) {
     Box(Modifier.fillMaxWidth().padding(bottom = 8.dp), contentAlignment = Alignment.Center) {
         Text(
             stringResource(if (box == MailBox.TRASH) R.string.empty_trash else R.string.empty_spam),
             Modifier
                 .glass(CircleShape, GlassKind.Card)
-                .clickable(role = Role.Button) { confirm = true }
+                .clickable(role = Role.Button, onClick = onClick)
                 .padding(horizontal = 20.dp, vertical = 12.dp),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.error,
-        )
-    }
-    if (confirm) {
-        androidx.compose.material3.AlertDialog(
-            onDismissRequest = { confirm = false },
-            title = { Text(stringResource(R.string.empty_confirm_title)) },
-            text = { Text(stringResource(R.string.empty_confirm_body, name)) },
-            confirmButton = {
-                androidx.compose.material3.TextButton(onClick = { confirm = false; vm.emptyFolder(box) }) {
-                    Text(stringResource(R.string.delete_forever), color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                androidx.compose.material3.TextButton(onClick = { confirm = false }) { Text(stringResource(R.string.cancel)) }
-            },
         )
     }
 }

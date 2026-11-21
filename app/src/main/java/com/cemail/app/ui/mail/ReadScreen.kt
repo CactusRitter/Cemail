@@ -662,30 +662,27 @@ private fun UnsubscribeDialog(sender: String, accountId: String, info: com.cemai
         info.https != null -> R.string.unsub_body_web
         else -> R.string.unsub_body_mail
     }
-    androidx.compose.material3.AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.unsub_title, sender)) },
-        text = { Text(stringResource(body)) },
-        confirmButton = {
-            androidx.compose.material3.TextButton(onClick = {
-                onDismiss()
-                when {
-                    info.oneClick -> scope.launch {
-                        val ok = com.cemail.app.data.mail.Unsubscribe.postOneClick(info.https.orEmpty())
-                        Toast.makeText(context, if (ok) R.string.unsub_done else R.string.unsub_failed, Toast.LENGTH_LONG).show()
-                    }
-                    info.https != null -> try {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(info.https)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                    } catch (_: Exception) {
-                        Toast.makeText(context, R.string.unsub_failed, Toast.LENGTH_LONG).show()
-                    }
-                    info.mailto != null -> vm.newDraft(Draft(to = info.mailto, subject = info.mailtoSubject ?: "unsubscribe", fromAccountId = accountId.takeIf { it.isNotBlank() }))
+    com.ce.kit.ui.GlassDialog(
+        visible = true,
+        title = stringResource(R.string.unsub_title, sender),
+        message = stringResource(body),
+        confirmLabel = stringResource(R.string.action_unsubscribe),
+        onConfirm = {
+            onDismiss()
+            when {
+                info.oneClick -> scope.launch {
+                    val ok = com.cemail.app.data.mail.Unsubscribe.postOneClick(info.https.orEmpty())
+                    Toast.makeText(context, if (ok) R.string.unsub_done else R.string.unsub_failed, Toast.LENGTH_LONG).show()
                 }
-            }) { Text(stringResource(R.string.action_unsubscribe)) }
+                info.https != null -> try {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(info.https)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                } catch (_: Exception) {
+                    Toast.makeText(context, R.string.unsub_failed, Toast.LENGTH_LONG).show()
+                }
+                info.mailto != null -> vm.newDraft(Draft(to = info.mailto, subject = info.mailtoSubject ?: "unsubscribe", fromAccountId = accountId.takeIf { it.isNotBlank() }))
+            }
         },
-        dismissButton = {
-            androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
-        },
+        onDismiss = onDismiss,
     )
 }
 

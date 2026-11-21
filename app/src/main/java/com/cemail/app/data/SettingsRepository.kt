@@ -18,9 +18,9 @@ import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.put
 
 data class AppSettings(
-    val accent: Accent = Accent.INDIGO,
+    override val accent: Accent = Accent.INDIGO,
     /** A colour of the free hue bar (0–360) instead of [accent]; null = the chosen accent. */
-    val customHue: Float? = null,
+    override val customHue: Float? = null,
     /** Light or dark: following the phone, or always one of them. */
     override val themeMode: com.ce.kit.ui.theme.ThemeMode = com.ce.kit.ui.theme.ThemeMode.SYSTEM,
     /** Background and glass look (Classic, Neutral, Aurora). */

@@ -1,5 +1,10 @@
 package com.cemail.app.ui.settings
 
+import com.ce.kit.ui.settings.BigRow
+import com.ce.kit.ui.settings.IconBubble
+import com.ce.kit.ui.settings.SwitchRow
+import com.ce.kit.ui.settings.ChoiceChip
+import com.ce.kit.ui.settings.SettingsCard
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
@@ -106,7 +111,9 @@ internal fun AccountsPage(accounts: List<AccountEntity>, settings: AppSettings, 
             body = stringResource(R.string.account_row_body, account.email, providerName(account)),
             index = index,
             onClick = { onRoute(SettingsRoute.account(account.id)) },
-            starred = accounts.size > 1 && account.id == default?.id,
+            titleBadge = if (accounts.size > 1 && account.id == default?.id) {
+                { androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Filled.Star, stringResource(R.string.settings_default_account_title), Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary) }
+            } else null,
         ) { AccountAvatar(account, accounts, size = 52, ring = true) }
     }
     Row(

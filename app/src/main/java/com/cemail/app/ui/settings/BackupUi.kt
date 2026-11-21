@@ -1,5 +1,7 @@
 package com.cemail.app.ui.settings
 
+import com.ce.kit.ui.settings.ChoiceChip
+import com.ce.kit.ui.settings.SettingsCard
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -23,8 +25,6 @@ import androidx.compose.ui.unit.dp
 import com.cemail.app.CemailApplication
 import com.cemail.app.R
 import com.cemail.app.data.backup.BackupAccount
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -35,7 +35,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /** Saving the backup to a file the user picks, and restoring one. */
-class BackupLaunchers(val save: () -> Unit, val restore: () -> Unit)
+class BackupLaunchers(val save: () -> Unit, val restore: () -> Unit, val dialog: @Composable () -> Unit)
 
 /**
  * The two file pickers of the backup (a .zip, see data/backup/Backup.kt), and the question before restoring. The work
@@ -70,23 +70,26 @@ fun rememberBackupLaunchers(onResult: (Int) -> Unit): BackupLaunchers {
             if (backup == null) report(R.string.backup_invalid) else picked = backup
         }
     }
-    picked?.let { backup ->
-        AlertDialog(
-            onDismissRequest = { picked = null },
-            title = { Text(stringResource(R.string.backup_restore_title)) },
-            text = { Text(stringResource(R.string.backup_restore_body)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    picked = null
-                    app.appScope.launch(Dispatchers.Main) {
-                        val ok = runCatching { app.backup.restore(backup) }
-                            .onFailure { com.ce.kit.log.AppLog.e("backup", "the backup could not be restored", it) }.isSuccess
-                        report(if (ok) R.string.backup_restored else R.string.backup_failed)
-                    }
-                }) { Text(stringResource(R.string.backup_restore_confirm)) }
+    // Not drawn here: a GlassDialog fills the box it is in, so the screen that owns the launchers calls
+    // [BackupLaunchers.dialog] as the last child of its full-screen Box.
+    val dialog: @Composable () -> Unit = {
+      picked?.let { backup ->
+        com.ce.kit.ui.GlassDialog(
+            visible = true,
+            title = stringResource(R.string.backup_restore_title),
+            message = stringResource(R.string.backup_restore_body),
+            confirmLabel = stringResource(R.string.backup_restore_confirm),
+            onConfirm = {
+                picked = null
+                app.appScope.launch(Dispatchers.Main) {
+                    val ok = runCatching { app.backup.restore(backup) }
+                        .onFailure { com.ce.kit.log.AppLog.e("backup", "the backup could not be restored", it) }.isSuccess
+                    report(if (ok) R.string.backup_restored else R.string.backup_failed)
+                }
             },
-            dismissButton = { TextButton(onClick = { picked = null }) { Text(stringResource(R.string.cancel)) } },
+            onDismiss = { picked = null },
         )
+      }
     }
     // A date in the name tells the copies apart; ISO, because a local date can have slashes.
     val fileName = stringResource(R.string.backup_file, java.time.LocalDate.now().toString())
@@ -94,6 +97,7 @@ fun rememberBackupLaunchers(onResult: (Int) -> Unit): BackupLaunchers {
         save = { save.launch(fileName) },
         // Any file: a .zip is often typed loosely by the providers (Drive…) and would show greyed out; read() checks it.
         restore = { open.launch(arrayOf("*/*")) },
+        dialog = dialog,
     )
 }
 

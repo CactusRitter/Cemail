@@ -182,11 +182,14 @@ fun MailApp(vm: MailViewModel, accountVm: AccountViewModel, settings: AppSetting
     if (acc.accounts.isEmpty() && !acc.demo) {
         var restoreMessage by rememberSaveable { mutableStateOf<Int?>(null) }
         val backupFiles = com.cemail.app.ui.settings.rememberBackupLaunchers { restoreMessage = it }
-        SignInScreen(
-            acc, startSignIn, accountVm::useDemo, onMicrosoft = startMicrosoft, onImap = { imapForm = IMAP_PLAIN }, onYahoo = { imapForm = IMAP_YAHOO },
-            onRestore = backupFiles.restore, restoreMessage = restoreMessage,
-            accountsToAdd = accountsToAdd, onAddRestored = addRestored, onForgetRestored = backup::forgetAccountsToAdd,
-        )
+        Box(Modifier.fillMaxSize()) {
+            SignInScreen(
+                acc, startSignIn, accountVm::useDemo, onMicrosoft = startMicrosoft, onImap = { imapForm = IMAP_PLAIN }, onYahoo = { imapForm = IMAP_YAHOO },
+                onRestore = backupFiles.restore, restoreMessage = restoreMessage,
+                accountsToAdd = accountsToAdd, onAddRestored = addRestored, onForgetRestored = backup::forgetAccountsToAdd,
+            )
+            backupFiles.dialog()
+        }
         return@AnimatedContent
     }
     val state by vm.state.collectAsStateWithLifecycle()
