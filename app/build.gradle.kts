@@ -138,7 +138,6 @@ dependencies {
 
     implementation(libs.okhttp)
     implementation(libs.kotlinx.serialization.json)
-    implementation(libs.appauth)
     implementation(libs.jsoup)
     implementation(libs.android.mail)
     implementation(libs.android.activation)

@@ -6,12 +6,14 @@ import android.app.Application
 import com.cemail.app.data.SettingsRepository
 import com.cemail.app.data.auth.AccountRepository
 import com.cemail.app.data.auth.AccountTokenProvider
-import com.cemail.app.data.auth.GoogleAuth
+import com.ce.kit.auth.GoogleAuth
 import com.cemail.app.data.gmail.HttpGmailApi
 import com.cemail.app.data.mail.RoomMailRepository
 import com.cemail.app.data.mail.UnifiedMailRepository
 import com.cemail.app.sync.SyncWorker
-import com.cemail.app.data.auth.TokenStore
+import com.ce.kit.auth.TokenStore
+import com.ce.kit.auth.MicrosoftAuth
+import com.cemail.app.data.auth.AuthConfig
 import com.cemail.app.data.db.CemailDatabase
 import com.cemail.app.data.mail.DemoData
 import com.cemail.app.data.mail.DemoMailRepository
@@ -38,9 +40,9 @@ class CemailApplication : Application() {
     val updates: com.ce.kit.update.Updates get() = com.ce.kit.CeKit.updates
 
     val database: CemailDatabase by lazy { CemailDatabase.create(this) }
-    val googleAuth: GoogleAuth by lazy { GoogleAuth(this) }
-    val microsoftAuth: com.cemail.app.data.auth.MicrosoftAuth by lazy { com.cemail.app.data.auth.MicrosoftAuth(this) }
-    val tokenStore: TokenStore by lazy { TokenStore(this) }
+    val googleAuth: GoogleAuth by lazy { GoogleAuth(this, AuthConfig.googleClientId(), AuthConfig.GOOGLE_SCOPES) }
+    val microsoftAuth: MicrosoftAuth by lazy { MicrosoftAuth(this, AuthConfig.microsoftClientId(), AuthConfig.MICROSOFT_SCOPES, AuthConfig.MICROSOFT_REDIRECT) }
+    val tokenStore: TokenStore by lazy { TokenStore(this, AuthConfig.TOKEN_ALIAS, AuthConfig.TOKEN_PREFS) }
     val accountRepository: AccountRepository by lazy { AccountRepository(database.accounts(), database.messages(), tokenStore, java.io.File(filesDir, "inline")) }
     val backup: com.cemail.app.data.backup.Backup by lazy {
         com.cemail.app.data.backup.Backup(this, settings, accountRepository, database.messages(), appScope)
