@@ -30,3 +30,7 @@
 
 # Workers and receivers are created by the system by name.
 -keep class * extends androidx.work.ListenableWorker { <init>(...); }
+
+# WorkManager (Glance refreshes widgets through it) creates its input mergers by reflection from their class name;
+# without this the widget stays on its loading spinner ("OverwritingInputMerger has no zero argument constructor").
+-keep class * extends androidx.work.InputMerger { <init>(); }
