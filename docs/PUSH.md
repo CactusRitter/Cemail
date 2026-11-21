@@ -51,3 +51,11 @@ npx wrangler secret put FCM_SA < fcm-service-account.local.json
 - Gmail y Microsoft. IMAP no tiene push sin una conexión permanente: queda para un posible servicio IDLE más adelante.
 - Necesita Google Play Services en el móvil.
 - El Worker ve la dirección y el token, nunca el contenido del correo (ver la política de privacidad).
+
+## Calendario de Celander (rutas `/cal/*`, `/gcal`)
+Mismo Worker, prefijos de KV `cal:` y secreto propio `CAL_APP_KEY` (cabecera `X-Celander-Key`); el push de correo no cambia.
+- `POST /cal/register` `{token, accounts:[{email, provider:"google"|"microsoft", channels:[{id,token}] | subscription:{id,clientState}}], previous?:[email]}`; `POST /cal/unregister` `{token, emails:[...]}`. Máx. 20 cuentas y 50 canales; canales Google caducan en 8 días, suscripciones Graph en 4.
+- `POST /gcal`: webhook de Google Calendar; ignora `sync` y tokens que no coinciden (200 sin hacer nada); manda FCM `type=gcal, email, channelId`.
+- `POST /graph` (compartido): si la suscripción está en `cal:ms:<id>` manda `type=mscal`; si no, `ms:<id>` como antes.
+- Pruebas sin red: `node push-worker/test.mjs`.
+- Despliegue desde PowerShell: `npx.cmd --yes wrangler deploy` (`npx.ps1` está bloqueado). `wrangler login` es interactivo (abre el navegador). Los secretos se suben con `wrangler secret bulk archivo.local.json`.

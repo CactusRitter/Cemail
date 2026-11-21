@@ -11,10 +11,20 @@
 //   Secret                APP_KEY       shared with the app (registration)
 //   Secret                PUBSUB_SECRET random text that is part of the address Pub/Sub calls
 //   Secret                FCM_SA        the Firebase service account JSON (whole file)
+//   Secret                CAL_APP_KEY   shared with Celander (calendar registration, header X-Celander-Key)
+//
+// Celander calendar push uses its own KV prefixes ("cal:") and routes; Cemail's are untouched:
+//   POST /cal/register    {token, accounts:[{email, provider, channels:[{id,token}] | subscription:{id,clientState}}], previous?:[email]}
+//   POST /cal/unregister  {token, emails:[email]}
+//   POST /gcal            Google Calendar webhook (X-Goog-Channel-ID / -Token / Resource-State) -> FCM type=gcal
+//   POST /graph           shared with mail; a subscription found under cal:ms:<id> -> FCM type=mscal
 
 const FCM_SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
 const MAX_TOKENS_PER_ADDRESS = 10;
 const SUBSCRIPTION_TTL_SECONDS = 4 * 24 * 3600; // Graph subscriptions last under 3 days; the app registers again daily
+const CHANNEL_TTL_SECONDS = 8 * 24 * 3600; // Google Calendar channels last about a week; the app renews them
+const MAX_CAL_ACCOUNTS = 20;
+const MAX_CAL_CHANNELS = 50;
 
 export default {
   async fetch(request, env, ctx) {
@@ -24,6 +34,9 @@ export default {
       if (request.method === "POST" && url.pathname === "/unregister") return await register(request, env, false);
       if (request.method === "POST" && url.pathname === "/register-ms") return await registerSubscription(request, env);
       if (request.method === "POST" && url.pathname === `/pubsub/${env.PUBSUB_SECRET}`) return await fromPubSub(request, env);
+      if (request.method === "POST" && url.pathname === "/cal/register") return await calRegister(request, env, true);
+      if (request.method === "POST" && url.pathname === "/cal/unregister") return await calRegister(request, env, false);
+      if (request.method === "POST" && url.pathname === "/gcal") return await fromGoogleCalendar(request, env, ctx);
       if (request.method === "POST" && url.pathname === "/graph") return await fromGraph(request, env, ctx, url);
       if (request.method === "GET" && url.pathname === "/") return new Response("Cemail push relay", { status: 200 });
     } catch (e) {
@@ -35,15 +48,16 @@ export default {
 };
 
 const key = (address) => `em:${address.toLowerCase()}`;
+const calKey = (address) => `cal:em:${address.toLowerCase()}`;
 
-async function readTokens(env, address) {
-  const raw = await env.KV.get(key(address));
+async function readTokens(env, address, keyOf = key) {
+  const raw = await env.KV.get(keyOf(address));
   return raw ? JSON.parse(raw) : [];
 }
 
-async function writeTokens(env, address, tokens) {
-  if (tokens.length === 0) await env.KV.delete(key(address));
-  else await env.KV.put(key(address), JSON.stringify(tokens.slice(-MAX_TOKENS_PER_ADDRESS)));
+async function writeTokens(env, address, tokens, keyOf = key) {
+  if (tokens.length === 0) await env.KV.delete(keyOf(address));
+  else await env.KV.put(keyOf(address), JSON.stringify(tokens.slice(-MAX_TOKENS_PER_ADDRESS)));
 }
 
 /** The app says "this phone (token) follows these addresses". [on] false removes it. */
@@ -75,6 +89,67 @@ async function registerSubscription(request, env) {
   return new Response("ok");
 }
 
+/**
+ * Celander: "this phone (token) follows these calendar accounts", plus each account's push channels (Google) or
+ * subscription (Microsoft) with the secret the provider sends back. [on] false removes the token from [emails].
+ */
+async function calRegister(request, env, on) {
+  if (!env.CAL_APP_KEY || request.headers.get("X-Celander-Key") !== env.CAL_APP_KEY) return new Response("forbidden", { status: 403 });
+  const body = await request.json();
+  const token = String(body.token || "");
+  const accounts = on && Array.isArray(body.accounts) ? body.accounts : [];
+  const emails = accounts.map((a) => String((a && a.email) || "").toLowerCase());
+  const listed = !on && Array.isArray(body.emails) ? body.emails.map(String) : [];
+  if (token.length < 20 || accounts.length > MAX_CAL_ACCOUNTS || listed.length > MAX_CAL_ACCOUNTS || emails.some((e) => !e)) {
+    return new Response("bad request", { status: 400 });
+  }
+  const previous = Array.isArray(body.previous) ? body.previous.map(String) : [];
+  // A token follows exactly the accounts of this call: drop it from the ones that are no longer listed.
+  for (const address of new Set([...emails, ...previous, ...listed])) {
+    const list = (await readTokens(env, address, calKey)).filter((t) => t !== token);
+    if (emails.includes(address.toLowerCase())) list.push(token);
+    await writeTokens(env, address, list, calKey);
+  }
+  for (const a of accounts) {
+    const email = String(a.email).toLowerCase();
+    if (a.provider === "google") {
+      const channels = Array.isArray(a.channels) ? a.channels : [];
+      if (channels.length > MAX_CAL_CHANNELS) return new Response("bad request", { status: 400 });
+      for (const c of channels) {
+        const id = String((c && c.id) || "");
+        const secret = String((c && c.token) || "");
+        if (id.length < 8 || id.length > 200 || secret.length < 8) continue;
+        await env.KV.put(`cal:g:${id}`, JSON.stringify({ email, token: secret }), { expirationTtl: CHANNEL_TTL_SECONDS });
+      }
+    } else if (a.provider === "microsoft" && a.subscription) {
+      const id = String(a.subscription.id || "");
+      const state = String(a.subscription.clientState || "");
+      if (id.length < 8 || id.length > 200 || state.length < 8) continue;
+      await env.KV.put(`cal:ms:${id}`, JSON.stringify({ email, state }), { expirationTtl: SUBSCRIPTION_TTL_SECONDS });
+    }
+  }
+  return new Response("ok");
+}
+
+/**
+ * Google Calendar push: headers only (the body is empty). "sync" is the handshake after events.watch and is ignored.
+ * The channel token must match what the app registered; otherwise we answer 200 and do nothing (no hints to strangers).
+ */
+async function fromGoogleCalendar(request, env, ctx) {
+  const channelId = request.headers.get("X-Goog-Channel-ID") || "";
+  const state = request.headers.get("X-Goog-Resource-State") || "";
+  const secret = request.headers.get("X-Goog-Channel-Token") || "";
+  if (!channelId || state === "sync") return new Response("ok");
+  ctx.waitUntil((async () => {
+    const raw = await env.KV.get(`cal:g:${channelId}`);
+    if (!raw) return;
+    const channel = JSON.parse(raw);
+    if (!secret || channel.token !== secret) return;
+    await wake(env, channel.email, { type: "gcal", email: channel.email, channelId }, calKey);
+  })());
+  return new Response("ok");
+}
+
 /** Pub/Sub push: {"message":{"data":"base64({emailAddress,historyId})"},...}. */
 async function fromPubSub(request, env) {
   const envelope = await request.json();
@@ -100,20 +175,23 @@ async function fromGraph(request, env, ctx, url) {
   ctx.waitUntil((async () => {
     const done = new Set();
     for (const n of notes) {
-      const raw = await env.KV.get(`ms:${n.subscriptionId}`);
+      const calRaw = await env.KV.get(`cal:ms:${n.subscriptionId}`);
+      const raw = calRaw || await env.KV.get(`ms:${n.subscriptionId}`);
       if (!raw) continue; // unknown or expired subscription
       const sub = JSON.parse(raw);
-      if (sub.state !== n.clientState || done.has(sub.email)) continue; // not ours, or already announced in this call
-      done.add(sub.email);
-      await wake(env, sub.email, { type: "microsoft", email: sub.email });
+      const id = `${calRaw ? "cal" : "mail"}:${sub.email}`;
+      if (sub.state !== n.clientState || done.has(id)) continue; // not ours, or already announced in this call
+      done.add(id);
+      if (calRaw) await wake(env, sub.email, { type: "mscal", email: sub.email }, calKey);
+      else await wake(env, sub.email, { type: "microsoft", email: sub.email });
     }
   })());
   return new Response(null, { status: 202 });
 }
 
 /** Sends [data] as a high-priority FCM message to every phone that follows [address]. */
-async function wake(env, address, data) {
-  const tokens = await readTokens(env, address);
+async function wake(env, address, data, keyOf = key) {
+  const tokens = await readTokens(env, address, keyOf);
   if (tokens.length === 0) return;
   const access = await accessToken(env);
   const sa = JSON.parse(env.FCM_SA);
@@ -127,7 +205,7 @@ async function wake(env, address, data) {
     if (res.status === 404 || res.status === 400) dead.push(token); // phone gone or token expired
     else if (!res.ok) console.log("fcm", res.status, await res.text());
   }));
-  if (dead.length) await writeTokens(env, address, tokens.filter((t) => !dead.includes(t)));
+  if (dead.length) await writeTokens(env, address, tokens.filter((t) => !dead.includes(t)), keyOf);
 }
 
 // --- Google OAuth for FCM: a signed JWT exchanged for an access token (kept for ~50 minutes) ---
