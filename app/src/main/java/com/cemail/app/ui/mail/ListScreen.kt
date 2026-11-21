@@ -243,7 +243,7 @@ fun ListScreen(
         ) {
             var n = 0
             if (state.box == MailBox.INBOX && state.labelId == null && state.query.isBlank()) {
-                item(key = "update") { Box(edge) { UpdateBanner() } }
+                item(key = "update") { Box(edge) { com.ce.kit.ui.update.UpdateBanner() } }
             }
             if (empty) {
                 item {

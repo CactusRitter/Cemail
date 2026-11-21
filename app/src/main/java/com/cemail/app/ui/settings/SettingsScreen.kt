@@ -234,9 +234,9 @@ fun SettingsScreen(
                     target == SettingsRoute.GESTURES -> GesturesPage(settings, repo)
                     target == SettingsRoute.NOTIFICATIONS -> NotificationsPage(settings, repo)
                     target == SettingsRoute.APPEARANCE -> AppearancePage(settings, repo)
-                    target == SettingsRoute.DIAGNOSTICS -> DiagnosticsPage()
+                    target == SettingsRoute.DIAGNOSTICS -> com.ce.kit.ui.update.DiagnosticsPage()
                     target == SettingsRoute.BACKUP -> BackupPage(backupFiles, backupMessage, onAddRestored)
-                    target == SettingsRoute.UPDATES -> UpdatesPage(settings, repo)
+                    target == SettingsRoute.UPDATES -> com.ce.kit.ui.update.UpdatesPage(settings.checkUpdates, repo::setCheckUpdates, rememberChangelog())
                     else -> Unit // an account that was just removed: the screen is on its way out
                 }
             }
@@ -487,89 +487,6 @@ private fun AppearancePage(settings: AppSettings, repo: SettingsRepository) {
     )
 }
 
-/** The activity log can always be shared; the last crash shows only if there was one. */
-@Composable
-private fun DiagnosticsPage() {
-    val context = LocalContext.current
-    var crash by remember { mutableStateOf(CrashLog.read(context)) }
-    SettingsCard {
-        Text(stringResource(R.string.settings_log_title), style = MaterialTheme.typography.titleSmall)
-        Text(stringResource(R.string.settings_log_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            val shareTitle = stringResource(R.string.settings_log_share_title)
-            TextAction(R.string.settings_log_share, MaterialTheme.colorScheme.primary) { AppLog.share(context, shareTitle) }
-            val copiedLabel = stringResource(R.string.copied)
-            TextAction(R.string.copy, MaterialTheme.colorScheme.primary) {
-                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                clipboard.setPrimaryClip(ClipData.newPlainText(copiedLabel, AppLog.text(context)))
-            }
-            TextAction(R.string.clear, MaterialTheme.colorScheme.onSurfaceVariant) {
-                AppLog.clear(context)
-                crash = null
-            }
-        }
-    }
-    crash?.let { text ->
-        SettingsCard {
-            Text(stringResource(R.string.settings_crash_title), style = MaterialTheme.typography.titleSmall)
-            Text(stringResource(R.string.settings_crash_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(
-                text,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 6,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                val copiedLabel = stringResource(R.string.copied)
-                TextAction(R.string.copy, MaterialTheme.colorScheme.primary) {
-                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    clipboard.setPrimaryClip(ClipData.newPlainText(copiedLabel, text))
-                }
-                TextAction(R.string.clear, MaterialTheme.colorScheme.onSurfaceVariant) {
-                    CrashLog.clear(context)
-                    crash = null
-                }
-            }
-        }
-    }
-}
-
-/** Settings → Updates: this version, looking on GitHub for a newer one (by itself, or now). */
-@Composable
-private fun UpdatesPage(settings: AppSettings, repo: SettingsRepository) {
-    val context = LocalContext.current
-    val updates = (context.applicationContext as com.cemail.app.CemailApplication).updates
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
-    // What "Look now" found: null = not asked yet; then a version, "up to date" or "could not check".
-    var result by remember { mutableStateOf<String?>(null) }
-    var checking by remember { mutableStateOf(false) }
-    val upToDate = stringResource(R.string.update_none, com.cemail.app.BuildConfig.VERSION_NAME)
-    val failed = stringResource(R.string.update_check_failed)
-    val foundText = stringResource(R.string.update_found)
-    SwitchRow(R.string.settings_updates_title, R.string.settings_updates_body, settings.checkUpdates, repo::setCheckUpdates)
-    com.cemail.app.ui.mail.UpdateBanner(allowLater = false)
-    SettingsCard {
-        Text(stringResource(R.string.settings_version, com.cemail.app.BuildConfig.VERSION_NAME), style = MaterialTheme.typography.titleSmall)
-        result?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        ChoiceChip(stringResource(if (checking) R.string.update_checking else R.string.settings_updates_now), false, enabled = !checking) {
-            if (checking) return@ChoiceChip
-            checking = true
-            scope.launch {
-                result = try {
-                    if (updates.check(force = true) != null) foundText else upToDate
-                } catch (e: kotlinx.coroutines.CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    failed
-                }
-                checking = false
-            }
-        }
-    }
-    WhatsNew()
-}
-
 /**
  * Settings → Backup: settings, signatures, the list of accounts (without any password) and the muted, pinned and
  * snoozed messages, saved to a file the user picks (Drive, Downloads…) and brought back on this or another device
@@ -590,4 +507,11 @@ private fun BackupPage(files: BackupLaunchers, message: Int?, onAddRestored: (Ba
         message?.let { Text(stringResource(it), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary) }
     }
     AccountsToAdd(toAdd, onAddRestored, backup::forgetAccountsToAdd)
+}
+
+/** The bundled release notes (res/raw/changelog), read once. */
+@Composable
+private fun rememberChangelog(): String {
+    val context = LocalContext.current
+    return remember { context.resources.openRawResource(R.raw.changelog).bufferedReader().use { it.readText() } }
 }

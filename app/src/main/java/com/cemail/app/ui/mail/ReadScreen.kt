@@ -1,5 +1,7 @@
 package com.cemail.app.ui.mail
 
+import androidx.core.view.drawToBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
@@ -590,9 +592,14 @@ fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier, darken: Bool
     val darkPage = MaterialTheme.colorScheme.surface.toArgb()
     // The WebView only darkens a page when its own theme is a dark one, so it gets one that says so (whatever the
     // system is set to), and is made again when this changes.
+    // While a popup is open the native page is hidden (it would paint above the popup on some phones); a picture of it takes its
+    // place so the message does not vanish. If the picture cannot be taken, the empty card shows as before.
+    var snapshot by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    if (!hidden) snapshot = null
+    Box(modifier) {
     key(darken) {
     AndroidView(
-        modifier = modifier,
+        modifier = Modifier.fillMaxSize(),
         factory = { ctx ->
             val theme = if (darken) android.R.style.Theme_Material_NoActionBar else android.R.style.Theme_Material_Light_NoActionBar
             WebView(android.view.ContextThemeWrapper(ctx, theme)).apply {
@@ -633,6 +640,9 @@ fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier, darken: Bool
         update = { web ->
             web.settings.blockNetworkImage = !showImages
             // [hidden]: a Compose popup is open over the page, which the native view would otherwise paint above.
+            if (hidden && web.visibility == android.view.View.VISIBLE && web.width > 0 && web.height > 0) {
+                snapshot = try { web.drawToBitmap() } catch (_: Throwable) { null }
+            }
             web.visibility = if (hidden) android.view.View.INVISIBLE else android.view.View.VISIBLE
             val key = "$showImages|$page"
             if (web.tag != key) {
@@ -643,6 +653,15 @@ fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier, darken: Bool
         },
         onRelease = { it.destroy() },
     )
+    }
+    snapshot?.let { shot ->
+        androidx.compose.foundation.Image(
+            shot.asImageBitmap(),
+            null,
+            Modifier.fillMaxSize(),
+            contentScale = androidx.compose.ui.layout.ContentScale.FillBounds,
+        )
+    }
     }
 }
 

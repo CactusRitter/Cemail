@@ -209,11 +209,6 @@
         <item quantity="other">%d h</item>
     </plurals>
     <string name="settings_section_diagnostics">Diagnóstico</string>
-    <string name="settings_crash_title">Último error inesperado</string>
-    <string name="settings_crash_body">Se guarda solo en este dispositivo. Cópialo para enviárselo a quien mantiene la app.</string>
-    <string name="copy">Copiar</string>
-    <string name="clear">Borrar</string>
-    <string name="copied">Copiado</string>
     <string name="settings_circle_title">Etiqueta del remitente</string>
     <string name="settings_circle_body">Muestra al remitente dentro de una etiqueta con color sobre cada mensaje. Si lo desactivas aparece como texto normal. Las fotos de los contactos llegarán cuando Cemail pueda leer tus contactos.</string>
     <plurals name="accounts_count">
@@ -235,10 +230,6 @@
     <string name="notif_test_body">Así se verá el correo nuevo cuando llegue con Cemail cerrado.</string>
     <string name="notif_action_read">Leído</string>
     <string name="notif_action_delete">Borrar</string>
-    <string name="settings_log_title">Registro de actividad</string>
-    <string name="settings_log_body">Un registro de lo que hace la app en este dispositivo (sincronizaciones, notificaciones, errores), sin texto de los mensajes. Compártelo para poder leerlo cuando no hay cable.</string>
-    <string name="settings_log_share">Compartir registro</string>
-    <string name="settings_log_share_title">Compartir el registro</string>
     <string name="attachments_label">Adjuntos</string>
     <string name="attachment_open_failed">Ninguna app de este dispositivo puede abrir este archivo. Prueba a compartirlo.</string>
     <string name="attachment_download_failed">No se pudo descargar el adjunto. Comprueba tu conexión.</string>
@@ -458,28 +449,4 @@
     <string name="sync_window_normal">Normal</string>
     <string name="settings_section_updates">Actualizaciones</string>
     <string name="settings_version">Versión %1$s</string>
-    <string name="settings_updates_title">Buscar versiones nuevas</string>
-    <string name="settings_updates_body">Una o dos veces al día, Cemail pregunta a GitHub, donde se publican sus versiones, si hay una más nueva, y lo avisa arriba en Recibidos. GitHub solo ve la dirección de tu conexión, nada de ti ni de tu correo.</string>
-    <string name="settings_updates_now">Buscar ahora</string>
-    <string name="update_checking">Buscando…</string>
-    <string name="whatsnew_current">Novedades de la %1$s</string>
-    <string name="whatsnew_next">Novedades de la %1$s (próxima)</string>
-    <string name="whatsnew_earlier">Versiones anteriores</string>
-    <string name="whatsnew_none">Sin notas para esta versión.</string>
-    <string name="update_title">Cemail %1$s está disponible</string>
-    <string name="update_body">Descárgala y Android te pedirá instalarla. Tus cuentas y ajustes se quedan como están.</string>
-    <string name="update_progress">%1$s · %2$s de %3$s</string>
-    <string name="update_progress_unknown">%1$s descargados</string>
-    <string name="update_ready">Descargada. Pulsa Instalar y Android te pedirá confirmarlo.</string>
-    <string name="update_failed_network">La descarga se ha cortado. Revisa la conexión e inténtalo otra vez: seguirá donde se quedó.</string>
-    <string name="update_failed_incomplete">El archivo descargado no estaba completo. Inténtalo otra vez.</string>
-    <string name="update_cancel">Cancelar</string>
-    <string name="update_retry">Reintentar</string>
-    <string name="update_allow">Primero permite instalar apps desde Cemail en la pantalla que se ha abierto; después vuelve y pulsa Descargar otra vez.</string>
-    <string name="update_download">Descargar</string>
-    <string name="update_later">Ahora no</string>
-    <string name="update_install">Instalar</string>
-    <string name="update_none">Tienes la última versión (%1$s).</string>
-    <string name="update_found">Hay una versión nueva: aparece arriba en Recibidos.</string>
-    <string name="update_check_failed">No se pudo comprobar. Revisa la conexión.</string>
 </resources>

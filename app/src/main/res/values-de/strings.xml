@@ -209,11 +209,6 @@
         <item quantity="other">%d Std.</item>
     </plurals>
     <string name="settings_section_diagnostics">Diagnose</string>
-    <string name="settings_crash_title">Letzter unerwarteter Fehler</string>
-    <string name="settings_crash_body">Nur auf diesem Gerät gespeichert. Kopiere ihn, um ihn an die Person zu schicken, die die App betreut.</string>
-    <string name="copy">Kopieren</string>
-    <string name="clear">Löschen</string>
-    <string name="copied">Kopiert</string>
     <string name="settings_circle_title">Absender-Label</string>
     <string name="settings_circle_body">Den Absender in einem farbigen Label über jeder Nachricht anzeigen. Ausgeschaltet erscheint er als einfacher Text. Kontaktfotos kommen, sobald Cemail deine Kontakte lesen kann.</string>
     <plurals name="accounts_count">
@@ -235,10 +230,6 @@
     <string name="notif_test_body">So sehen neue E-Mails aus, wenn sie ankommen, während Cemail geschlossen ist.</string>
     <string name="notif_action_read">Gelesen</string>
     <string name="notif_action_delete">Löschen</string>
-    <string name="settings_log_title">Aktivitätsprotokoll</string>
-    <string name="settings_log_body">Eine Aufzeichnung dessen, was die App auf diesem Gerät tut (Synchronisierungen, Benachrichtigungen, Fehler), ohne Nachrichtentext. Teile es, damit es gelesen werden kann, wenn kein Kabel angeschlossen werden kann.</string>
-    <string name="settings_log_share">Protokoll teilen</string>
-    <string name="settings_log_share_title">Das Protokoll teilen</string>
     <string name="attachments_label">Anhänge</string>
     <string name="attachment_open_failed">Keine App auf diesem Gerät kann diese Datei öffnen. Versuche, sie zu teilen.</string>
     <string name="attachment_download_failed">Der Anhang konnte nicht heruntergeladen werden. Prüfe deine Verbindung.</string>
@@ -458,28 +449,4 @@
     <string name="sync_window_normal">Normal</string>
     <string name="settings_section_updates">Updates</string>
     <string name="settings_version">Version %1$s</string>
-    <string name="settings_updates_title">Nach neuen Versionen suchen</string>
-    <string name="settings_updates_body">Ein- bis zweimal am Tag fragt Cemail bei GitHub, wo seine Versionen veröffentlicht werden, ob es eine neuere gibt, und zeigt es oben im Posteingang an. GitHub sieht nur die Adresse deiner Verbindung, nichts über dich oder deine E-Mails.</string>
-    <string name="settings_updates_now">Jetzt suchen</string>
-    <string name="update_checking">Wird gesucht…</string>
-    <string name="whatsnew_current">Neu in %1$s</string>
-    <string name="whatsnew_next">Kommt in %1$s</string>
-    <string name="whatsnew_earlier">Frühere Versionen</string>
-    <string name="whatsnew_none">Keine Notizen zu dieser Version.</string>
-    <string name="update_title">Cemail %1$s ist verfügbar</string>
-    <string name="update_body">Lade sie herunter, dann fragt Android, ob sie installiert werden soll. Deine Konten und Einstellungen bleiben erhalten.</string>
-    <string name="update_progress">%1$s · %2$s von %3$s</string>
-    <string name="update_progress_unknown">%1$s heruntergeladen</string>
-    <string name="update_ready">Heruntergeladen. Tippe auf Installieren, dann fragt Android nach.</string>
-    <string name="update_failed_network">Der Download wurde unterbrochen. Prüfe deine Verbindung und versuche es erneut: Er macht dort weiter, wo er aufgehört hat.</string>
-    <string name="update_failed_incomplete">Die heruntergeladene Datei war nicht vollständig. Versuche es erneut.</string>
-    <string name="update_cancel">Abbrechen</string>
-    <string name="update_retry">Erneut versuchen</string>
-    <string name="update_allow">Erlaube zuerst auf dem geöffneten Bildschirm das Installieren von Apps aus Cemail, komm dann zurück und tippe erneut auf Herunterladen.</string>
-    <string name="update_download">Herunterladen</string>
-    <string name="update_later">Jetzt nicht</string>
-    <string name="update_install">Installieren</string>
-    <string name="update_none">Du hast die neueste Version (%1$s).</string>
-    <string name="update_found">Es gibt eine neue Version: Sie wird oben im Posteingang angezeigt.</string>
-    <string name="update_check_failed">Prüfung fehlgeschlagen. Prüfe deine Verbindung.</string>
 </resources>
