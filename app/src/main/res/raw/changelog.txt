@@ -1,3 +1,8 @@
+﻿## 2.7.0
+- Shared design code with the other Ce apps (new common module): dialogs, menus, buttons, chips and switches now follow the chosen design everywhere (Glass, Modern, AMOLED, Retro 98, Paper, Brutalist). Menus and notices are never see-through enough to mix with the text below.
+- Settings → Appearance, Updates and Diagnostics are now the same in every Ce app.
+- Search bar: its shadow is no longer cut into a rectangle.
+
 ## 2.6.1
 - Reading: when you open the actions menu (or the attachments or labels window), the page of an HTML email no longer shows on top of it.
 - Tapping a notification while you are writing a message now opens that message; what you were writing is kept in Drafts.

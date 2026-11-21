@@ -1,3 +1,8 @@
+﻿## 2.7.0
+- Gemeinsamer Design-Code mit den anderen Ce-Apps (neues gemeinsames Modul): Dialoge, Menüs, Schaltflächen, Chips und Schalter folgen jetzt überall dem gewählten Design (Glas, Modern, AMOLED, Retro 98, Papier, Brutalistisch). Menüs und Hinweise sind nicht mehr so durchsichtig, dass sie sich mit dem Text darunter vermischen.
+- Einstellungen → Aussehen, Updates und Diagnose sind jetzt in allen Ce-Apps gleich.
+- Suchleiste: Ihr Schatten wird nicht mehr als Rechteck abgeschnitten.
+
 ## 2.6.1
 - Lesen: Wenn du das Aktionsmenü (oder das Fenster mit Anhängen oder Labels) öffnest, erscheint die Seite einer HTML-Mail nicht mehr darüber.
 - Wenn du beim Schreiben auf eine Benachrichtigung tippst, öffnet sich jetzt diese Nachricht; was du geschrieben hast, bleibt in den Entwürfen.

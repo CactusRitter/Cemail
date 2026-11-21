@@ -1,3 +1,8 @@
+﻿## 2.7.0
+- Código de diseño compartido con las otras apps Ce (módulo común nuevo): diálogos, menús, botones, chips e interruptores siguen ahora el diseño elegido en todas partes (Cristal, Moderno, AMOLED, Retro 98, Papel, Brutalista). Los menús y avisos ya no son tan transparentes como para mezclarse con el texto de debajo.
+- Ajustes → Apariencia, Actualizaciones y Diagnóstico son ahora iguales en todas las apps Ce.
+- Barra de búsqueda: su sombra ya no se recorta en un rectángulo.
+
 ## 2.6.1
 - Lector: al abrir el menú de acciones (o la ventana de adjuntos o de etiquetas), la página de un correo HTML ya no se ve por encima.
 - Tocar una notificación mientras escribes un mensaje abre ahora ese mensaje; lo que escribías se guarda en Borradores.
