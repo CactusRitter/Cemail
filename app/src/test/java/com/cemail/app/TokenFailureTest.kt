@@ -1,6 +1,6 @@
 package com.cemail.app
 
-import com.ce.kit.auth.TokenFailure
+import com.cemail.app.data.auth.TokenFailure
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test

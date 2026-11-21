@@ -110,7 +110,6 @@ room {
 
 dependencies {
     implementation(project(":kit"))
-    implementation(project(":kitauth"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.webkit)
     implementation(libs.firebase.messaging)
@@ -139,6 +138,7 @@ dependencies {
 
     implementation(libs.okhttp)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.appauth)
     implementation(libs.jsoup)
     implementation(libs.android.mail)
     implementation(libs.android.activation)

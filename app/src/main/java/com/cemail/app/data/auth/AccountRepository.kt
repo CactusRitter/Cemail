@@ -1,8 +1,5 @@
 package com.cemail.app.data.auth
 
-import com.ce.kit.auth.SignInResult
-import com.ce.kit.auth.TokenStore
-
 import com.cemail.app.data.db.AccountDao
 import com.cemail.app.data.db.AccountEntity
 import com.cemail.app.data.db.MessageDao

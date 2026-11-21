@@ -8,8 +8,8 @@ import androidx.lifecycle.viewModelScope
 import com.cemail.app.R
 import com.cemail.app.data.orderedBy
 import com.cemail.app.data.auth.AccountRepository
-import com.ce.kit.auth.GoogleAuth
-import com.ce.kit.auth.SignInOutcome
+import com.cemail.app.data.auth.GoogleAuth
+import com.cemail.app.data.auth.SignInOutcome
 import com.cemail.app.data.db.AccountEntity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -41,7 +41,7 @@ private data class Local(
 class AccountViewModel(
     private val repo: AccountRepository,
     private val auth: GoogleAuth,
-    private val microsoft: com.ce.kit.auth.MicrosoftAuth,
+    private val microsoft: com.cemail.app.data.auth.MicrosoftAuth,
     /** The order the user chose for the accounts (Settings → Accounts). */
     private val order: kotlinx.coroutines.flow.Flow<List<String>> = kotlinx.coroutines.flow.flowOf(emptyList()),
 ) : ViewModel() {
@@ -124,7 +124,7 @@ class AccountViewModel(
     class Factory(
         private val repo: AccountRepository,
         private val auth: GoogleAuth,
-        private val microsoft: com.ce.kit.auth.MicrosoftAuth,
+        private val microsoft: com.cemail.app.data.auth.MicrosoftAuth,
         private val order: kotlinx.coroutines.flow.Flow<List<String>> = kotlinx.coroutines.flow.flowOf(emptyList()),
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
