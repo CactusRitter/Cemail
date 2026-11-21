@@ -44,7 +44,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -84,6 +83,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ce.kit.log.AppLog
+import com.ce.kit.ui.GlassMenu
 import com.cemail.app.data.gmail.HtmlSanitizer
 import androidx.compose.foundation.layout.height
 import com.cemail.app.R
@@ -568,7 +568,7 @@ private fun FromField(
                 if (several) Icon(Icons.Filled.KeyboardArrowDown, stringResource(R.string.compose_from_pick))
             }
         }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+        GlassMenu(expanded = open, onDismiss = { open = false }) {
             accounts.forEach { account ->
                 DropdownMenuItem(
                     leadingIcon = { AccountAvatar(account, accounts, size = 34, ring = true) },
@@ -630,7 +630,7 @@ private fun FormatBar(rich: RichTextState) {
                 CemailIcons.Font, stringResource(R.string.format_font), { fonts = true },
                 selected = style.fontFamily != null, width = 44.dp,
             )
-            DropdownMenu(expanded = fonts, onDismissRequest = { fonts = false }) {
+            GlassMenu(expanded = fonts, onDismiss = { fonts = false }) {
                 FONTS.forEach { (label, family) ->
                     DropdownMenuItem(
                         text = { Text(stringResource(label), fontFamily = family) },

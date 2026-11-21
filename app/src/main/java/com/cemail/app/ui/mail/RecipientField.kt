@@ -1,6 +1,7 @@
 package com.cemail.app.ui.mail
 
 import android.util.Patterns
+import com.ce.kit.ui.RemovableChip
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -120,6 +121,13 @@ fun RecipientField(
         ) {
             chips.forEachIndexed { index, address ->
                 val ok = isValidAddress(address)
+                if (ok) {
+                    RemovableChip(
+                        address, stringResource(R.string.recipient_remove, address),
+                        { emit(build(chips.filterIndexed { i, _ -> i != index }, typing)) },
+                    )
+                    return@forEachIndexed
+                }
                 Row(
                     Modifier
                         .clip(CircleShape)

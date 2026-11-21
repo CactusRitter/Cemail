@@ -19,7 +19,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.width
+import com.ce.kit.ui.AccentButton
+import com.ce.kit.ui.SoftButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerDefaults
 import androidx.compose.material3.rememberDatePickerState
@@ -137,10 +139,14 @@ fun DateTimeDialog(initial: Long?, onPick: (Long) -> Unit, onDismiss: () -> Unit
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = { if (onTime) onTime = false else onDismiss() }) {
-                    Text(stringResource(if (onTime) R.string.back else R.string.cancel))
-                }
-                TextButton(
+                SoftButton(
+                    stringResource(if (onTime) R.string.back else R.string.cancel),
+                    { if (onTime) onTime = false else onDismiss() },
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                )
+                Box(Modifier.width(8.dp))
+                AccentButton(
+                    stringResource(if (onTime) R.string.pick_set else R.string.pick_next),
                     enabled = date.selectedDateMillis != null,
                     onClick = {
                         if (!onTime) {
@@ -154,9 +160,7 @@ fun DateTimeDialog(initial: Long?, onPick: (Long) -> Unit, onDismiss: () -> Unit
                             onPick(at)
                         }
                     },
-                ) {
-                    Text(stringResource(if (onTime) R.string.pick_set else R.string.pick_next), fontWeight = FontWeight.Bold)
-                }
+                )
             }
         }
     }

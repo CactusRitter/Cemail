@@ -1,6 +1,8 @@
 package com.cemail.app.ui.account
 
 import androidx.compose.foundation.clickable
+import com.ce.kit.ui.SoftButton
+import com.ce.kit.ui.AccentButton
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -77,18 +79,11 @@ fun SignInScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
-                Row(
-                    Modifier
-                        .glass(CircleShape, GlassKind.Pinned, elevation = 8.dp)
-                        .clickable(enabled = !state.signingIn, role = Role.Button, onClick = onSignIn)
-                        .padding(horizontal = 24.dp, vertical = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     if (state.signingIn) {
                         CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
                     }
-                    Text(stringResource(R.string.sign_in_google), style = MaterialTheme.typography.titleSmall)
+                    AccentButton(stringResource(R.string.sign_in_google), onSignIn, enabled = !state.signingIn)
                 }
                 state.error?.let {
                     Text(
@@ -104,36 +99,11 @@ fun SignInScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
-                Text(
-                    stringResource(R.string.sign_in_microsoft),
-                    Modifier.clickable(enabled = !state.signingIn, role = Role.Button, onClick = onMicrosoft).padding(8.dp),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Text(
-                    stringResource(R.string.sign_in_yahoo),
-                    Modifier.clickable(role = Role.Button, onClick = onYahoo).padding(8.dp),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Text(
-                    stringResource(R.string.sign_in_other),
-                    Modifier.clickable(role = Role.Button, onClick = onImap).padding(8.dp),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Text(
-                    stringResource(R.string.sign_in_demo),
-                    Modifier.clickable(role = Role.Button, onClick = onDemo).padding(8.dp),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Text(
-                    stringResource(R.string.sign_in_restore),
-                    Modifier.clickable(role = Role.Button, onClick = onRestore).padding(8.dp),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+                SoftButton(stringResource(R.string.sign_in_microsoft), { if (!state.signingIn) onMicrosoft() })
+                SoftButton(stringResource(R.string.sign_in_yahoo), onYahoo)
+                SoftButton(stringResource(R.string.sign_in_other), onImap)
+                SoftButton(stringResource(R.string.sign_in_demo), onDemo)
+                SoftButton(stringResource(R.string.sign_in_restore), onRestore)
                 restoreMessage?.let {
                     Text(stringResource(it), style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
                 }

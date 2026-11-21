@@ -145,12 +145,8 @@ internal fun AccountsPage(accounts: List<AccountEntity>, settings: AppSettings, 
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     AccountAvatar(account, accounts, size = 34, ring = true)
                     Text(account.shownName(), Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                    androidx.compose.material3.IconButton(onClick = { move(-1) }, enabled = index > 0) {
-                        Icon(Icons.Filled.KeyboardArrowUp, stringResource(R.string.move_up))
-                    }
-                    androidx.compose.material3.IconButton(onClick = { move(1) }, enabled = index < accounts.size - 1) {
-                        Icon(Icons.Filled.KeyboardArrowDown, stringResource(R.string.move_down))
-                    }
+                    com.ce.kit.ui.PlainIconButton(Icons.Filled.KeyboardArrowUp, stringResource(R.string.move_up), { move(-1) }, enabled = index > 0)
+                    com.ce.kit.ui.PlainIconButton(Icons.Filled.KeyboardArrowDown, stringResource(R.string.move_down), { move(1) }, enabled = index < accounts.size - 1)
                 }
             }
         }

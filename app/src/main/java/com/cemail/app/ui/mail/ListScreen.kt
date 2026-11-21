@@ -1,6 +1,7 @@
 package com.cemail.app.ui.mail
 
 import androidx.compose.foundation.clickable
+import com.ce.kit.ui.SoftButton
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.foundation.layout.Arrangement
@@ -343,7 +344,7 @@ fun ListScreen(
             val barMode = if (selecting) 0 else if (state.searching) 1 else 2
             AnimatedContent(
                 targetState = barMode,
-                transitionSpec = { (fadeIn(glassSpring()) + scaleIn(bounceSpring(), initialScale = 0.92f)) togetherWith fadeOut(glassSpring()) },
+                transitionSpec = { (fadeIn(glassSpring()) + scaleIn(bounceSpring(), initialScale = 0.92f)) togetherWith fadeOut(glassSpring()) using androidx.compose.animation.SizeTransform(clip = false) }, // clip = false: the soft shadow of the pill reaches past its bounds
                 label = "topBar",
             ) { mode ->
             Box(Modifier.padding(end = barRoom, bottom = barRoom)) {
@@ -621,7 +622,7 @@ private fun MoreButton(state: MailUiState, search: Boolean, onClick: () -> Unit)
                 textAlign = TextAlign.Center,
             )
         }
-        Text(
+        SoftButton(
             stringResource(
                 when {
                     state.moreLoading -> R.string.loading_more
@@ -629,13 +630,7 @@ private fun MoreButton(state: MailUiState, search: Boolean, onClick: () -> Unit)
                     else -> R.string.load_more
                 },
             ),
-            Modifier
-                .pressScale(0.94f)
-                .glass(CircleShape, GlassKind.Card)
-                .clickable(enabled = !state.moreLoading, role = Role.Button, onClick = onClick)
-                .padding(horizontal = 20.dp, vertical = 12.dp),
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary,
+            { if (!state.moreLoading) onClick() },
         )
     }
 }

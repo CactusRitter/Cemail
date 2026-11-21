@@ -1,6 +1,8 @@
 package com.cemail.app.ui.account
 
 import androidx.compose.foundation.clickable
+import com.ce.kit.ui.SelectableChip
+import com.ce.kit.ui.AccentButton
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -225,19 +227,12 @@ fun ImapSetupScreen(
                     Text(stringResource(it), Modifier.padding(horizontal = 8.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                 }
                 Row(
-                    Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .glass(CircleShape, GlassKind.Pinned, elevation = 8.dp)
-                        .clickable(enabled = !checking, role = Role.Button) { submit() }
-                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                    Modifier.align(Alignment.CenterHorizontally),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     if (checking) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                    Text(
-                        stringResource(if (checking) R.string.imap_checking else R.string.imap_add),
-                        style = MaterialTheme.typography.titleSmall,
-                    )
+                    AccentButton(stringResource(if (checking) R.string.imap_checking else R.string.imap_add), { submit() }, enabled = !checking)
                 }
             }
             Box(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 12.dp, vertical = 8.dp)) {
@@ -338,14 +333,7 @@ private fun ServerBlock(
     }
     Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         listOf(false to R.string.imap_security_ssl, true to R.string.imap_security_starttls).forEach { (value, label) ->
-            Text(
-                stringResource(label),
-                Modifier
-                    .selectable(selected = startTls == value, role = Role.RadioButton) { onStartTls(value) }
-                    .glass(CircleShape, if (startTls == value) GlassKind.Pinned else GlassKind.Card)
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
-                style = MaterialTheme.typography.labelLarge,
-            )
+            SelectableChip(stringResource(label), startTls == value, { onStartTls(value) })
         }
     }
 }

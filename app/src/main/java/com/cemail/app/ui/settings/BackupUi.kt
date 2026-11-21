@@ -1,6 +1,7 @@
 package com.cemail.app.ui.settings
 
 import com.ce.kit.ui.settings.ChoiceChip
+import com.ce.kit.ui.SoftButton
 import com.ce.kit.ui.settings.SettingsCard
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -138,12 +139,7 @@ fun AccountsToAdd(accounts: List<BackupAccount>, onAdd: (BackupAccount) -> Unit,
                 ChoiceChip(stringResource(R.string.backup_accounts_add), false) { onAdd(account) }
             }
         }
-        Text(
-            stringResource(R.string.backup_accounts_forget),
-            Modifier.clickable(role = Role.Button, onClick = onForget).padding(vertical = 8.dp),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary,
-        )
+        SoftButton(stringResource(R.string.backup_accounts_forget), onForget)
     }
 }
 

@@ -1,6 +1,7 @@
 package com.cemail.app.ui.mail
 
 import androidx.activity.compose.BackHandler
+import com.ce.kit.ui.SoftButton
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.rememberScrollState
@@ -567,14 +568,7 @@ private fun UndoRow(undo: UndoEvent, vm: MailViewModel) {
     ) {
         Text(stringResource(undo.message), style = MaterialTheme.typography.bodyMedium)
         if (undo.previous.isNotEmpty() || undo.cancelSend != null) {
-            Text(
-                stringResource(R.string.action_undo),
-                Modifier
-                    .clickable(role = Role.Button, onClick = vm::undo)
-                    .padding(horizontal = 14.dp, vertical = 14.dp),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            SoftButton(stringResource(R.string.action_undo), vm::undo)
         }
     }
 }
