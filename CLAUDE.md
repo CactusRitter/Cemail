@@ -93,3 +93,9 @@ Lee `D:\cesar\Documents\Claude Projects\Ce\docs\AHORRO.md`: subagentes para leer
 ## Dispositivos reales y mensajes entre sesiones (César, 2026-11-21: vale sin volver a preguntar)
 - Se puede instalar y probar en el **S26** `RFGL107KERL` (`--user 0`) y en la **tableta** `R52Y806MWSP` con `adb -s <serie> install -r` (nunca desinstalar ni borrar datos; nunca `installDebug` ni `connectedAndroidTest` sin `ANDROID_SERIAL`). Con la pantalla SIEMPRE encendida durante la prueba: `adb -s <serie> shell svc power stayon true` y `false` al terminar. El **OPPO** `3B165C00LH900000` es el móvil principal de César: NO tocarlo sin que él lo pida. Correos de prueba: solo entre cuentas propias de César, con asunto de prueba. Si dos sesiones usan el mismo móvil, mirar antes `topResumedActivity` y esperar.
 - Enviar mensajes a «Ce Líder» y a las demás sesiones Ce con `SendMessage` está permitido y esperado (resúmenes, preguntas, avisos): no hace falta pedir permiso a César.
+
+## Normas comunes, turnos y traspaso (César, 2026-11-22)
+- Las normas de toda la familia Ce están en `D:\cesar\Documents\Claude Projects\Ce\CLAUDE.md`; léelo al empezar. El estado y los pendientes de esta app, en `docs/TRASPASO.md`.
+- **Turnos**: emulador, S26 y tableta son de uno solo a la vez: `powershell -NoProfile -ExecutionPolicy Bypass -File "D:\cesar\Documents\Claude Projects\Ce\scripts\emu-lock.ps1" acquire Cemail` (añade `-Dev s26` o `-Dev tableta` para esos), y `release Cemail` al acabar.
+- **Burn-in**: pantalla del móvil encendida solo mientras se prueba; al acabar `stayon false` y `input keyevent KEYCODE_SLEEP`.
+- **Sesiones bajo demanda**: la sesión se cierra al terminar la tarea (deja `docs/TRASPASO.md` al día) y se abre otra nueva cuando haga falta.
