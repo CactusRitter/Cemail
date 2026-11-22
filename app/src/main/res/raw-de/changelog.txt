@@ -1,3 +1,6 @@
+## 2.8.1
+- Behoben: „Neuigkeiten“ unter Einstellungen → Updates war für die aktuelle Version leer.
+
 ## 2.8.0
 - Sicherung und Einstellungen nutzen jetzt den gemeinsamen Ce-Code (gleiches Dateiformat, gleiche Schlüssel).
 - Die Seitenleiste ist wieder Glas mit Unschärfe; Menüs über dem Leser lassen die E-Mail nicht mehr durchscheinen; der Schatten der Suchleiste wird nicht mehr abgeschnitten.

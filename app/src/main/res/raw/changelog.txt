@@ -1,3 +1,6 @@
+## 2.8.1
+- Fixed: "What's new" in Settings → Updates was empty for the current version.
+
 ## 2.8.0
 - Backup and settings now use the common Ce code (same file format, same keys).
 - The drawer is glass with blur again; menus over the reader no longer let the email show through; the search bar shadow is no longer cut off.
