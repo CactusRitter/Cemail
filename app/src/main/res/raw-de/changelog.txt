@@ -1,4 +1,11 @@
-﻿## 2.7.0
+﻿## 2.8.0
+- Sicherung und Einstellungen nutzen jetzt den gemeinsamen Ce-Code (gleiches Dateiformat, gleiche Schlüssel).
+- Die Seitenleiste ist wieder Glas mit Unschärfe; Menüs über dem Leser lassen die E-Mail nicht mehr durchscheinen; der Schatten der Suchleiste wird nicht mehr abgeschnitten.
+- Textfelder (IMAP-Konto, Betreff, Konteneinstellungen) nutzen den gemeinsamen Glas-Stil.
+- Verfassen: Die Formatierungsleiste reserviert nur Platz, während du die Nachricht schreibst.
+- Kleinere und schnellere App (Code-Verkleinerung aktiviert).
+
+## 2.7.0
 - Gemeinsamer Design-Code mit den anderen Ce-Apps (neues gemeinsames Modul): Dialoge, Menüs, Schaltflächen, Chips und Schalter folgen jetzt überall dem gewählten Design (Glas, Modern, AMOLED, Retro 98, Papier, Brutalistisch). Menüs und Hinweise sind nicht mehr so durchsichtig, dass sie sich mit dem Text darunter vermischen.
 - Einstellungen → Aussehen, Updates und Diagnose sind jetzt in allen Ce-Apps gleich.
 - Suchleiste: Ihr Schatten wird nicht mehr als Rechteck abgeschnitten.

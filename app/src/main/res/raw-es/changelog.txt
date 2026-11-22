@@ -1,4 +1,11 @@
-﻿## 2.7.0
+﻿## 2.8.0
+- La copia de seguridad y los ajustes usan el código común de las apps Ce (mismo formato de archivo, mismas claves).
+- El cajón vuelve a ser cristal con desenfoque; los menús sobre el lector ya no dejan ver el correo; la sombra de la barra de búsqueda ya no se recorta.
+- Los campos de texto (cuenta IMAP, asunto, ajustes de cuentas) usan el estilo de cristal común.
+- Redactar: la barra de formato solo reserva espacio mientras escribes el mensaje.
+- App más pequeña y rápida (reducción de código activada).
+
+## 2.7.0
 - Código de diseño compartido con las otras apps Ce (módulo común nuevo): diálogos, menús, botones, chips e interruptores siguen ahora el diseño elegido en todas partes (Cristal, Moderno, AMOLED, Retro 98, Papel, Brutalista). Los menús y avisos ya no son tan transparentes como para mezclarse con el texto de debajo.
 - Ajustes → Apariencia, Actualizaciones y Diagnóstico son ahora iguales en todas las apps Ce.
 - Barra de búsqueda: su sombra ya no se recorta en un rectángulo.

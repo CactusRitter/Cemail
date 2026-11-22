@@ -4,6 +4,8 @@ Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones pri
 Cada versión se guarda en Google Drive (`Mi unidad/Ce Apps/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
 ## Sin publicar
+
+## 2.8.0 — 2026-11-22
 - Copia de seguridad y ajustes (F6 de CeKit): contenedor del ZIP, ajustes tipados y lectura validada de los ajustes comunes pasan al kit; mismas claves y mismo formato. Probado en emulador: una copia hecha con la versión anterior se restaura con la nueva (ajustes idénticos) y las dos copias tienen la misma estructura. Sin probar con una copia real con cuentas.
 - El aviso «Movido a la papelera · Deshacer» (y los demás avisos, menús y diálogos con desenfoque) ya no se ven transparentes: opacidad mínima 0,92 (kit). Sin probar en emulador (turno ocupado) ni en el OPPO.
 - Campos de texto de Cuenta IMAP, asunto y Ajustes de cuentas pasan a GlassTextField del kit (baldosa de cristal con las esquinas y el trazo del diseño); en la alta IMAP sin tarjeta ni divisores alrededor. Menús sobre el lector totalmente opacos (no se transparenta el correo). Probado en emulador.
