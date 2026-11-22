@@ -5,17 +5,15 @@ import com.ce.kit.ui.theme.Accent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.serialization.json.JsonArray
+import com.ce.kit.backup.PrefsBackup
+import com.ce.kit.settings.CommonSettings
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.floatOrNull
-import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 data class AppSettings(
     override val accent: Accent = Accent.INDIGO,
@@ -103,23 +101,22 @@ class SettingsRepository(context: Context) {
     private val _state = MutableStateFlow(read())
     val state: StateFlow<AppSettings> = _state.asStateFlow()
 
-    private fun read() = AppSettings(
-        accent = prefs.getString(KEY_ACCENT, null)
-            ?.let { name -> Accent.entries.firstOrNull { it.name == name } } ?: Accent.INDIGO,
-        customHue = prefs.getFloat(KEY_HUE, -1f).takeIf { it >= 0f },
-        themeStyle = prefs.getString(KEY_STYLE, null)
-            ?.let { n -> com.ce.kit.ui.theme.ThemeStyle.entries.firstOrNull { it.name == n } } ?: com.ce.kit.ui.theme.ThemeStyle.AURORA,
-        themeMode = prefs.getString(KEY_THEME, null)
-            ?.let { n -> com.ce.kit.ui.theme.ThemeMode.entries.firstOrNull { it.name == n } } ?: com.ce.kit.ui.theme.ThemeMode.SYSTEM,
-        skin = prefs.getString(KEY_SKIN, null)?.let { n -> com.ce.kit.ui.theme.Skin.entries.firstOrNull { it.name == n } } ?: com.ce.kit.ui.theme.Skin.GLASS,
-        depth3d = prefs.getBoolean(KEY_DEPTH, false),
+    private fun read(): AppSettings {
+        val common = CommonSettings.read(prefs)
+        return AppSettings(
+        accent = common.accent,
+        customHue = common.customHue,
+        themeStyle = common.themeStyle,
+        themeMode = common.themeMode,
+        skin = common.skin,
+        depth3d = common.depth3d,
+        transparency = common.transparency,
+        checkUpdates = common.checkUpdates,
         listOnRight = prefs.getBoolean(KEY_LIST_RIGHT, false),
         settingsDock = prefs.getInt(KEY_SETTINGS_DOCK, 0).coerceIn(-1, 1),
-        transparency = prefs.getInt(KEY_TRANSPARENCY, 65),
         alwaysShowImages = prefs.getBoolean(KEY_IMAGES, false),
         darkMail = prefs.getBoolean(KEY_DARK_MAIL, true),
         syncWindow = prefs.getInt(KEY_SYNC_WINDOW, 0),
-        checkUpdates = prefs.getBoolean(KEY_CHECK_UPDATES, true),
         groupByDate = prefs.getBoolean(KEY_GROUP, true),
         groupCards = prefs.getBoolean(KEY_GROUP_CARDS, true),
         syncMinutes = prefs.getInt(KEY_SYNC, 15),
@@ -143,8 +140,8 @@ class SettingsRepository(context: Context) {
             undoSeconds = prefs.getInt(KEY_UNDO_SECONDS, 5),
         ),
         hiddenLabels = prefs.all.filterKeys { it.startsWith(KEY_HIDDEN_LABELS) }.mapNotNull { (k, v) -> (v as? Set<*>)?.let { k.removePrefix(KEY_HIDDEN_LABELS) to it.filterIsInstance<String>().toSet() } }.toMap(),
-    )
-
+        )
+    }
 
     /** The signature added to new messages written from [email] (empty = none). */
     fun signature(email: String): String = prefs.getString("signature_${email.lowercase()}", "").orEmpty()
@@ -196,19 +193,11 @@ class SettingsRepository(context: Context) {
      * the per-account names, colours, intervals and folders, and the text signatures. Never any password or access
      * token: those live elsewhere and are not part of it. Each value keeps its type ({"b": true}, {"i": 5}…).
      */
-    fun backupValues(): JsonObject = buildJsonObject {
-        prefs.all.forEach { (key, value) ->
-            if (key == KEY_ASKED || key.startsWith(KEY_LAST_BG)) return@forEach // this device's own bookkeeping
-            when (value) {
-                is Boolean -> put(key, buildJsonObject { put("b", value) })
-                is Int -> put(key, buildJsonObject { put("i", value) })
-                is Long -> put(key, buildJsonObject { put("l", value) })
-                is Float -> put(key, buildJsonObject { put("f", value) })
-                is String -> put(key, buildJsonObject { put("s", value) })
-                is Set<*> -> put(key, buildJsonObject { put("set", JsonArray(value.filterIsInstance<String>().map(::JsonPrimitive))) })
-            }
-        }
-    }
+    fun backupValues(): JsonObject =
+        Json.parseToJsonElement(PrefsBackup.export(prefs, ::isDeviceKey).toString()).jsonObject
+
+    /** This device's own bookkeeping: not part of a backup. */
+    private fun isDeviceKey(key: String) = key == KEY_ASKED || key.startsWith(KEY_LAST_BG)
 
     /** The HTML signatures (imported from a message), by the file name made from the address. */
     fun backupSignatures(): JsonObject = buildJsonObject {
@@ -220,18 +209,7 @@ class SettingsRepository(context: Context) {
      * the file.
      */
     fun restoreBackup(values: JsonObject, signatures: JsonObject?) {
-        val edit = prefs.edit()
-        values.forEach { (key, entry) ->
-            if (key == KEY_ASKED || key.startsWith(KEY_LAST_BG)) return@forEach // this device's own bookkeeping
-            val typed = entry as? JsonObject ?: return@forEach
-            typed["b"]?.jsonPrimitive?.booleanOrNull?.let { edit.putBoolean(key, it) }
-            typed["i"]?.jsonPrimitive?.intOrNull?.let { edit.putInt(key, it) }
-            typed["l"]?.jsonPrimitive?.longOrNull?.let { edit.putLong(key, it) }
-            typed["f"]?.jsonPrimitive?.floatOrNull?.let { edit.putFloat(key, it) }
-            typed["s"]?.jsonPrimitive?.contentOrNull?.let { edit.putString(key, it) }
-            (typed["set"] as? JsonArray)?.let { list -> edit.putStringSet(key, list.mapNotNull { it.jsonPrimitive.contentOrNull }.toSet()) }
-        }
-        edit.commit()
+        PrefsBackup.import(prefs, org.json.JSONObject(values.toString()), ::isDeviceKey, commit = true)
         signatures?.forEach { (name, html) ->
             val safe = name.filter { it.isLetterOrDigit() || it == '@' || it == '.' }
             html.jsonPrimitive.contentOrNull?.let { signatureDir.mkdirs(); java.io.File(signatureDir, "$safe.html").writeText(it) }
