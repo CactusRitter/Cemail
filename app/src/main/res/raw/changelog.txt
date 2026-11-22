@@ -1,3 +1,6 @@
+## 2.8.2
+- Accounts and network now live in the shared Ce module (CeKit): no visible changes. You stay signed in.
+
 ## 2.8.1
 - Fixed: "What's new" in Settings → Updates was empty for the current version.
 

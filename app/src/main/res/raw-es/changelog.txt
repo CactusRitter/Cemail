@@ -1,3 +1,6 @@
+## 2.8.2
+- Cuentas y red pasan al módulo común (CeKit): sin cambios visibles. La sesión se mantiene.
+
 ## 2.8.1
 - Arreglo: las «Novedades» de Ajustes → Actualizaciones salían vacías en la versión actual.
 
