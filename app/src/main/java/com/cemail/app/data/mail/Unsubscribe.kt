@@ -33,7 +33,7 @@ object Unsubscribe {
     }
 
     /** The "one click" way: a POST to the list's address. true if the server accepted it. */
-    suspend fun postOneClick(url: String, client: OkHttpClient = OkHttpClient()): Boolean = withContext(Dispatchers.IO) {
+    suspend fun postOneClick(url: String, client: OkHttpClient = com.ce.kit.net.CeHttp.client): Boolean = withContext(Dispatchers.IO) {
         if (!url.startsWith("https://", ignoreCase = true)) return@withContext false
         try {
             val body = FormBody.Builder().add("List-Unsubscribe", "One-Click").build()

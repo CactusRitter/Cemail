@@ -4,7 +4,9 @@ Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones pri
 Cada versión se guarda en Google Drive (`Mi unidad/Ce Apps/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
 ## Sin publicar
-$L
+- Cuentas y red (CeKit F4, parte 2): la foto de cuenta pasa al kit (AccountPhotos: con el reintento a las 6 h de Celander y su registro en Diagnóstico; la clave `checked_` pasa a `checked_v2_`, así que cada cuenta se vuelve a mirar una vez), un único cliente HTTP del kit (CeHttp: IPv4 primero, tiempos de espera y User-Agent «Cemail/versión (Android)»; Gmail, Graph, push y darse de baja lo usan), el proveedor de tokens (TokenProvider) y el canal de notificaciones (Notifications). Compila y pasan los tests; sin probar en emulador.
+- Inicio de sesión (Google, Microsoft) y almacén de tokens pasan al kit (CeKit F4): mismo cifrado, mismo alias del Keystore (`cemail_tokens`), mismas preferencias (`tokens`) y claves: las sesiones existentes no se cierran. Sin probar con un inicio de sesión real tras el cambio.
+
 
 ## 2.8.1 — 2026-11-22
 - Arreglo: las novedades de la versión actual salían vacías en Actualizaciones (el changelog empezaba con BOM y la versión más nueva no se leía). El kit ignora el BOM y release.ps1 escribe sin BOM. Probado en emulador.

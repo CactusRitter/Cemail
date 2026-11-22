@@ -15,6 +15,8 @@ class AccountRepository(
     private val tokens: TokenStore,
     /** Root folder of the embedded pictures kept on the phone (one sub-folder per account). */
     private val inlineRoot: java.io.File,
+    /** Called after an account is removed (the app drops its picture). */
+    private val onRemoved: (String) -> Unit = {},
 ) {
     val accounts: Flow<List<AccountEntity>> = dao.observeAll()
 
@@ -36,8 +38,8 @@ class AccountRepository(
         messages.deleteAccount(accountId)
         messages.forgetKept(accountId)
         java.io.File(inlineRoot, accountId).deleteRecursively()
-        // Its picture (see AccountPhotos) goes too.
-        inlineRoot.parentFile?.let { java.io.File(it, "avatars/${accountId.filter { c -> c.isLetterOrDigit() }}.jpg").delete() }
+        // Its picture (kit AccountPhotos) goes too.
+        onRemoved(accountId)
         dao.delete(accountId)
     }
 

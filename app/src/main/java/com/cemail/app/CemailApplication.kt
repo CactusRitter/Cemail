@@ -7,6 +7,7 @@ import com.cemail.app.data.SettingsRepository
 import com.cemail.app.data.auth.AccountRepository
 import com.cemail.app.data.auth.AccountTokenProvider
 import com.ce.kit.auth.GoogleAuth
+import com.cemail.app.data.auth.photoProvider
 import com.cemail.app.data.gmail.HttpGmailApi
 import com.cemail.app.data.mail.RoomMailRepository
 import com.cemail.app.data.mail.UnifiedMailRepository
@@ -43,7 +44,15 @@ class CemailApplication : Application() {
     val googleAuth: GoogleAuth by lazy { GoogleAuth(this, AuthConfig.googleClientId(), AuthConfig.GOOGLE_SCOPES) }
     val microsoftAuth: MicrosoftAuth by lazy { MicrosoftAuth(this, AuthConfig.microsoftClientId(), AuthConfig.MICROSOFT_SCOPES, AuthConfig.MICROSOFT_REDIRECT) }
     val tokenStore: TokenStore by lazy { TokenStore(this, AuthConfig.TOKEN_ALIAS, AuthConfig.TOKEN_PREFS) }
-    val accountRepository: AccountRepository by lazy { AccountRepository(database.accounts(), database.messages(), tokenStore, java.io.File(filesDir, "inline")) }
+    /** The picture of each account (kit); the access token comes from the same store and refresh as the mail APIs. */
+    val photos: com.ce.kit.auth.AccountPhotos by lazy {
+        com.ce.kit.auth.AccountPhotos(this, com.ce.kit.net.CeHttp.client) { key, provider ->
+            com.ce.kit.auth.TokenProvider(tokenStore).accessToken(key) {
+                if (provider == com.ce.kit.auth.PhotoProvider.GOOGLE) googleAuth.freshAccessToken(it) else microsoftAuth.freshAccessToken(it)
+            }
+        }
+    }
+    val accountRepository: AccountRepository by lazy { AccountRepository(database.accounts(), database.messages(), tokenStore, java.io.File(filesDir, "inline"), onRemoved = { photos.remove(it) }) }
     val backup: com.cemail.app.data.backup.Backup by lazy {
         com.cemail.app.data.backup.Backup(this, settings, accountRepository, database.messages(), appScope)
     }
@@ -174,7 +183,7 @@ class CemailApplication : Application() {
         // Each account's picture comes from Google or Microsoft (unless the user picked one); checked every few days.
         appScope.launch {
             accountRepository.accounts.collect { list ->
-                list.forEach { com.cemail.app.data.auth.AccountPhotos.refreshIfStale(this@CemailApplication, it) }
+                list.forEach { photos.refreshIfStale(it.id, it.photoProvider()) }
             }
         }
         // The widgets redraw whenever the Inbox changes (a short pause first, so a sync counts as one change).

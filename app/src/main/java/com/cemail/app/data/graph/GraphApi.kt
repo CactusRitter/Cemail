@@ -81,11 +81,7 @@ data class GraphInline(
 class GraphApi(
     private val tokens: AccessTokenProvider,
     // A full sync lists whole folders with their bodies: Microsoft can take well over the default 10 s to answer.
-    private val client: OkHttpClient = OkHttpClient.Builder()
-        .dns(com.cemail.app.data.net.Ipv4First)
-        .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
-        .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-        .build(),
+    private val client: OkHttpClient = com.ce.kit.net.CeHttp.client,
 ) {
     private val json = Json { ignoreUnknownKeys = true }
     private val textType = "text/plain".toMediaType()

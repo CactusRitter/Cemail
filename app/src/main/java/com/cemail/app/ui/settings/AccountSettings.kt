@@ -79,7 +79,7 @@ import com.cemail.app.ui.mail.HtmlBody
 import com.cemail.app.ui.mail.shade
 import com.cemail.app.ui.mail.shownName
 import com.cemail.app.data.AccountLook
-import com.cemail.app.data.auth.AccountPhotos
+import com.cemail.app.data.auth.photoProvider
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.compose.foundation.background
 import kotlinx.coroutines.launch
@@ -390,7 +390,7 @@ private fun AccountLookCard(account: AccountEntity, look: AccountLook, repo: Set
     val gallery = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
         scope.launch {
-            if (!AccountPhotos.setFromUri(context, account.id, uri)) {
+            if (!app.photos.setFromUri(account.id, uri)) {
                 Toast.makeText(context, R.string.account_photo_failed, Toast.LENGTH_LONG).show()
             }
         }
@@ -412,13 +412,13 @@ private fun AccountLookCard(account: AccountEntity, look: AccountLook, repo: Set
             if (account.provider == "GMAIL" || account.provider == "MICROSOFT") {
                 ChoiceChip(stringResource(R.string.account_photo_provider, providerName(account)), false) {
                     scope.launch {
-                        if (!AccountPhotos.useProvider(app, account)) {
+                        if (!app.photos.useProvider(account.id, account.photoProvider())) {
                             Toast.makeText(context, R.string.account_photo_none, Toast.LENGTH_LONG).show()
                         }
                     }
                 }
-            } else if (AccountPhotos.file(context, account.id).exists()) {
-                ChoiceChip(stringResource(R.string.account_photo_remove), false) { AccountPhotos.remove(context, account.id) }
+            } else if (app.photos.file(account.id).exists()) {
+                ChoiceChip(stringResource(R.string.account_photo_remove), false) { app.photos.remove(account.id) }
             }
         }
     }

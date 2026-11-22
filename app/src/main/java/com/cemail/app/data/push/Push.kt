@@ -45,7 +45,7 @@ object Push {
         get() = BuildConfig.PUSH_URL.isNotBlank() && BuildConfig.PUSH_APP_KEY.isNotBlank() &&
             BuildConfig.FIREBASE_APP_ID.isNotBlank() && BuildConfig.FIREBASE_API_KEY.isNotBlank()
 
-    private val client = OkHttpClient()
+    private val client = com.ce.kit.net.CeHttp.client
     private val json = "application/json; charset=utf-8".toMediaType()
     private val lock = Mutex()
 

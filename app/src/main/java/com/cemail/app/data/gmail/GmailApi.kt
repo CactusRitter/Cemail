@@ -78,10 +78,7 @@ interface GmailApi {
 /** Gmail REST API over HTTPS with OkHttp. Network work always runs on [Dispatchers.IO]. */
 class HttpGmailApi(
     private val tokens: AccessTokenProvider,
-    private val client: OkHttpClient = OkHttpClient.Builder()
-        .dns(com.cemail.app.data.net.Ipv4First)
-        .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
-        .build(),
+    private val client: OkHttpClient = com.ce.kit.net.CeHttp.client,
 ) : GmailApi {
     private val json = Json { ignoreUnknownKeys = true }
     private val jsonType = "application/json; charset=utf-8".toMediaType()

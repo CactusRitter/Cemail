@@ -23,16 +23,12 @@ import com.cemail.app.data.mail.Mail
  */
 class MailNotifier(private val context: Context) {
 
-    fun createChannel() {
-        val channel = NotificationChannel(CHANNEL, context.getString(R.string.notif_channel_name), NotificationManager.IMPORTANCE_DEFAULT)
-        channel.description = context.getString(R.string.notif_channel_body)
-        context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
-    }
+    fun createChannel() = com.ce.kit.notify.Notifications.ensureChannel(
+        context, CHANNEL, context.getString(R.string.notif_channel_name), context.getString(R.string.notif_channel_body),
+    )
 
     /** true if Android lets us show notifications (the runtime permission exists from Android 13). */
-    fun allowed(): Boolean =
-        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+    fun allowed(): Boolean = com.ce.kit.notify.Notifications.permissionGranted(context)
 
     /** @param accountLabel the account's address, shown only when there is more than one account. */
     @SuppressLint("MissingPermission") // checked by allowed()

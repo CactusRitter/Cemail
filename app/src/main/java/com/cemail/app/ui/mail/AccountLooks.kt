@@ -24,7 +24,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.cemail.app.data.AccountLook
-import com.cemail.app.data.auth.AccountPhotos
 import com.cemail.app.data.db.AccountEntity
 import com.ce.kit.ui.theme.Accent
 import com.cemail.app.ui.theme.AccountColor
@@ -62,10 +61,11 @@ fun accountColor(account: AccountEntity, accounts: List<AccountEntity>): Color {
 @Composable
 fun AccountAvatar(account: AccountEntity, accounts: List<AccountEntity>, size: Int = 44, ring: Boolean = false) {
     val context = LocalContext.current
-    val version by AccountPhotos.version.collectAsState()
+    val photos = (context.applicationContext as com.cemail.app.CemailApplication).photos
+    val version by photos.version.collectAsState()
     val photo by produceState<ImageBitmap?>(null, account.id, version) {
         value = withContext(Dispatchers.IO) {
-            val file = AccountPhotos.file(context, account.id)
+            val file = photos.file(account.id)
             if (file.exists()) BitmapFactory.decodeFile(file.path)?.asImageBitmap() else null
         }
     }
