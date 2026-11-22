@@ -1,4 +1,4 @@
-﻿## 2.8.0
+## 2.8.0
 - Backup and settings now use the common Ce code (same file format, same keys).
 - The drawer is glass with blur again; menus over the reader no longer let the email show through; the search bar shadow is no longer cut off.
 - Text fields (IMAP account, subject, account settings) use the shared glass style.

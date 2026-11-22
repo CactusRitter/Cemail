@@ -1,4 +1,4 @@
-﻿## 2.8.0
+## 2.8.0
 - Sicherung und Einstellungen nutzen jetzt den gemeinsamen Ce-Code (gleiches Dateiformat, gleiche Schlüssel).
 - Die Seitenleiste ist wieder Glas mit Unschärfe; Menüs über dem Leser lassen die E-Mail nicht mehr durchscheinen; der Schatten der Suchleiste wird nicht mehr abgeschnitten.
 - Textfelder (IMAP-Konto, Betreff, Konteneinstellungen) nutzen den gemeinsamen Glas-Stil.

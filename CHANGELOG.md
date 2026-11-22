@@ -4,6 +4,7 @@ Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones pri
 Cada versión se guarda en Google Drive (`Mi unidad/Ce Apps/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
 ## Sin publicar
+- Arreglo: las novedades de la versión actual salían vacías en Actualizaciones (el changelog empezaba con BOM y la versión más nueva no se leía). El kit ignora el BOM y release.ps1 escribe sin BOM. Probado en emulador.
 
 ## 2.8.0 — 2026-11-22
 - Copia de seguridad y ajustes (F6 de CeKit): contenedor del ZIP, ajustes tipados y lectura validada de los ajustes comunes pasan al kit; mismas claves y mismo formato. Probado en emulador: una copia hecha con la versión anterior se restaura con la nueva (ajustes idénticos) y las dos copias tienen la misma estructura. Sin probar con una copia real con cuentas.
