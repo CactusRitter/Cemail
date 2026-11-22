@@ -4,6 +4,9 @@ import android.app.LocaleManager
 import android.content.Context
 import android.os.Build
 import android.os.LocaleList
+import com.ce.kit.backup.BackupFormat
+import com.ce.kit.backup.NotABackupException
+import com.ce.kit.backup.TooNewException
 import com.ce.kit.log.AppLog
 import com.cemail.app.BuildConfig
 import com.cemail.app.data.SettingsRepository
@@ -41,10 +44,8 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.put
 import java.io.File
-import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
-import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
@@ -116,16 +117,10 @@ class Backup(
     /** Writes the whole backup, as the zip described above, to [out] (which it closes). */
     suspend fun export(out: OutputStream) = withContext(Dispatchers.IO) {
         val data = settingsJson()
-        val manifest = buildJsonObject {
-            put("app", APP)
-            put("container", CONTAINER)
-            put("appVersion", BuildConfig.VERSION_NAME)
-            put("createdAt", System.currentTimeMillis())
-            put("contents", buildJsonArray { add(JsonPrimitive(CONTENT_SETTINGS)) })
-        }
+        val manifest = BackupFormat.manifest(APP, BuildConfig.VERSION_NAME, listOf(CONTENT_SETTINGS))
         ZipOutputStream(out.buffered()).use { zip ->
-            zip.putText(MANIFEST_ENTRY, manifest.toString())
-            zip.putText(SETTINGS_ENTRY, data)
+            BackupFormat.putText(zip, BackupFormat.MANIFEST, manifest.toString())
+            BackupFormat.putText(zip, BackupFormat.SETTINGS, data)
         }
     }
 
@@ -135,54 +130,38 @@ class Backup(
      */
     suspend fun read(input: InputStream): JsonObject? = withContext(Dispatchers.IO) {
         try {
-            var manifest: JsonObject? = null
+            var manifest: org.json.JSONObject? = null
             var data: JsonObject? = null
             var entries = 0
             ZipInputStream(input.buffered()).use { zip ->
                 while (true) {
                     val entry = zip.nextEntry ?: break
-                    if (++entries > MAX_ENTRIES) return@withContext null
+                    BackupFormat.checkEntryCount(++entries)
                     val name = entry.name
                     if (name.startsWith("/") || name.startsWith("\\") || name.split('/', '\\').any { it == ".." }) return@withContext null
                     when (name) {
-                        MANIFEST_ENTRY -> manifest = parse(readLimited(zip))
-                        SETTINGS_ENTRY -> data = parse(readLimited(zip))
+                        BackupFormat.MANIFEST -> {
+                            val bytes = BackupFormat.readLimited(zip)
+                            manifest = runCatching { org.json.JSONObject(bytes.decodeToString()) }.getOrNull()
+                        }
+                        BackupFormat.SETTINGS -> data = parse(BackupFormat.readLimited(zip))
                     }
                     zip.closeEntry()
                 }
             }
-            val m = manifest ?: return@withContext null
-            if (!m["app"].string().equals(APP, ignoreCase = true) || m["container"].int() != CONTAINER) return@withContext null
+            BackupFormat.checkManifest(manifest, APP)
+            if (manifest?.optInt("container", 0) != BackupFormat.CONTAINER) return@withContext null
             data
-        } catch (e: TooBig) {
+        } catch (e: NotABackupException) {
+            null
+        } catch (e: TooNewException) {
             null
         } catch (e: java.util.zip.ZipException) {
             null
         }
     }
 
-    private class TooBig : IOException()
-
     private fun parse(bytes: ByteArray): JsonObject? = runCatching { Json.parseToJsonElement(bytes.decodeToString()).jsonObject }.getOrNull()
-
-    /** An entry's bytes, at most [MAX_JSON_BYTES] (a bigger one is not a backup: it guards against zip bombs). */
-    private fun readLimited(input: InputStream): ByteArray {
-        val out = java.io.ByteArrayOutputStream()
-        val buffer = ByteArray(16 * 1024)
-        while (true) {
-            val n = input.read(buffer)
-            if (n < 0) break
-            if (out.size() + n > MAX_JSON_BYTES) throw TooBig()
-            out.write(buffer, 0, n)
-        }
-        return out.toByteArray()
-    }
-
-    private fun ZipOutputStream.putText(name: String, text: String) {
-        putNextEntry(ZipEntry(name))
-        write(text.toByteArray())
-        closeEntry()
-    }
 
     /** The data entry: settings, signatures, language, accounts, muted conversations and marked messages. */
     private suspend fun settingsJson(): String {
@@ -327,15 +306,7 @@ class Backup(
         /** The version of the data entry ("format" in settings.json). */
         const val FORMAT = 2
         const val PENDING_DAYS = 30
-
-        // The zip container shared by the Ce apps.
-        const val CONTAINER = 1
-        const val MANIFEST_ENTRY = "manifest.json"
-        const val SETTINGS_ENTRY = "settings.json"
         const val CONTENT_SETTINGS = "settings"
-        /** Limits for an untrusted zip: each JSON entry, and the number of entries. */
-        const val MAX_JSON_BYTES = 64 * 1024 * 1024
-        const val MAX_ENTRIES = 20_000
     }
 }
 
