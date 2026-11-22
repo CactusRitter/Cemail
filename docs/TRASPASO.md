@@ -1,7 +1,14 @@
 # Traspaso de Cemail
 
 Lo que necesita una sesión nueva (o tras `/clear`) además de `CLAUDE.md`. Mantener al día al cerrar cada bloque.
-Última actualización: 2026-11-21.
+Última actualización: 2026-11-22.
+
+## Cierre de bloque 2026-11-22 (léelo primero)
+- **Hecho y subido a `main`, sin publicar** (todo en «Sin publicar» del CHANGELOG): Redactar sin el hueco de la barra de formato (código en c2ffe71; comprobado en emulador claro/oscuro con teclado; falta el OPPO); **R8 fusionado** (`r8-prueba` → `main`, merge ef03a1f, con la regla `-keep` de los `InputMerger` de WorkManager copiada de Cenotes 4289ccb). Menú ⋮ del lector: en emulador no mueve el cuerpo; sin probar con HTML/WebView real.
+- **Probado con R8 en el S26** (cuentas reales): arranca y sincroniza Gmail y Microsoft sin errores. **No probado:** widgets de Cemail en el S26, un worker de Cemail ejecutado a mano. El push de Worker (Gmail ~5 s, Microsoft ~5 s) se midió en el S26.
+- Worker de calendario de Celander (`/cal/*`, `/gcal`, `/graph` con `type=mscal`) desplegado por Ce Líder; tests: `node push-worker/test.mjs`; ver `docs/PUSH.md`.
+- **Pendiente de César/Líder:** publicar el lote cuando lo ordenen; ver Redactar y el lector en el OPPO. Hay cambios sin commit de otras sesiones en el árbol (CeKit, Settings, Backup…): no son míos.
+- **S26 y tableta:** mismos turnos que el emulador (`emu-lock.ps1 acquire Cemail -Dev s26|tableta`); pantalla encendida solo mientras pruebas y al acabar `stayon false` + `KEYCODE_SLEEP` (antiburn-in). Instalar con `install -r --user 0`, nunca desinstalar. OPPO: no tocar.
 
 ## Estado
 - Última versión publicada: **2.6.1** (versionCode 101), release `v2.6.1` en GitHub con APK; también en `G:\Mi unidad\Ce Apps\Cemail\`. De 2.6.1 solo se probó en emulador la notificación con Redactar abierto (abre el mensaje y guarda el borrador).
@@ -32,7 +39,7 @@ Lo que necesita una sesión nueva (o tras `/clear`) además de `CLAUDE.md`. Mant
 
 ## Dispositivos
 - Probar **solo en el emulador**: `export MSYS_NO_PATHCONV=1 ANDROID_SERIAL=emulator-5554` siempre. El emulador se comparte con todas las sesiones Ce: usar el turno de arriba (`emu-lock.ps1`), sin mensajes. Para probar la demo: tras reinstalar hay que volver a pulsar «Look around»; con varias cuentas (pantalla Cuentas) se pueden sembrar filas en `accounts` con `adb shell "run-as com.cemail.app sqlite3 databases/cemail.db '…'"` (y borrarlas al acabar).
-- **Nunca** instalar en la tableta R52Y806MWSP ni en el móvil RFGL107KERL (están conectados; `connectedAndroidTest` borra la app).
+- S26 `RFGL107KERL` y tableta `R52Y806MWSP`: sí se puede probar (con turno, ver «Cierre de bloque»), pero nunca `connectedAndroidTest` ni `installDebug` sin `ANDROID_SERIAL` (borran la app).
 - Dejar el emulador como estaba: Cemail en Cristal con 3D, escalas de animación a 1, red activada, apagado si lo estaba.
 - `scripts/emulator.ps1` con `-ExecutionPolicy Bypass` y `$env:ANDROID_SERIAL='emulator-5554'`. Ajustes de la app en `shared_prefs/settings.xml` (claves `skin`, `theme_mode`, `depth_3d`), copiados con `run-as` con la app parada.
 
