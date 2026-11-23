@@ -1,3 +1,7 @@
+## 2.8.3
+- Behoben: Eine von Hand geladene E-Mail („Mehr laden“), die auf der Gmail-Webseite gelöscht oder in den Papierkorb verschoben wurde, bleibt nicht mehr im Posteingang, wenn die Benachrichtigung darüber verloren ging; die vollständige Synchronisierung prüft sie jetzt.
+- Diagnose: Das Protokoll hält jede Label-Änderung von Gmail fest; die Schaltflächen springen in eine neue Zeile, wenn sie nicht passen.
+
 ## 2.8.2
 - Konten und Netzwerk sind jetzt im gemeinsamen Ce-Modul (CeKit): keine sichtbaren Änderungen. Du bleibst angemeldet.
 

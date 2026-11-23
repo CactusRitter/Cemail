@@ -1,3 +1,7 @@
+## 2.8.3
+- Arreglo: un correo traído a mano («cargar más») que se borra o va a la Papelera en la web de Gmail ya no se queda en Recibidos si el aviso de ese cambio se perdió; la sincronización completa lo revisa.
+- Diagnóstico: el registro anota cada cambio de etiquetas de Gmail; sus botones bajan de línea cuando no caben.
+
 ## 2.8.2
 - Cuentas y red pasan al módulo común (CeKit): sin cambios visibles. La sesión se mantiene.
 

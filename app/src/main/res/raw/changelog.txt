@@ -1,3 +1,7 @@
+## 2.8.3
+- Fixed: a mail you loaded by hand ("load more") that was deleted or trashed on Gmail's website no longer stays in the Inbox if the notice of that change was lost; the full sync now checks it.
+- Diagnostics: the log records every label change from Gmail; its buttons now wrap to a new line when they don't fit.
+
 ## 2.8.2
 - Accounts and network now live in the shared Ce module (CeKit): no visible changes. You stay signed in.
 
