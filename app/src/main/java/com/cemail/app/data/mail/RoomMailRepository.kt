@@ -701,6 +701,25 @@ class RoomMailRepository(
         // Messages of labels fetched by hand stay although they are older than the window (Gmail's history still
         // removes them if they are deleted).
         val kept = dao.keptIds(accountId).toHashSet()
+        // Those kept messages lie outside the window just listed, so only Gmail's history ever told the phone about them:
+        // if one change was missed (a too old history, a message changed here at the time), a message trashed on the web
+        // stayed in the Inbox for good. A full sync looks at their labels again (a few at a time).
+        if (!quick) {
+            val outside = cached.filter { (id, entity) -> id !in remoteIds && (id in kept || entity.inManualLabel()) }
+            var fixed = 0
+            for ((id, old) in outside.entries.take(OUTSIDE_CHECK_LIMIT)) {
+                try {
+                    val before = old.folder
+                    applyLabels(old, api.getLabels(id).toSet())
+                    if (dao.light(old.localId)?.folder != before) fixed++
+                } catch (e: GmailHttpException) {
+                    if (e.code != 404) throw e
+                    dao.deleteAll(accountId, listOf(old.localId)) // deleted for good on the server
+                    fixed++
+                }
+            }
+            if (outside.isNotEmpty()) AppLog.i("sync", "...${accountId.takeLast(4)} kept messages checked: ${minOf(outside.size, OUTSIDE_CHECK_LIMIT)} of ${outside.size}, $fixed changed")
+        }
         val gone = cached.filterKeys { it !in remoteIds && it !in kept }.values.filterNot { it.inManualLabel() }.map { it.localId }
         gone.chunked(500).forEach { dao.deleteAll(accountId, it) }
         if (historyAtStart != null) marks.save(historyAtStart, fullToo = true)
@@ -738,6 +757,7 @@ class RoomMailRepository(
 
         /** A real listing at least this often, so messages that fell out of the window or were missed are corrected. */
         const val FULL_EVERY_MILLIS = 6L * 60 * 60 * 1000
+        const val OUTSIDE_CHECK_LIMIT = 150
 
         /** Renamed whenever the way embedded pictures are found changes, so they are fetched again. */
         const val INLINE_INDEX = "index.v2"

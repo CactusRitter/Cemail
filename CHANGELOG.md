@@ -4,6 +4,7 @@ Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones pri
 Cada versión se guarda en Google Drive (`Mi unidad/Ce Apps/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
 ## Sin publicar
+- Arreglo: un correo traído a mano («cargar más») que se borra o va a la Papelera en la web de Gmail ya no se queda en Recibidos si el aviso de ese cambio se perdió: la sincronización completa (cada 6 horas) vuelve a mirar las etiquetas de esos correos (hasta 150 por vez) y lo anota en Diagnóstico. Sin probar en móvil.
 - Diagnóstico: el registro anota cada cambio de etiquetas que llega de Gmail (de qué carpeta a cuál, leído/destacado, o si se dejó quieto porque el mensaje se acababa de cambiar aquí), sin asunto ni remitente, para saber por qué un correo borrado en la web a veces no desaparece de la lista.
 
 ## 2.8.2 — 2026-11-22
