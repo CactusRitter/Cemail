@@ -638,11 +638,18 @@ class RoomMailRepository(
 
     /** Puts the labels the server has on the cached copy (and drops it if it became spam). */
     private suspend fun applyLabels(old: MessageEntity, labels: Set<String>) {
-        if (touched(old.localId)) return // changed here a moment ago: what the server says may be older than that
+        if (touched(old.localId)) {
+            AppLog.i("sync", "...${accountId.takeLast(4)} label change left alone: the message was changed here a moment ago")
+            return // changed here a moment ago: what the server says may be older than that
+        }
         val state = LabelDiff.stateOf(labels)
         val joined = labels.sorted().joinToString(" ")
         if (state.folder.name != old.folder || state.read != old.read || state.starred != old.starred || joined != old.labelIds) {
             dao.updateState(old.localId, state.folder.name, state.read, state.starred, joined)
+            // No subject or sender: only where it moved and which flags changed.
+            AppLog.i("sync", "...${accountId.takeLast(4)} label change applied: ${old.folder}→${state.folder.name}, read ${old.read}→${state.read}, starred ${old.starred}→${state.starred}")
+        } else {
+            AppLog.i("sync", "...${accountId.takeLast(4)} label change: nothing differs from the copy on the phone (${state.folder.name})")
         }
     }
 
