@@ -4,6 +4,8 @@ Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones pri
 Cada versión se guarda en Google Drive (`Mi unidad/Ce Apps/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
 ## Sin publicar
+
+## 2.9.0 — 2026-11-24
 - Lector de correo rediseñado: el menú «⋮» pasa a la píldora de arriba (lista con icono y nombre; incluye «Info» con cuenta, remitente, día y hora exactos, carpeta, etiquetas y adjuntos) y abajo hay una píldora de cristal con Responder, A todos, Reenviar, Archivar (o Entrada) y Papelera, con nombre bajo cada icono. Desaparecen el botón «⋮» flotante, el botón redondo de responder y la cuadrícula de 14 iconos; el mensaje deja espacio al final para que su última línea quede justo sobre la píldora. Probado en emulador (inglés y alemán, ejemplos); sin probar con correo HTML largo ni adjuntos reales.
 
 ## 2.8.3 — 2026-11-23

@@ -1,3 +1,8 @@
+## 2.9.0
+- Redesigned mail reader: the ⋮ menu moves to the top pill (a list with icons and names; it includes "Info" with account, sender, exact date and time, folder, labels and attachments).
+- A glass pill at the bottom holds Reply, Reply all, Forward, Archive (or Inbox) and Trash, with a name under each icon.
+- The floating ⋮ button, the round reply button and the 14-icon grid are gone.
+
 ## 2.8.3
 - Fixed: a mail you loaded by hand ("load more") that was deleted or trashed on Gmail's website no longer stays in the Inbox if the notice of that change was lost; the full sync now checks it.
 - Diagnostics: the log records every label change from Gmail; its buttons now wrap to a new line when they don't fit.

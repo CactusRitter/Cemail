@@ -1,3 +1,8 @@
+## 2.9.0
+- Neu gestalteter E-Mail-Leser: Das ⋮-Menü wandert in die obere Pille (Liste mit Symbolen und Namen; enthält „Info“ mit Konto, Absender, genauem Datum und Uhrzeit, Ordner, Labels und Anhängen).
+- Unten sitzt eine Glas-Pille mit Antworten, Allen antworten, Weiterleiten, Archivieren (oder Posteingang) und Papierkorb, mit dem Namen unter jedem Symbol.
+- Der schwebende ⋮-Knopf, der runde Antworten-Knopf und das 14-Symbole-Raster entfallen.
+
 ## 2.8.3
 - Behoben: Eine von Hand geladene E-Mail („Mehr laden“), die auf der Gmail-Webseite gelöscht oder in den Papierkorb verschoben wurde, bleibt nicht mehr im Posteingang, wenn die Benachrichtigung darüber verloren ging; die vollständige Synchronisierung prüft sie jetzt.
 - Diagnose: Das Protokoll hält jede Label-Änderung von Gmail fest; die Schaltflächen springen in eine neue Zeile, wenn sie nicht passen.

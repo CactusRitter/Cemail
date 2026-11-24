@@ -1,3 +1,8 @@
+## 2.9.0
+- Lector de correo rediseñado: el menú ⋮ pasa a la píldora de arriba (lista con icono y nombre; incluye «Info» con cuenta, remitente, día y hora exactos, carpeta, etiquetas y adjuntos).
+- Abajo hay una píldora de cristal con Responder, A todos, Reenviar, Archivar (o Entrada) y Papelera, con el nombre bajo cada icono.
+- Desaparecen el botón ⋮ flotante, el botón redondo de responder y la cuadrícula de 14 iconos.
+
 ## 2.8.3
 - Arreglo: un correo traído a mano («cargar más») que se borra o va a la Papelera en la web de Gmail ya no se queda en Recibidos si el aviso de ese cambio se perdió; la sincronización completa lo revisa.
 - Diagnóstico: el registro anota cada cambio de etiquetas de Gmail; sus botones bajan de línea cuando no caben.
