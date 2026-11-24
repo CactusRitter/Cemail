@@ -41,6 +41,7 @@ import com.ce.kit.ui.glass.pressScale
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -103,6 +104,7 @@ import androidx.compose.foundation.horizontalScroll
 import com.ce.kit.ui.glass.GlassIconButton
 import com.ce.kit.ui.glass.GlassKind
 import com.ce.kit.ui.glass.GlassPill
+import dev.chrisbanes.haze.hazeSource
 import com.ce.kit.ui.glass.PillIcon
 import com.ce.kit.ui.glass.glass
 import com.cemail.app.ui.icons.CemailIcons
@@ -210,7 +212,11 @@ fun ReadScreen(
     // The page is a native WebView: on some phones it is drawn above the Compose popups (menu, attachments, labels)
     // that open over it: so they are drawn in their own window (GlassOverlayWindow), which is always above the page..
 
+    val haze = dev.chrisbanes.haze.rememberHazeState()
+    var web by remember { mutableStateOf<WebView?>(null) }
+    var shotTick by remember { mutableIntStateOf(0) }
     Box(Modifier.fillMaxSize()) {
+        com.ce.kit.ui.glass.GlassBackground(Modifier.hazeSource(haze, zIndex = com.ce.kit.ui.glass.GlassLayers.BACKGROUND)) {}
         Column(
             Modifier
                 .fillMaxSize()
@@ -265,7 +271,8 @@ fun ReadScreen(
                 Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .clip(com.ce.kit.ui.theme.LocalSkin.current.shape(RoundedCornerShape(24.dp))),
+                    .clip(com.ce.kit.ui.theme.LocalSkin.current.shape(RoundedCornerShape(24.dp)))
+                    .hazeSource(haze, zIndex = com.ce.kit.ui.glass.GlassLayers.CONTENT),
             ) {
                 val page = cleanPage
                 when {
@@ -280,7 +287,8 @@ fun ReadScreen(
                         )
                         Box(Modifier.fillMaxSize().glass(RoundedCornerShape(24.dp), GlassKind.Card))
                         if (page != null && settled) {
-                            HtmlBody(page, showImages, Modifier.fillMaxSize().graphicsLayer { this.alpha = alpha }, darken = darken, onShown = { shown = true }) { }
+                            WebBackdrop(web, shotTick, Modifier.fillMaxSize())
+                            HtmlBody(page, showImages, Modifier.fillMaxSize().graphicsLayer { this.alpha = alpha }, darken = darken, onShown = { shown = true; shotTick++ }, onWeb = { web = it }) { shotTick++ }
                         }
                     }
                     else -> Box(
@@ -302,7 +310,7 @@ fun ReadScreen(
         val muted by produceState(false, summary.id, panel) { value = panel && vm.isMuted(summary.id) }
         var unsubscribing by remember { mutableStateOf(false) }
         Box(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 12.dp, vertical = 8.dp)) {
-            GlassPill(Modifier.fillMaxWidth(), height = 64.dp) {
+            GlassPill(Modifier.fillMaxWidth(), height = 64.dp, hazeState = haze) {
                 PillIcon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), vm::closeMail)
                 Column(Modifier.weight(1f).padding(horizontal = 8.dp)) {
                     Text(
@@ -345,7 +353,7 @@ fun ReadScreen(
                 .popIn(delayMillis = 60, initialScale = 0.9f),
         ) {
             // opaque: the message is a WebView, which the glass cannot blur, so its text would show through the pill.
-            GlassPill(Modifier.fillMaxWidth(), height = 64.dp, opaque = true) {
+            GlassPill(Modifier.fillMaxWidth(), height = 64.dp, hazeState = haze) {
                 PillAction(CemailIcons.Reply, R.string.pill_reply) { reply() }
                 PillAction(CemailIcons.ReplyAll, R.string.pill_reply_all) { reply(all = true) }
                 PillAction(CemailIcons.Forward, R.string.pill_forward) { reply(forward = true) }
@@ -586,9 +594,10 @@ private fun AttachmentsPopup(messageId: Long, attachments: List<com.cemail.app.d
  */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier, darken: Boolean = false, hidden: Boolean = false, onShown: () -> Unit = {}, onScroll: (Int) -> Unit) {
+fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier, darken: Boolean = false, hidden: Boolean = false, onShown: () -> Unit = {}, onWeb: (WebView) -> Unit = {}, onScroll: (Int) -> Unit) {
     val currentOnScroll by rememberUpdatedState(onScroll)
     val currentOnShown by rememberUpdatedState(onShown)
+    val onWebCreated by rememberUpdatedState(onWeb)
     val darkPage = MaterialTheme.colorScheme.surface.toArgb()
     // The WebView only darkens a page when its own theme is a dark one, so it gets one that says so (whatever the
     // system is set to), and is made again when this changes.
@@ -612,6 +621,7 @@ fun HtmlBody(page: String, showImages: Boolean, modifier: Modifier, darken: Bool
                     WebSettingsCompat.setAlgorithmicDarkeningAllowed(settings, darken)
                 }
                 setBackgroundColor(if (darken) darkPage else android.graphics.Color.WHITE)
+                onWebCreated(this)
                 setOnScrollChangeListener { _, _, y, _, _ -> currentOnScroll(y) }
                 webViewClient = object : WebViewClient() {
                     // The page is about to be on screen (drawn, with its embedded pictures): time to show it.
@@ -758,4 +768,27 @@ private fun PlaceChip(icon: ImageVector, text: String, clickLabel: String?, onCl
             overflow = TextOverflow.Ellipsis,
         )
     }
+}
+
+/**
+ * The glass cannot blur a WebView (it is a native view, not Compose content), so the pills would show it sharp or not
+ * at all. This keeps a small picture of the page, redrawn when it scrolls, drawn under the WebView as a blur source
+ * (hidden behind it, same pixels): the pills blur that.
+ */
+@Composable
+private fun WebBackdrop(web: WebView?, tick: Int, modifier: Modifier) {
+    var shot by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+    androidx.compose.runtime.LaunchedEffect(web, tick) {
+        val w = web ?: return@LaunchedEffect
+        if (w.width <= 0 || w.height <= 0) return@LaunchedEffect
+        val scale = 0.25f
+        val bmp = android.graphics.Bitmap.createBitmap(
+            (w.width * scale).toInt().coerceAtLeast(1), (w.height * scale).toInt().coerceAtLeast(1), android.graphics.Bitmap.Config.ARGB_8888,
+        )
+        val canvas = android.graphics.Canvas(bmp)
+        canvas.scale(scale, scale)
+        w.draw(canvas)
+        shot = bmp.asImageBitmap()
+    }
+    shot?.let { androidx.compose.foundation.Image(it, null, modifier, contentScale = androidx.compose.ui.layout.ContentScale.FillBounds) }
 }
