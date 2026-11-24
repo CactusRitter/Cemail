@@ -344,7 +344,8 @@ fun ReadScreen(
                 .padding(horizontal = 12.dp, vertical = 12.dp)
                 .popIn(delayMillis = 60, initialScale = 0.9f),
         ) {
-            GlassPill(Modifier.fillMaxWidth(), height = 64.dp) {
+            // opaque: the message is a WebView, which the glass cannot blur, so its text would show through the pill.
+            GlassPill(Modifier.fillMaxWidth(), height = 64.dp, opaque = true) {
                 PillAction(CemailIcons.Reply, R.string.pill_reply) { reply() }
                 PillAction(CemailIcons.ReplyAll, R.string.pill_reply_all) { reply(all = true) }
                 PillAction(CemailIcons.Forward, R.string.pill_forward) { reply(forward = true) }
