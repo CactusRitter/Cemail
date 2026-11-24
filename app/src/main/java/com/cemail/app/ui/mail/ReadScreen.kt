@@ -100,11 +100,11 @@ import com.cemail.app.data.mail.Folder
 import com.cemail.app.data.mail.Label
 import com.cemail.app.data.mail.Mail
 import com.cemail.app.data.mail.MailBox
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import com.ce.kit.ui.glass.GlassIconButton
 import com.ce.kit.ui.glass.GlassKind
 import com.ce.kit.ui.glass.GlassPill
-import com.ce.kit.ui.glass.fadingTopEdge
 import com.ce.kit.ui.glass.PillIcon
 import com.ce.kit.ui.glass.glass
 import com.cemail.app.ui.icons.CemailIcons
@@ -282,8 +282,13 @@ fun ReadScreen(
                         )
                         Box(Modifier.fillMaxSize().glass(RoundedCornerShape(24.dp), GlassKind.Card))
                         if (page != null && settled) {
-                            Box(Modifier.fillMaxSize().fadingTopEdge(PAGE_FADE_TOP).hiddenUnderBottomPill()) {
+                            Box(Modifier.fillMaxSize().hiddenUnderBottomPill()) {
                                 HtmlBody(page, showImages, Modifier.fillMaxSize().graphicsLayer { this.alpha = alpha }, darken = darken, onShown = { shown = true }) { }
+                            }
+                            // Brutalist: the black frame of the card, which is there before the page loads, stays on top of the page.
+                            val look = com.ce.kit.ui.theme.LocalSkin.current
+                            if (look.skin == com.ce.kit.ui.theme.Skin.BRUTAL) {
+                                Box(Modifier.fillMaxSize().border(look.edgeWidth, look.edgeColor, look.shape(RoundedCornerShape(24.dp))))
                             }
                         }
                     }
@@ -767,8 +772,6 @@ private fun PlaceChip(icon: ImageVector, text: String, clickLabel: String?, onCl
 /** Alpha of the opacity floor under the reader's pills (a safety net: the page is already hidden under the bottom pill). */
 private const val PILL_FLOOR = 0.3f
 
-/** How far the message fades out before it reaches the pills (the bottom one overlaps the page, the top one sits above it). */
-private val PAGE_FADE_TOP = 20.dp
 /** The page is fully hidden under the bottom pill (it is 64dp tall plus its margin) and fades in over the next 28dp above it. */
 private val PAGE_HIDDEN_BOTTOM = 72.dp
 private val PAGE_FADE_BOTTOM = 28.dp
