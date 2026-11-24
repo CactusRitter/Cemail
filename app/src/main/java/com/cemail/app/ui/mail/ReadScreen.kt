@@ -40,6 +40,7 @@ import com.ce.kit.ui.glass.popIn
 import com.ce.kit.ui.glass.pressScale
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -103,6 +104,7 @@ import androidx.compose.foundation.horizontalScroll
 import com.ce.kit.ui.glass.GlassIconButton
 import com.ce.kit.ui.glass.GlassKind
 import com.ce.kit.ui.glass.GlassPill
+import com.ce.kit.ui.glass.fadingTopEdge
 import com.ce.kit.ui.glass.PillIcon
 import com.ce.kit.ui.glass.glass
 import com.cemail.app.ui.icons.CemailIcons
@@ -280,7 +282,9 @@ fun ReadScreen(
                         )
                         Box(Modifier.fillMaxSize().glass(RoundedCornerShape(24.dp), GlassKind.Card))
                         if (page != null && settled) {
-                            HtmlBody(page, showImages, Modifier.fillMaxSize().graphicsLayer { this.alpha = alpha }, darken = darken, onShown = { shown = true }) { }
+                            Box(Modifier.fillMaxSize().fadingTopEdge(PAGE_FADE_TOP).hiddenUnderBottomPill()) {
+                                HtmlBody(page, showImages, Modifier.fillMaxSize().graphicsLayer { this.alpha = alpha }, darken = darken, onShown = { shown = true }) { }
+                            }
                         }
                     }
                     else -> Box(
@@ -760,5 +764,23 @@ private fun PlaceChip(icon: ImageVector, text: String, clickLabel: String?, onCl
     }
 }
 
-/** Alpha of the opacity floor under the reader's pills (they sit over a WebView, which cannot be blurred). */
-private const val PILL_FLOOR = 0.97f
+/** Alpha of the opacity floor under the reader's pills (a safety net: the page is already hidden under the bottom pill). */
+private const val PILL_FLOOR = 0.3f
+
+/** How far the message fades out before it reaches the pills (the bottom one overlaps the page, the top one sits above it). */
+private val PAGE_FADE_TOP = 20.dp
+/** The page is fully hidden under the bottom pill (it is 64dp tall plus its margin) and fades in over the next 28dp above it. */
+private val PAGE_HIDDEN_BOTTOM = 72.dp
+private val PAGE_FADE_BOTTOM = 28.dp
+
+private fun Modifier.hiddenUnderBottomPill(): Modifier = graphicsLayer { compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen }
+    .drawWithContent {
+        drawContent()
+        val h = size.height
+        val hold = (PAGE_HIDDEN_BOTTOM.toPx() / h).coerceIn(0f, 1f)
+        val ramp = ((PAGE_HIDDEN_BOTTOM + PAGE_FADE_BOTTOM).toPx() / h).coerceIn(hold, 1f)
+        drawRect(
+            androidx.compose.ui.graphics.Brush.verticalGradient(0f to androidx.compose.ui.graphics.Color.Black, 1f - ramp to androidx.compose.ui.graphics.Color.Black, 1f - hold to androidx.compose.ui.graphics.Color.Transparent, 1f to androidx.compose.ui.graphics.Color.Transparent),
+            blendMode = androidx.compose.ui.graphics.BlendMode.DstIn,
+        )
+    }

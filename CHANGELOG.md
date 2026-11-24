@@ -4,6 +4,7 @@ Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones pri
 Cada versión se guarda en Google Drive (`Mi unidad/Ce Apps/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
 ## Sin publicar
+- Lector: el mensaje (WebView) se desvanece en lugar de verse a través de las píldoras: queda del todo oculto bajo la píldora de abajo (72 dp) y se desvanece en los 28 dp de encima; arriba se desvanece 20 dp. Con eso el suelo de opacidad de las píldoras baja de 0,97 a 0,30 y el cristal vuelve a verse como en el resto de la app. Sin fotos ni bitmaps por scroll (se descartó la foto desenfocada: marea con scroll rápido). Probado en emulador con HTML largo, transparencia 100, claro y oscuro; APK de prueba 2.9.1-prueba-fade (versionCode 110) para el OPPO.
 
 ## 2.9.1 — 2026-11-24
 - Arreglo: la píldora de acciones de abajo del lector tenía el texto del correo visible a través (el mensaje es un WebView y el cristal no puede difuminarlo); las dos píldoras del lector (arriba y abajo) llevan ahora un suelo de opacidad (97 % de `surface` bajo el cristal; `GlassPill(floor = …)`, nuevo en CeKit), así que aunque la transparencia esté al máximo el texto no se lee a través y se ve un ligero fantasma. Probado en emulador con un correo HTML largo, transparencia 100, tema claro y oscuro; sin probar en el OPPO.
