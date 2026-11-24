@@ -1,3 +1,7 @@
+## 2.9.2
+- Leser: Die Nachricht blendet aus, wenn sie die Aktionsleiste unten erreicht, statt durchzuscheinen; die Leiste ist wieder klares Glas.
+- Leser, Brutalist-Design: Der schwarze Rahmen um die Nachricht bleibt sichtbar, auch wenn die Nachricht geladen ist.
+
 ## 2.9.1
 - Leser: Die Leisten oben und unten lassen den Nachrichtentext nicht mehr durchscheinen, auch nicht bei maximaler Transparenz.
 

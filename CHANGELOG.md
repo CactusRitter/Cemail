@@ -4,6 +4,8 @@ Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones pri
 Cada versión se guarda en Google Drive (`Mi unidad/Ce Apps/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
 ## Sin publicar
+
+## 2.9.2 — 2026-11-24
 - Lector: se quita el desvanecido de arriba (recortaba la primera línea; el mensaje no llega a verse bajo la píldora de arriba) y, solo en el tema Brutalista, el marco negro del borde de la tarjeta se dibuja por encima del WebView, así que se ve siempre (antes desaparecía al cargar el correo). Probado en emulador con Brutalista y Papel (sin cambios); APK de prueba 2.9.1-prueba-marco (versionCode 111).
 - Lector: el mensaje (WebView) se desvanece en lugar de verse a través de las píldoras: queda del todo oculto bajo la píldora de abajo (72 dp) y se desvanece en los 28 dp de encima; arriba se desvanece 20 dp. Con eso el suelo de opacidad de las píldoras baja de 0,97 a 0,30 y el cristal vuelve a verse como en el resto de la app. Sin fotos ni bitmaps por scroll (se descartó la foto desenfocada: marea con scroll rápido). Probado en emulador con HTML largo, transparencia 100, claro y oscuro; APK de prueba 2.9.1-prueba-fade (versionCode 110) para el OPPO.
 
