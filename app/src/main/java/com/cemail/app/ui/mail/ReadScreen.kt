@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,6 +26,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Email
@@ -67,6 +69,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -112,6 +115,7 @@ fun ReadScreen(
     labels: List<Label> = emptyList(),
     thread: List<Mail> = emptyList(),
     darkMail: Boolean = true,
+    accounts: List<com.cemail.app.data.db.AccountEntity> = emptyList(),
 ) {
     // The list only holds the start of each text: the whole message is read when it is opened. Flags
     // (read, star...) keep coming from the list so they stay current.
@@ -184,7 +188,7 @@ fun ReadScreen(
     // newsletter takes a while: it is done away from the main thread so the screen keeps opening smoothly meanwhile.
     val cleanPage by produceState<String?>(null, mail.id, html, inline) {
         value = if (html.isBlank()) null else kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-            HtmlSanitizer.page(HtmlSanitizer.clean(html, inline), 76, HtmlSanitizer.styles(html))
+            HtmlSanitizer.page(HtmlSanitizer.clean(html, inline), 88, HtmlSanitizer.styles(html))
         }
     }
     // The web view (costly to create) is put in place only after the opening animation, which runs with the plain text.
@@ -201,6 +205,7 @@ fun ReadScreen(
     val mailLabels = accountLabels.filter { it.id in mail.labelIds }.sortedBy { it.name.lowercase() }
 
     var panel by remember { mutableStateOf(false) }
+    var infoPanel by remember { mutableStateOf(false) }
     var attachPanel by remember { mutableStateOf(false) }
     // The page is a native WebView: on some phones it is drawn above the Compose popups (menu, attachments, labels)
     // that open over it: so they are drawn in their own window (GlassOverlayWindow), which is always above the page..
@@ -282,8 +287,8 @@ fun ReadScreen(
                         Modifier.fillMaxSize().glass(RoundedCornerShape(24.dp), GlassKind.Card)
                             .verticalScroll(rememberScrollState()).padding(16.dp),
                     ) {
-                        // The extra room at the end keeps the last lines clear of the reply button.
-                        Text(mail.body, Modifier.padding(bottom = 72.dp), style = MaterialTheme.typography.bodyLarge)
+                        // The extra room at the end keeps the last lines clear of the action pill.
+                        Text(mail.body, Modifier.padding(bottom = 88.dp), style = MaterialTheme.typography.bodyLarge)
                     }
                 }
             }
@@ -326,36 +331,30 @@ fun ReadScreen(
                         )
                     }
                 }
+                PillIcon(Icons.Filled.MoreVert, stringResource(R.string.action_more), { panel = true })
             }
         }
 
-        // Bottom corner: the menu button over the reply button.
-        Column(
-            Modifier.align(com.ce.kit.ui.glass.floatingCorner()).windowInsetsPadding(WindowInsets.safeDrawing).padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+        // Bottom: one glass pill with the main actions (icon and name), floating over the message. The message keeps
+        // extra room at its end (88 dp), so scrolled to the end its last line rests just above the pill.
+        Box(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(horizontal = 12.dp, vertical = 12.dp)
+                .popIn(delayMillis = 60, initialScale = 0.9f),
         ) {
-            Box(
-                Modifier
-                    .popIn(delayMillis = 140, initialScale = 0.3f)
-                    .pressScale(0.88f)
-                    .size(52.dp)
-                    .glass(CircleShape, GlassKind.Chrome, opaque = true)
-                    .clickable(role = Role.Button) { panel = true },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Filled.MoreVert, stringResource(R.string.action_more))
-            }
-            Box(
-                Modifier
-                    .popIn(delayMillis = 60, initialScale = 0.3f)
-                    .pressScale(0.88f)
-                    .size(60.dp)
-                    .glass(CircleShape, com.ce.kit.ui.glass.fabKind(), opaque = true)
-                    .clickable(role = Role.Button) { reply() },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(CemailIcons.Reply, stringResource(R.string.action_reply), tint = com.ce.kit.ui.glass.fabTint())
+            GlassPill(Modifier.fillMaxWidth(), height = 64.dp) {
+                PillAction(CemailIcons.Reply, R.string.pill_reply) { reply() }
+                PillAction(CemailIcons.ReplyAll, R.string.pill_reply_all) { reply(all = true) }
+                PillAction(CemailIcons.Forward, R.string.pill_forward) { reply(forward = true) }
+                // The same slot: archive from the inbox, or bring the message back to it from anywhere else.
+                if (mail.folder == Folder.INBOX) {
+                    PillAction(CemailIcons.Archive, R.string.pill_archive) { vm.archive(one) }
+                } else {
+                    PillAction(CemailIcons.Inbox, R.string.pill_inbox) { vm.moveToInbox(one) }
+                }
+                PillAction(Icons.Filled.Delete, R.string.pill_trash, danger = true) { vm.trash(one) }
             }
         }
 
@@ -364,23 +363,33 @@ fun ReadScreen(
         }
         if (attachPanel) AttachmentsPopup(mail.id, attachments, vm) { attachPanel = false }
         if (labelPanel) LabelsPopup(listOf(mail), mapOf(mail.accountId to accountLabels), vm, onDismiss = { labelPanel = false })
+        if (infoPanel) {
+            val whenFull = java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.FULL, java.text.DateFormat.MEDIUM, java.util.Locale.getDefault())
+                .format(java.util.Date(mail.timeMillis))
+            val account = accounts.firstOrNull { it.id == mail.accountId }?.email ?: mail.accountId.ifBlank { "-" }
+            val sender = if (mail.senderName.isNotBlank() && mail.senderName != mail.senderEmail) "${mail.senderName} <${mail.senderEmail}>" else mail.senderEmail
+            val lines = buildList {
+                add(stringResource(R.string.info_account) + ": " + account)
+                add(stringResource(R.string.info_from) + ": " + sender)
+                add(stringResource(R.string.info_date) + ": " + whenFull)
+                add(stringResource(R.string.info_folder) + ": " + stringResource(mail.folder.toBox().labelRes()))
+                if (mailLabels.isNotEmpty()) add(stringResource(R.string.info_labels) + ": " + mailLabels.joinToString { it.name })
+                if (attachments.isNotEmpty()) add(stringResource(R.string.info_attachments) + ": " + attachments.joinToString { it.filename })
+            }
+            com.ce.kit.ui.GlassDialog(
+                visible = true,
+                title = stringResource(R.string.action_info),
+                message = lines.joinToString("\n\n"),
+                confirmLabel = stringResource(R.string.close),
+                onConfirm = { infoPanel = false },
+                onDismiss = { infoPanel = false },
+            )
+        }
         if (panel) {
-            ActionGrid(
+            MoreMenu(
                 onDismiss = { panel = false },
                 items = listOfNotNull(
-                    PanelItem(CemailIcons.Reply, R.string.action_reply) { reply() },
-                    PanelItem(CemailIcons.ReplyAll, R.string.action_reply_all) { reply(all = true) },
-                    PanelItem(CemailIcons.Forward, R.string.action_forward) { reply(forward = true) },
-                    // The same slot: archive from the inbox, or bring the message back to it from anywhere else.
-                    if (mail.folder == Folder.INBOX) {
-                        PanelItem(CemailIcons.Archive, R.string.action_archive) { vm.archive(one) }
-                    } else {
-                        PanelItem(CemailIcons.Inbox, R.string.action_move_inbox) { vm.moveToInbox(one) }
-                    },
-                    // In the Spam folder the same button takes the message back out of it.
-                    PanelItem(Icons.Filled.Warning, R.string.action_spam, selected = mail.folder == Folder.SPAM) {
-                        if (mail.folder == Folder.SPAM) vm.moveToInbox(one) else vm.spam(one)
-                    },
+                    PanelItem(Icons.Filled.Info, R.string.action_info) { infoPanel = true },
                     PanelItem(CemailIcons.Snooze, R.string.action_snooze) { vm.askSnooze(one) },
                     PanelItem(
                         if (mail.starred) Icons.Filled.Star else CemailIcons.StarOutline,
@@ -390,6 +399,10 @@ fun ReadScreen(
                     PanelItem(Icons.Filled.Email, R.string.action_mark_unread) { vm.markRead(one, false) },
                     PanelItem(CemailIcons.Label, R.string.action_labels, selected = mail.labelIds.any { id -> accountLabels.any { it.id == id } }) {
                         labelPanel = true
+                    },
+                    // In the Spam folder the same button takes the message back out of it.
+                    PanelItem(Icons.Filled.Warning, R.string.action_spam, selected = mail.folder == Folder.SPAM) {
+                        if (mail.folder == Folder.SPAM) vm.moveToInbox(one) else vm.spam(one)
                     },
                     PanelItem(CemailIcons.Download, R.string.action_save_eml) {
                         scope.launch {
@@ -415,7 +428,6 @@ fun ReadScreen(
                     } else {
                         null
                     },
-                    PanelItem(Icons.Filled.Delete, R.string.action_trash, danger = true) { vm.trash(one) },
                 ),
             )
         }
@@ -430,69 +442,69 @@ private class PanelItem(
     val onClick: () -> Unit,
 )
 
+/** One action of the bottom pill: its icon with a short name under it. */
+@Composable
+private fun RowScope.PillAction(icon: ImageVector, label: Int, danger: Boolean = false, onClick: () -> Unit) {
+    val tint = if (danger) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+    val name = stringResource(label)
+    Column(
+        Modifier
+            .weight(1f)
+            .pressScale(0.9f)
+            .clip(com.ce.kit.ui.theme.LocalSkin.current.shape(RoundedCornerShape(24.dp)))
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(vertical = 6.dp, horizontal = 2.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(icon, null, Modifier.size(24.dp), tint = tint)
+        Text(
+            name,
+            style = MaterialTheme.typography.labelSmall,
+            fontSize = 10.sp,
+            color = tint,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
 /**
- * Every action on the open message in a small square glass window of icons (no text), 3 x 3, that opens above the
- * menu button: reply, reply all, forward / archive, snooze, star / pin, unread, trash. Tapping outside closes it.
+ * The rest of the actions on the open message (the main ones are in the bottom pill): a glass list, icon and name
+ * on each row, that opens under the top pill's menu button. Tapping outside closes it.
  */
 @Composable
-private fun ActionGrid(onDismiss: () -> Unit, items: List<PanelItem>) {
-    var hint by remember { mutableStateOf<Int?>(null) }
-    val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
+private fun MoreMenu(onDismiss: () -> Unit, items: List<PanelItem>) {
     com.ce.kit.ui.GlassOverlayWindow(onDismiss) {
         Column(
             Modifier
-                .align(com.ce.kit.ui.glass.floatingCorner())
+                .align(Alignment.TopEnd)
                 .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(bottom = 156.dp, start = 16.dp, end = 16.dp)
-                .popIn(initialScale = 0.3f, origin = TransformOrigin(if (com.ce.kit.ui.glass.LocalListOnRight.current) 0f else 1f, 1f))
+                .padding(top = 80.dp, start = 16.dp, end = 16.dp, bottom = 16.dp)
+                .popIn(initialScale = 0.5f, origin = TransformOrigin(1f, 0f))
                 // Swallows taps so only the area around the window closes it.
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
-                .glass(RoundedCornerShape(28.dp), GlassKind.Menu, elevation = 12.dp)
-                .padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+                .width(284.dp)
+                .glass(RoundedCornerShape(24.dp), GlassKind.Menu, elevation = 12.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(vertical = 8.dp),
         ) {
-            // The icons carry no text: the name of the one held down shows here, as wide as the grid (4 x 60 + 3 x 6 dp).
-            AnimatedVisibility(hint != null, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
-                Text(
-                    hint?.let { stringResource(it) }.orEmpty(),
-                    Modifier.width(258.dp).padding(horizontal = 6.dp, vertical = 4.dp),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    textAlign = TextAlign.Center,
-                    maxLines = 2,
-                )
-            }
-            items.chunked(4).forEachIndexed { rowIndex, row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    row.forEachIndexed { column, item ->
-                        val tint = when {
-                            item.danger -> MaterialTheme.colorScheme.error
-                            item.selected -> MaterialTheme.colorScheme.primary
-                            else -> MaterialTheme.colorScheme.onSurface
-                        }
-                        Box(
-                            Modifier
-                                .popIn(delayMillis = 70 + (rowIndex * 4 + column) * 28, initialScale = 0.4f)
-                                .pressScale(0.88f)
-                                .size(60.dp)
-                                .clip(com.ce.kit.ui.theme.LocalSkin.current.shape(RoundedCornerShape(18.dp)))
-                                .background(
-                                    if (item.selected) MaterialTheme.colorScheme.primaryContainer
-                                    else MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                                )
-                                // A long press tells what the button does (its name, at the top of the window).
-                                .combinedClickable(
-                                    role = Role.Button,
-                                    onLongClick = {
-                                        haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                                        hint = item.label
-                                    },
-                                ) { onDismiss(); item.onClick() },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(item.icon, stringResource(item.label), tint = tint)
-                        }
-                    }
+            items.forEachIndexed { index, item ->
+                val tint = when {
+                    item.danger -> MaterialTheme.colorScheme.error
+                    item.selected -> MaterialTheme.colorScheme.primary
+                    else -> MaterialTheme.colorScheme.onSurface
+                }
+                Row(
+                    Modifier
+                        .popIn(delayMillis = 40 + index * 24, initialScale = 0.9f)
+                        .fillMaxWidth()
+                        .clickable(role = Role.Button) { onDismiss(); item.onClick() }
+                        .padding(horizontal = 18.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Icon(item.icon, null, tint = tint)
+                    Text(stringResource(item.label), style = MaterialTheme.typography.bodyLarge, color = tint, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
         }

@@ -449,4 +449,17 @@
     <string name="sync_window_normal">Normal</string>
     <string name="settings_section_updates">Updates</string>
     <string name="settings_version">Version %1$s</string>
+    <string name="action_info">Info</string>
+    <string name="info_account">Konto</string>
+    <string name="info_from">Von</string>
+    <string name="info_date">Empfangen</string>
+    <string name="info_folder">Ordner</string>
+    <string name="info_labels">Labels</string>
+    <string name="info_attachments">Anhänge</string>
+    <string name="pill_reply">Antworten</string>
+    <string name="pill_reply_all">Allen</string>
+    <string name="pill_forward">Weiterleiten</string>
+    <string name="pill_archive">Archiv</string>
+    <string name="pill_inbox">Posteingang</string>
+    <string name="pill_trash">Papierkorb</string>
 </resources>
