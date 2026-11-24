@@ -1,3 +1,6 @@
+## 2.9.1
+- Lector: las píldoras de arriba y de abajo ya no dejan ver el texto del correo a través, ni siquiera con la transparencia al máximo.
+
 ## 2.9.0
 - Lector de correo rediseñado: el menú ⋮ pasa a la píldora de arriba (lista con icono y nombre; incluye «Info» con cuenta, remitente, día y hora exactos, carpeta, etiquetas y adjuntos).
 - Abajo hay una píldora de cristal con Responder, A todos, Reenviar, Archivar (o Entrada) y Papelera, con el nombre bajo cada icono.

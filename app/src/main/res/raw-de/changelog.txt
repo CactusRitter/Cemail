@@ -1,3 +1,6 @@
+## 2.9.1
+- Leser: Die Leisten oben und unten lassen den Nachrichtentext nicht mehr durchscheinen, auch nicht bei maximaler Transparenz.
+
 ## 2.9.0
 - Neu gestalteter E-Mail-Leser: Das ⋮-Menü wandert in die obere Pille (Liste mit Symbolen und Namen; enthält „Info“ mit Konto, Absender, genauem Datum und Uhrzeit, Ordner, Labels und Anhängen).
 - Unten sitzt eine Glas-Pille mit Antworten, Allen antworten, Weiterleiten, Archivieren (oder Posteingang) und Papierkorb, mit dem Namen unter jedem Symbol.

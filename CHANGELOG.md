@@ -4,6 +4,8 @@ Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones pri
 Cada versión se guarda en Google Drive (`Mi unidad/Ce Apps/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
 ## Sin publicar
+
+## 2.9.1 — 2026-11-24
 - Arreglo: la píldora de acciones de abajo del lector tenía el texto del correo visible a través (el mensaje es un WebView y el cristal no puede difuminarlo); las dos píldoras del lector (arriba y abajo) llevan ahora un suelo de opacidad (97 % de `surface` bajo el cristal; `GlassPill(floor = …)`, nuevo en CeKit), así que aunque la transparencia esté al máximo el texto no se lee a través y se ve un ligero fantasma. Probado en emulador con un correo HTML largo, transparencia 100, tema claro y oscuro; sin probar en el OPPO.
 
 ## 2.9.0 — 2026-11-24
