@@ -99,3 +99,6 @@ Lee `D:\cesar\Documents\Claude Projects\Ce\docs\AHORRO.md`: subagentes para leer
 - **Turnos**: emulador, S26 y tableta son de uno solo a la vez: `powershell -NoProfile -ExecutionPolicy Bypass -File "D:\cesar\Documents\Claude Projects\Ce\scripts\emu-lock.ps1" acquire Cemail` (añade `-Dev s26` o `-Dev tableta` para esos), y `release Cemail` al acabar.
 - **Burn-in**: pantalla del móvil encendida solo mientras se prueba; al acabar `stayon false` y `input keyevent KEYCODE_SLEEP`.
 - **Sesiones bajo demanda**: la sesión se cierra al terminar la tarea (deja `docs/TRASPASO.md` al día) y se abre otra nueva cuando haga falta.
+
+## Inventario de funciones
+`docs/FUNCIONES.md` (y `CeKit/docs/FUNCIONES.md` para lo común): leerlo antes de proponer o programar algo y actualizarlo en el mismo commit que añada, cambie o quite una función.
