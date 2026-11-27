@@ -52,7 +52,6 @@ class MailNotifier(private val context: Context) {
             .setWhen(mails.maxOf { it.timeMillis })
             .setSubText(accountLabel)
             .addAction(0, context.getString(R.string.notif_action_read), action(MailActionReceiver.ACTION_READ, accountId, mails, 1))
-            .addAction(0, context.getString(R.string.notif_action_delete), action(MailActionReceiver.ACTION_DELETE, accountId, mails, 2))
             // Snooze opens the app's own snooze choices (not Android's, which only hides the notification for a while).
             .addAction(
                 0, context.getString(R.string.action_snooze),
@@ -62,11 +61,15 @@ class MailNotifier(private val context: Context) {
                     PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
                 ),
             )
+            .addAction(0, context.getString(R.string.notif_action_delete), action(MailActionReceiver.ACTION_DELETE, accountId, mails, 2))
         val first = mails.first()
         if (mails.size == 1) {
+            val subject = first.subject.ifBlank { context.getString(R.string.no_subject) }
+            // The clean body; if nothing readable is left, the subject alone.
+            val body = NotificationText.clean(first.body)
             builder.setContentTitle(first.senderName)
-                .setContentText(first.subject.ifBlank { context.getString(R.string.no_subject) })
-                .setStyle(NotificationCompat.BigTextStyle().bigText(first.subject.ifBlank { context.getString(R.string.no_subject) } + "\n" + first.preview))
+                .setContentText(subject)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(if (body.isEmpty()) subject else subject + "\n" + body))
         } else {
             val title = context.resources.getQuantityString(R.plurals.notif_new_messages, mails.size, mails.size)
             val style = NotificationCompat.InboxStyle()
@@ -99,7 +102,7 @@ class MailNotifier(private val context: Context) {
                 .setContentTitle(context.getString(R.string.notif_snoozed_title, mail.senderName))
                 .setContentText(subject)
                 .setSubText(accountLabel)
-                .setStyle(NotificationCompat.BigTextStyle().bigText(subject + "\n" + mail.preview))
+                .setStyle(NotificationCompat.BigTextStyle().bigText(NotificationText.clean(mail.body).let { if (it.isEmpty()) subject else subject + "\n" + it }))
             NotificationManagerCompat.from(context).notify(("snoozed" + mail.id).hashCode(), builder.build())
         }
     }
