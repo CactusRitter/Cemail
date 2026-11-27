@@ -4,6 +4,7 @@ Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones pri
 Cada versión se guarda en Google Drive (`Mi unidad/Ce Apps/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
 ## Sin publicar
+- Pantalla de entrada: «Echar un vistazo con mensajes de ejemplo» (modo de prueba, con su aviso) solo existe en las compilaciones de depuración; la app publicada ya no lo muestra.
 
 ## 2.9.3 — 2026-11-27
 - Notificaciones: las acciones salen en el orden Leído · Posponer · Eliminar (Eliminar a la derecha).

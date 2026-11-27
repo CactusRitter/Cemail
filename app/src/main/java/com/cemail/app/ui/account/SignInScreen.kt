@@ -102,7 +102,8 @@ fun SignInScreen(
                 SoftButton(stringResource(R.string.sign_in_microsoft), { if (!state.signingIn) onMicrosoft() })
                 SoftButton(stringResource(R.string.sign_in_yahoo), onYahoo)
                 SoftButton(stringResource(R.string.sign_in_other), onImap)
-                SoftButton(stringResource(R.string.sign_in_demo), onDemo)
+                // The example-messages mode is for testing only: debug builds, never the released app.
+                if (com.cemail.app.BuildConfig.DEBUG) SoftButton(stringResource(R.string.sign_in_demo), onDemo)
                 SoftButton(stringResource(R.string.sign_in_restore), onRestore)
                 restoreMessage?.let {
                     Text(stringResource(it), style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
