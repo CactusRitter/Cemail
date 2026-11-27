@@ -1,3 +1,7 @@
+## 2.9.3
+- Notificaciones: los botones ahora son Leído · Posponer · Borrar, con Borrar a la derecha.
+- Notificaciones: el texto del mensaje se muestra limpio, sin enlaces, Markdown, líneas separadoras ni líneas de «ver en el navegador» o «darse de baja»; si no queda nada legible, solo se ve el asunto.
+
 ## 2.9.2
 - Lector: el mensaje se desvanece al llegar a la barra de acciones de abajo en vez de verse a través, así que la barra vuelve a ser de cristal claro.
 - Lector, tema Brutalista: el marco negro alrededor del mensaje se sigue viendo cuando el mensaje ya ha cargado.

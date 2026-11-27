@@ -4,6 +4,8 @@ Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones pri
 Cada versión se guarda en Google Drive (`Mi unidad/Ce Apps/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
 ## Sin publicar
+
+## 2.9.3 — 2026-11-27
 - Notificaciones: las acciones salen en el orden Leído · Posponer · Eliminar (Eliminar a la derecha).
 - Notificaciones: el cuerpo se muestra como texto limpio (`NotificationText`): sin enlaces `<…>` ni URLs sueltas, sin `[texto](url)` ni sintaxis Markdown, sin líneas de guiones/iguales y sin las líneas tipo «Webansicht / Webview» o «Abmelden»; si no queda nada legible, solo el asunto. Tests con los ejemplos de Jacques Lemans y RENPHO.
 

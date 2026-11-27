@@ -1,3 +1,7 @@
+## 2.9.3
+- Notifications: the buttons are now Read · Snooze · Delete, with Delete on the right.
+- Notifications: the message text is shown clean, without links, Markdown, separator lines or "view in browser" and "unsubscribe" lines; if nothing readable is left, only the subject shows.
+
 ## 2.9.2
 - Reader: the message now fades out as it reaches the action bar at the bottom instead of showing through it, so the bar is clear glass again.
 - Reader, Brutalist theme: the black frame around the message stays visible once the message has loaded.

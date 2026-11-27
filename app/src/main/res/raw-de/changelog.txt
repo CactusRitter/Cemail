@@ -1,3 +1,7 @@
+## 2.9.3
+- Benachrichtigungen: Die Schaltflächen sind jetzt Gelesen · Zurückstellen · Löschen, mit Löschen rechts.
+- Benachrichtigungen: Der Nachrichtentext wird bereinigt angezeigt, ohne Links, Markdown, Trennlinien oder „Im Browser ansehen“- und „Abmelden“-Zeilen; bleibt nichts Lesbares übrig, erscheint nur der Betreff.
+
 ## 2.9.2
 - Leser: Die Nachricht blendet aus, wenn sie die Aktionsleiste unten erreicht, statt durchzuscheinen; die Leiste ist wieder klares Glas.
 - Leser, Brutalist-Design: Der schwarze Rahmen um die Nachricht bleibt sichtbar, auch wenn die Nachricht geladen ist.
