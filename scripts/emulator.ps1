@@ -18,18 +18,20 @@ $Avd = "Pixel_API_36"
 $Sdk = if ($env:ANDROID_HOME) { $env:ANDROID_HOME } else { "$env:LOCALAPPDATA\Android\Sdk" }
 $Adb = "$Sdk\platform-tools\adb.exe"
 $Emu = "$Sdk\emulator\emulator.exe"
+# Siempre con -s: sin serie, adb puede hablar con un móvil conectado.
+$Serial = "emulator-5554"
 
 function Test-Running { (& $Adb devices) -match "emulator-\d+\s+device" }
 
 function Start-Emu([bool]$Headless) {
     if (Test-Running) { Write-Output "Ya está en marcha."; return }
-    $emuArgs = @("-avd", $Avd, "-no-snapshot-save", "-no-audio", "-no-boot-anim")
+    $emuArgs = @("-avd", $Avd, "-port", "5554", "-no-snapshot-save", "-no-audio", "-no-boot-anim")
     if ($Headless) { $emuArgs += @("-no-window", "-gpu", "swiftshader_indirect") }
     # Hidden: sin ventana de consola de emulator.exe.
     Start-Process $Emu -ArgumentList $emuArgs -WindowStyle Hidden
-    & $Adb wait-for-device
+    & $Adb -s $Serial wait-for-device
     $t = 0
-    while ((& $Adb shell getprop sys.boot_completed 2>$null) -ne "1" -and $t -lt 180) { Start-Sleep 2; $t++ }
+    while ((& $Adb -s $Serial shell getprop sys.boot_completed 2>$null) -ne "1" -and $t -lt 180) { Start-Sleep 2; $t++ }
     if ($t -ge 180) { Write-Error "El emulador no terminó de arrancar."; exit 1 }
     Write-Output "Emulador listo."
 }
@@ -37,12 +39,12 @@ function Start-Emu([bool]$Headless) {
 switch ($Action) {
     "start"  { Start-Emu $true }
     "window" { Start-Emu $false }
-    "stop"   { if (Test-Running) { & $Adb emu kill | Out-Null; Write-Output "Apagado." } else { Write-Output "No estaba en marcha." } }
+    "stop"   { if (Test-Running) { & $Adb -s $Serial emu kill | Out-Null; Write-Output "Apagado." } else { Write-Output "No estaba en marcha." } }
     "status" { if (Test-Running) { Write-Output "En marcha." } else { Write-Output "Apagado." } }
     "shot"   {
         $full = [System.IO.Path]::GetFullPath($Path)
         # cmd evita que PowerShell 5 corrompa los bytes del PNG al redirigir.
-        cmd /c "`"$Adb`" exec-out screencap -p > `"$full`""
+        cmd /c "`"$Adb`" -s $Serial exec-out screencap -p > `"$full`""
         Write-Output $full
     }
 }
