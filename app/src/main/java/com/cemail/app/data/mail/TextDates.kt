@@ -7,6 +7,7 @@ import com.google.mlkit.nl.entityextraction.Entity
 import com.google.mlkit.nl.entityextraction.EntityExtraction
 import com.google.mlkit.nl.entityextraction.EntityExtractionParams
 import com.google.mlkit.nl.entityextraction.EntityExtractorOptions
+import java.time.ZoneId
 import java.util.Locale
 import java.util.TimeZone
 import kotlin.coroutines.resume
@@ -34,9 +35,10 @@ object TextDates {
                     .setEntityTypesFilter(setOf(Entity.TYPE_DATE_TIME))
                     .setReferenceTime(sent)
                     .setReferenceTimeZone(TimeZone.getDefault())
-                    .setPreferredLocale(Locale.forLanguageTag(language))
+                    // Numeric dates are day/month in English too (en-GB), not the American month/day.
+                    .setPreferredLocale(Locale.forLanguageTag(if (language == "es" || language == "de") language else "en-GB"))
                     .build()
-                extractor.annotate(params).await().mapNotNull { annotation ->
+                val found = extractor.annotate(params).await().mapNotNull { annotation ->
                     val date = annotation.entities.filterIsInstance<DateTimeEntity>().firstOrNull() ?: return@mapNotNull null
                     // A month, a week or a year alone is not a date to meet.
                     if (date.dateTimeGranularity < DateTimeEntity.GRANULARITY_DAY) return@mapNotNull null
@@ -44,6 +46,12 @@ object TextDates {
                         annotation.start, annotation.end, date.timestampMillis,
                         hasTime = date.dateTimeGranularity >= DateTimeEntity.GRANULARITY_HOUR,
                     )
+                }
+                // The locale above only counts for dates with a year: "12/03" is read as a month of 2003.
+                if (model == EntityExtractorOptions.ENGLISH) {
+                    Appointments.dayMonth(text, found, sent, ZoneId.systemDefault())
+                } else {
+                    found
                 }
             } finally {
                 extractor.close()

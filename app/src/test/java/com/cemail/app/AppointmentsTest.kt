@@ -109,6 +109,32 @@ class AppointmentsTest {
     }
 
     @Test
+    fun englishNumericDatesAreDayThenMonth() {
+        // As ML Kit leaves them: only the hour, which on its own would be dropped.
+        fun starts(text: String, hour: String, hourUtc: String): List<Long> {
+            val time = found(text, hour, at("2026-11-27T${hourUtc}:00Z"))
+            val dates = Appointments.dayMonth(text, listOf(time), sent, madrid)
+            return suggest(text, *dates.toTypedArray()).map { it.startMillis }
+        }
+        assertEquals(listOf(at("2027-03-12T09:00:00Z")), starts("meeting on 12/03 at 10:00", "10:00", "09:00"))
+        assertEquals(listOf(at("2026-12-05T17:00:00Z")), starts("meeting on 5/12 at 18:00", "18:00", "17:00"))
+        assertEquals(listOf(at("2026-12-05T17:00:00Z")), starts("Our meeting is 5/12, 18:00.", "18:00", "17:00"))
+        // Just gone by, no such day, and fractions.
+        assertTrue(starts("meeting on 5/11 at 18:00", "18:00", "17:00").isEmpty())
+        assertTrue(starts("meeting on 3/25 at 10:00", "10:00", "09:00").isEmpty())
+        for (text in listOf("support 24/7 for the meeting", "the class was rated 5/10", "call 1/2/3", "see /a/on 1/2.5")) {
+            assertEquals(text, emptyList<FoundDate>(), Appointments.dayMonth(text, emptyList(), sent, madrid))
+        }
+        val weekday = "We meet on Friday 5/12."
+        val friday = found(weekday, "Friday", at("2026-11-26T23:00:00Z"), time = false)
+        assertEquals(at("2026-12-04T23:00:00Z"), Appointments.dayMonth(weekday, listOf(friday), sent, madrid).single().millis)
+        // A date ML Kit already read with its hour keeps the hour; the day alone is replaced.
+        val text = "meeting on 12/03 at 10:00"
+        val wrong = found(text, "12/03 at 10:00", at("2026-12-03T09:00:00Z"))
+        assertEquals(at("2027-03-12T09:00:00Z"), Appointments.dayMonth(text, listOf(wrong), sent, madrid).single().millis)
+    }
+
+    @Test
     fun language() {
         assertEquals("es", Appointments.language("Hola, nos vemos el martes para la cena", "en"))
         assertEquals("de", Appointments.language("Hallo, wir treffen uns und essen", "en"))

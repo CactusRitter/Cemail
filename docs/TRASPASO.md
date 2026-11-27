@@ -9,11 +9,7 @@ Lo que necesita una sesión nueva (o tras `/clear`) además de `CLAUDE.md`. Mant
 
 ## Cierre de bloque 2026-11-27 (2): citas escritas en el texto
 - En `main`, sin publicar. Reglas y límites en `docs/FUNCIONES.md`.
-- Fallos conocidos de ML Kit en las pruebas: «Treffen am 5.12. um 18:30 Uhr» no reconoce «5.12.» (no sale nada); «lunes de 16:00 a 17:30» sale 16:00–17:00; fechas numéricas en inglés se leen mes/día. Corregidos en código: «9 de la noche», «day after tomorrow», «viernes que viene» dicho en viernes.
-- **Pendiente de César:** (1) APK release 4,6 → 19,2 MB; con solo `arm64-v8a` en release serían unos 8-9 MB (no cambiado). (2) Privacidad: ML Kit manda a Google métricas de uso y diagnóstico (no el texto), así que «sin analíticas» ya no es exacto. `docs/privacy.md` no se ha tocado (es la página publicada). Texto propuesto:
-  - EN: "Appointments written in a message are recognised on your phone with Google's ML Kit; the message text never leaves the device. The first time, ML Kit downloads a language model from Google, and it may send Google technical usage and diagnostic data about the library itself (never your messages)."
-  - ES: «Las citas escritas en un mensaje se reconocen en tu teléfono con ML Kit de Google; el texto del mensaje no sale del dispositivo. La primera vez, ML Kit descarga de Google el modelo del idioma, y puede enviar a Google datos técnicos de uso y diagnóstico de la propia librería (nunca tus mensajes).»
-  - Y en el resumen cambiar «No advertising, no analytics…» por «No advertising and no analytics of my own…» / «Sin publicidad ni analíticas propias…».
+- Fallos conocidos de ML Kit en las pruebas: «Treffen am 5.12. um 18:30 Uhr» no reconoce «5.12.» (no sale nada); «lunes de 16:00 a 17:30» sale 16:00–17:00; en español «el 12/03» sin año no sale (ML Kit lo lee como mes y año). Corregidos en código: «9 de la noche», «day after tomorrow», «viernes que viene» dicho en viernes, y en inglés d/m sin año (`Appointments.dayMonth`; con año basta `en-GB` en ML Kit).
 - Sin probar: correos reales, cabeceras List-Unsubscribe reales, sin red en la primera descarga.
 
 ## Cierre de bloque 2026-11-27: invitaciones .ics

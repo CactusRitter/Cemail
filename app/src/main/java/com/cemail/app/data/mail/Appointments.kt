@@ -1,6 +1,7 @@
 package com.cemail.app.data.mail
 
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
 
@@ -91,6 +92,52 @@ object Appointments {
     /** An hour written without its day: "10 Uhr", "a las 10:00", "at 8 pm". */
     private val TIME_ONLY = regex("""((um|at|a las|a la|sobre las|gegen|ab)\s+)?\d{1,2}([:.h]\d{2})?\s*(uhr|a\.?\s?m\.?|p\.?\s?m\.?|h|horas)?[.,]?""")
     private const val SAME_PHRASE = 80
+
+    /**
+     * A day/month without year, in English: only after "on", "date:" or a weekday, or right before an hour, so that
+     * "24/7" or "rated 5/10" are not days.
+     */
+    private val DAY_MONTH = regex("""(?<![\p{L}\d/.])(\d{1,2})/(\d{1,2})(?![\p{L}\d/]|[.,:]\d)""")
+    private val DATE_BEFORE = regex("""(?<!\p{L})(on( the)?|date:?|(mon|tues|wednes|thurs|fri|satur|sun)day,?( the)?)\s+$""")
+    private val HOUR_AFTER = regex("""^,?\s+(at\s+\d|\d{1,2}(:\d{2}|\s?[ap]\.?m(?!\p{L})))""")
+    private const val JUST_PAST = 60L
+    private val SAME_DAY = regex("""^,?\s*(the\s+)?$""")
+
+    /**
+     * ML Kit reads "12/03" as December 2003 whatever the locale, so those days are read here: day first, and the next
+     * time that day comes after [sent] (one just gone by stays in the past, and is not suggested).
+     */
+    fun dayMonth(text: String, dates: List<FoundDate>, sent: Long, zone: ZoneId): List<FoundDate> {
+        val sentDay = Instant.ofEpochMilli(sent).atZone(zone).toLocalDate()
+        var result = dates
+        for (match in DAY_MONTH.findAll(text)) {
+            val from = match.range.first
+            val to = match.range.last + 1
+            if (!DATE_BEFORE.containsMatchIn(text.substring(maxOf(0, from - 20), from)) &&
+                !HOUR_AFTER.containsMatchIn(text.substring(to, minOf(text.length, to + 12)))
+            ) {
+                continue
+            }
+            val (day, month) = match.destructured
+            fun inYear(year: Int) = runCatching { LocalDate.of(year, month.toInt(), day.toInt()) }.getOrNull()
+            val date = inYear(sentDay.year)?.takeIf { !it.isBefore(sentDay.minusDays(JUST_PAST)) }
+                ?: inYear(sentDay.year + 1) ?: continue
+            // With them goes a weekday written just before: "on Friday 5/12" is one day, the numbered one.
+            val overlapping = result.filter {
+                (it.from < to && it.to > from) || (!it.hasTime && it.to <= from && SAME_DAY.matches(text.substring(it.to, from)))
+            }
+            // An hour found together with the date is kept.
+            val timed = overlapping.firstOrNull { it.hasTime }
+            val read = if (timed == null) {
+                FoundDate(from, to, date.atStartOfDay(zone).toInstant().toEpochMilli(), false)
+            } else {
+                val time = Instant.ofEpochMilli(timed.millis).atZone(zone).toLocalTime()
+                FoundDate(minOf(from, timed.from), maxOf(to, timed.to), date.atTime(time).atZone(zone).toInstant().toEpochMilli(), true)
+            }
+            result = result - overlapping.toSet() + read
+        }
+        return result
+    }
 
     /**
      * "am Dienstag um 10 Uhr" is often found as a day and an hour apart: they become one moment. An hour with no day
