@@ -7,6 +7,11 @@
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <!-- To hand a downloaded new version of Cemail (from GitHub) to the Android installer. -->
 
+    <!-- Only to know whether Celander is there, to offer opening a cancelled invitation in it. -->
+    <queries>
+        <package android:name="com.celander.app" />
+    </queries>
+
     <application
         android:name=".CemailApplication"
         android:allowBackup="false"

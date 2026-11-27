@@ -519,6 +519,7 @@ class MailViewModel(
         viewModelScope.launch { repo.refresh(quick = true) }
     }
 
+    suspend fun calendarTexts(id: Long): List<String> = repo.calendarTexts(id)
     suspend fun inlineImages(id: Long): Map<String, String> = repo.inlineImages(id)
     suspend fun full(id: Long): Mail? = repo.full(id)
     suspend fun unsubscribeInfo(id: Long) = repo.unsubscribeInfo(id)

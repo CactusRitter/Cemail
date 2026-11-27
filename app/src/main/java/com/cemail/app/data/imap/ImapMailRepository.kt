@@ -437,6 +437,21 @@ class ImapMailRepository(
         }
     }
 
+    override suspend fun calendarTexts(id: Long): List<String> = withContext(Dispatchers.IO) {
+        val remote = dao.remoteIdOf(id, accountId) ?: return@withContext emptyList()
+        try {
+            com.cemail.app.data.mail.CalendarParts.cached(attachmentsDir, remote) {
+                val (path, uid) = parseRemote(remote)
+                client.withStore { store -> client.inFolder(store, path, readOnly = true) { client.calendarParts(it, uid) } }
+            }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppLog.e("invite", "could not read the invitation", e)
+            emptyList()
+        }
+    }
+
     override suspend fun attachments(id: Long): List<AttachmentInfo> = withContext(Dispatchers.IO) {
         val remote = dao.remoteIdOf(id, accountId) ?: return@withContext emptyList()
         val (path, uid) = parseRemote(remote)

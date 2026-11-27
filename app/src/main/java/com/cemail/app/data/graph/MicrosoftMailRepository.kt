@@ -480,6 +480,36 @@ class MicrosoftMailRepository(
         }
     }
 
+    override suspend fun calendarTexts(id: Long): List<String> = withContext(Dispatchers.IO) {
+        val remote = dao.remoteIdOf(id, accountId) ?: return@withContext emptyList()
+        try {
+            com.cemail.app.data.mail.CalendarParts.cached(attachmentsDir, remote) {
+                val message = api.message(remote, "id,hasAttachments")
+                // A meeting request carries its calendar part only in the original MIME, not among its attachments.
+                val meeting = message.type?.contains("eventMessage", ignoreCase = true) == true
+                val parts = if (meeting) com.cemail.app.data.mail.CalendarParts.find(api.raw(remote)) else emptyList()
+                parts.ifEmpty {
+                    if (!meeting && !message.hasAttachments) {
+                        emptyList()
+                    } else {
+                        api.attachments(remote)
+                            .filter {
+                                com.cemail.app.data.mail.CalendarParts.isCalendar(it.mimeType, it.filename) &&
+                                    it.size <= com.cemail.app.data.mail.CalendarParts.MAX_BYTES
+                            }
+                            .take(com.cemail.app.data.mail.CalendarParts.MAX_FILES)
+                            .map { api.attachmentBytes(remote, it.attachmentId) }
+                    }
+                }
+            }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppLog.e("invite", "could not read the invitation", e)
+            emptyList()
+        }
+    }
+
     override suspend fun attachments(id: Long): List<AttachmentInfo> = withContext(Dispatchers.IO) {
         val remote = dao.remoteIdOf(id, accountId) ?: return@withContext emptyList()
         try {

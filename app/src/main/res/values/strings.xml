@@ -464,4 +464,15 @@
     <string name="pill_archive">Archive</string>
     <string name="pill_inbox">Inbox</string>
     <string name="pill_trash">Trash</string>
+    <string name="invite_add">Add to calendar</string>
+    <string name="invite_cancelled">This event has been cancelled</string>
+    <string name="invite_open_celander">Open in Celander</string>
+    <string name="invite_no_app">No calendar app can take this event.</string>
+    <string name="invite_celander_failed">Celander could not open it. Check that it is up to date.</string>
+    <string name="invite_all_day">All day: %1$s</string>
+    <string name="invite_repeats">Repeating event</string>
+    <plurals name="invite_more">
+        <item quantity="one">%1$d more event in this invitation</item>
+        <item quantity="other">%1$d more events in this invitation</item>
+    </plurals>
 </resources>

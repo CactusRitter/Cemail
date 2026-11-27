@@ -39,6 +39,8 @@ data class GraphHeader(val name: String, val value: String)
 @Serializable
 data class GraphMessage(
     val id: String,
+    /** "#microsoft.graph.eventMessage..." for meeting requests and cancellations. */
+    @kotlinx.serialization.SerialName("@odata.type") val type: String? = null,
     val subject: String? = null,
     val from: GraphRecipient? = null,
     val toRecipients: List<GraphRecipient> = emptyList(),

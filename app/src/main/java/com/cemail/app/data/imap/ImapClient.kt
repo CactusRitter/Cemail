@@ -294,6 +294,10 @@ class ImapClient(private val config: ImapConfig) {
         return found
     }
 
+    /** The calendar invitations of a message (see CalendarParts). */
+    fun calendarParts(folder: IMAPFolder, uid: Long): List<ByteArray> =
+        byUid(folder, uid)?.let { com.cemail.app.data.mail.CalendarParts.find(it) }.orEmpty()
+
     fun attachmentBytes(folder: IMAPFolder, uid: Long, partPath: String): ByteArray? {
         var part: Part = byUid(folder, uid) ?: return null
         for (index in partPath.split('.').filter { it.isNotEmpty() }.map { it.toInt() }) {

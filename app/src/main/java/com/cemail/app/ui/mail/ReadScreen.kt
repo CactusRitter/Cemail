@@ -130,6 +130,8 @@ fun ReadScreen(
     val attachments by produceState(emptyList<com.cemail.app.data.gmail.AttachmentInfo>(), summary.id) {
         value = if (summary.hasAttachment) vm.attachments(summary.id) else emptyList()
     }
+    // Invitations (.ics) travel in their own part: asked once per message and then kept on the phone.
+    val invites = rememberInvites(summary.id, vm)
     val context = LocalContext.current
     val resources = androidx.compose.ui.platform.LocalResources.current
     val one = setOf(mail.id)
@@ -262,6 +264,7 @@ fun ReadScreen(
                     }
                 }
             }
+            if (invites.isNotEmpty()) InviteCard(invites)
             if (thread.isNotEmpty()) ThreadCard(thread, vm)
             Box(
                 Modifier

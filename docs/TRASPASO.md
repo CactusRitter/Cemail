@@ -3,7 +3,12 @@
 Lo que necesita una sesión nueva (o tras `/clear`) además de `CLAUDE.md`. Mantener al día al cerrar cada bloque.
 Última actualización: 2026-11-22.
 
-## Cierre de bloque 2026-11-22 (léelo primero)
+## Cierre de bloque 2026-11-27: invitaciones .ics
+- Hecho y en `main`, sin publicar: tarjeta de invitación en el lector (ver CHANGELOG y `docs/FUNCIONES.md`). Análisis propio en `data/mail/Ics.kt` (tests `IcsTest`); cada correo se pregunta al servidor una vez al abrirlo y se guarda en `cacheDir/attachments/<cuenta>/ics/`.
+- Sin probar: invitaciones reales de Gmail, Outlook (Graph: `@odata.type` eventMessage + MIME `$value`) e IMAP. Para Celander: el `com.celander.app` del emulador aún no acepta `ACTION_INSERT` con `setPackage` (sale el aviso, no se cierra).
+- Aviso ajeno: `lintDebug` falla por un BOM en `CeKit/kit/.../update/ReleaseNotes.kt:13` (no tocado).
+
+## Cierre de bloque 2026-11-22
 - **Hecho y subido a `main`, sin publicar** (todo en «Sin publicar» del CHANGELOG): Redactar sin el hueco de la barra de formato (código en c2ffe71; comprobado en emulador claro/oscuro con teclado; falta el OPPO); **R8 fusionado** (`r8-prueba` → `main`, merge ef03a1f, con la regla `-keep` de los `InputMerger` de WorkManager copiada de Cenotes 4289ccb). Menú ⋮ del lector: en emulador no mueve el cuerpo; sin probar con HTML/WebView real.
 - **Probado con R8 en el S26** (cuentas reales): arranca y sincroniza Gmail y Microsoft sin errores. **No probado:** widgets de Cemail en el S26, un worker de Cemail ejecutado a mano. El push de Worker (Gmail ~5 s, Microsoft ~5 s) se midió en el S26.
 - Worker de calendario de Celander (`/cal/*`, `/gcal`, `/graph` con `type=mscal`) desplegado por Ce Líder; tests: `node push-worker/test.mjs`; ver `docs/PUSH.md`.

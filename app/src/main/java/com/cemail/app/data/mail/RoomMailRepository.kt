@@ -385,6 +385,21 @@ class RoomMailRepository(
         }
     }
 
+    override suspend fun calendarTexts(id: Long): List<String> = withContext(Dispatchers.IO) {
+        val remote = dao.remoteIdOf(id, accountId) ?: return@withContext emptyList()
+        try {
+            com.cemail.app.data.mail.CalendarParts.cached(attachmentsDir, remote) {
+                com.cemail.app.data.mail.CalendarParts.find(api.getMessage(remote))
+                    .mapNotNull { part -> part.data ?: part.attachmentId?.let { api.getAttachment(remote, it) } }
+            }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppLog.e("invite", "could not read the invitation", e)
+            emptyList()
+        }
+    }
+
     override suspend fun attachments(id: Long): List<AttachmentInfo> = withContext(Dispatchers.IO) {
         val remote = dao.remoteIdOf(id, accountId) ?: return@withContext emptyList()
         try {

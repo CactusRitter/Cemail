@@ -65,6 +65,11 @@ class UnifiedMailRepository(private val accounts: List<MailRepository>, scope: C
         return null
     }
 
+    override suspend fun calendarTexts(id: Long): List<String> {
+        for (account in accounts) account.calendarTexts(id).takeIf { it.isNotEmpty() }?.let { return it }
+        return emptyList()
+    }
+
     override suspend fun emlFile(id: Long): java.io.File? {
         for (account in accounts) account.emlFile(id)?.let { return it }
         return null

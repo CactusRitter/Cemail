@@ -462,4 +462,15 @@
     <string name="pill_archive">Archivar</string>
     <string name="pill_inbox">Entrada</string>
     <string name="pill_trash">Papelera</string>
+    <string name="invite_add">Añadir al calendario</string>
+    <string name="invite_cancelled">Este evento se ha cancelado</string>
+    <string name="invite_open_celander">Abrir en Celander</string>
+    <string name="invite_no_app">No hay ninguna app de calendario que admita este evento.</string>
+    <string name="invite_celander_failed">Celander no ha podido abrirlo. Comprueba que está actualizado.</string>
+    <string name="invite_all_day">Todo el día: %1$s</string>
+    <string name="invite_repeats">Evento periódico</string>
+    <plurals name="invite_more">
+        <item quantity="one">%1$d evento más en esta invitación</item>
+        <item quantity="other">%1$d eventos más en esta invitación</item>
+    </plurals>
 </resources>

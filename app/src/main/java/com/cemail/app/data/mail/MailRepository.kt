@@ -110,6 +110,9 @@ interface MailRepository {
     /** Deletes for good everything in the Trash or Spam folder. false if the server refused (nothing is removed then). */
     suspend fun emptyFolder(folder: Folder): Boolean
 
+    /** The text of the calendar invitations (.ics) of a message; empty if it has none or it cannot be asked. */
+    suspend fun calendarTexts(id: Long): List<String> = emptyList()
+
     /** The pictures embedded in a message, as Content-ID → `data:` URI (downloaded once, then kept on the phone). */
     suspend fun inlineImages(id: Long): Map<String, String>
 }
