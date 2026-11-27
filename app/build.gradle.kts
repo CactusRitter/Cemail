@@ -114,6 +114,8 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.webkit)
     implementation(libs.firebase.messaging)
+    // Dates written in a message, found on the phone (the language model is downloaded the first time).
+    implementation(libs.mlkit.entity.extraction)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

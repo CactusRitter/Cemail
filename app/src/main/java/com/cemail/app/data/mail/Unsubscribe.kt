@@ -43,5 +43,7 @@ object Unsubscribe {
         }
     }
 
+    /** Headers only mailing lists send. */
+    val LIST_HEADERS = listOf("List-Unsubscribe", "List-Id")
     val HEADERS = listOf("List-Unsubscribe", "List-Unsubscribe-Post")
 }

@@ -473,4 +473,5 @@
         <item quantity="one">%1$d weiterer Termin in dieser Einladung</item>
         <item quantity="other">%1$d weitere Termine in dieser Einladung</item>
     </plurals>
+    <string name="invite_from_text">Im Text gefunden</string>
 </resources>

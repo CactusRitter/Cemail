@@ -18,6 +18,7 @@ Rutas relativas a `app/src/main/java/com/cemail/app/`. Lo compartido: `CeKit/doc
 - HTML saneado, imágenes incrustadas, bloqueo de imágenes externas (data/gmail/HtmlSanitizer.kt, ui/mail/RichHtml.kt)
 - Adjuntos (ui/mail/AttachmentViews.kt); guardar .eml y ver original; responder, a todos, reenviar
 - Invitaciones .ics (parte text/calendar o adjunto; Gmail, Outlook, IMAP): tarjeta con título, fecha, lugar y «Añadir al calendario» (cualquier app, ACTION_INSERT + extra `com.celander.app.extra.ICS`); canceladas: aviso y, con Celander, «Abrir en Celander» (data/mail/Ics.kt, CalendarParts.kt, ui/mail/InviteCard.kt)
+- Citas escritas en el texto (en, es, de; solo si no hay .ics): ML Kit Entity Extraction en el móvil, referencia la fecha del correo, la misma tarjeta con «Visto en el texto», máx. 2 (data/mail/Appointments.kt, TextDates.kt). Reglas: solo lo escrito por el remitente (sin citas ni firma); no pasado ni a más de ~400 días; una palabra de cita cerca o en el asunto; nada de facturas, ofertas, vencimientos; hora sin día, fuera; sin listas (List-Unsubscribe/List-Id), spam ni papelera; sin modelo, red o cabeceras no se muestra nada. Título = asunto sin Re:/Fwd:; +1 h; solo fecha = todo el día
 
 ## Redactar y enviar
 - Para/Cc/Cco, selector de remitente, formato, adjuntos (ui/mail/ComposeScreen.kt); contactos del teléfono (data/mail/Contacts.kt)
@@ -36,4 +37,4 @@ Rutas relativas a `app/src/main/java/com/cemail/app/`. Lo compartido: `CeKit/doc
 - Modo de ejemplo solo en depuración (data/mail/DemoData.kt)
 
 ## No tiene
-VIP, horas de silencio, plantillas, respuestas rápidas, bloqueo con huella, copia automática, exportar PDF/imprimir, aceptar/rechazar invitaciones, reconocer fechas en el texto, crear evento o nota desde un correo, tile de ajustes rápidos, Wear OS.
+VIP, horas de silencio, plantillas, respuestas rápidas, bloqueo con huella, copia automática, exportar PDF/imprimir, aceptar/rechazar invitaciones, crear evento o nota desde un correo, tile de ajustes rápidos, Wear OS.

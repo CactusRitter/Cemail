@@ -113,6 +113,9 @@ interface MailRepository {
     /** The text of the calendar invitations (.ics) of a message; empty if it has none or it cannot be asked. */
     suspend fun calendarTexts(id: Long): List<String> = emptyList()
 
+    /** true if the message comes from a mailing list; null if that cannot be asked now. */
+    suspend fun isMailingList(id: Long): Boolean? = null
+
     /** The pictures embedded in a message, as Content-ID → `data:` URI (downloaded once, then kept on the phone). */
     suspend fun inlineImages(id: Long): Map<String, String>
 }
@@ -142,6 +145,7 @@ class DemoMailRepository(seed: List<Mail>, private val demoLabels: List<Label> =
     override suspend fun refresh(quick: Boolean) = true
     override suspend fun full(id: Long): Mail? = state.value.firstOrNull { it.id == id }
     override suspend fun replyInfo(id: Long): Pair<com.cemail.app.data.gmail.ReplyInfo, String?>? = null
+    override suspend fun isMailingList(id: Long): Boolean? = false
     override suspend fun emlFile(id: Long): java.io.File? = null
     override suspend fun attachments(id: Long) = emptyList<com.cemail.app.data.gmail.AttachmentInfo>()
     override suspend fun attachmentFile(id: Long, attachment: com.cemail.app.data.gmail.AttachmentInfo): java.io.File? = null

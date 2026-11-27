@@ -452,6 +452,21 @@ class ImapMailRepository(
         }
     }
 
+    override suspend fun isMailingList(id: Long): Boolean? = withContext(Dispatchers.IO) {
+        val remote = dao.remoteIdOf(id, accountId) ?: return@withContext null
+        try {
+            val (path, uid) = parseRemote(remote)
+            client.withStore { store ->
+                client.inFolder(store, path, readOnly = true) { client.headers(it, uid, com.cemail.app.data.mail.Unsubscribe.LIST_HEADERS) }
+            }.isNotEmpty()
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppLog.e("dates", "could not read the headers", e)
+            null
+        }
+    }
+
     override suspend fun attachments(id: Long): List<AttachmentInfo> = withContext(Dispatchers.IO) {
         val remote = dao.remoteIdOf(id, accountId) ?: return@withContext emptyList()
         val (path, uid) = parseRemote(remote)

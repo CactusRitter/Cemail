@@ -520,6 +520,7 @@ class MailViewModel(
     }
 
     suspend fun calendarTexts(id: Long): List<String> = repo.calendarTexts(id)
+    suspend fun isMailingList(id: Long): Boolean? = repo.isMailingList(id)
     suspend fun inlineImages(id: Long): Map<String, String> = repo.inlineImages(id)
     suspend fun full(id: Long): Mail? = repo.full(id)
     suspend fun unsubscribeInfo(id: Long) = repo.unsubscribeInfo(id)

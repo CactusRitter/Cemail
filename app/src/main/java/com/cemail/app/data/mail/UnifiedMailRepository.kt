@@ -70,6 +70,11 @@ class UnifiedMailRepository(private val accounts: List<MailRepository>, scope: C
         return emptyList()
     }
 
+    override suspend fun isMailingList(id: Long): Boolean? {
+        for (account in accounts) account.isMailingList(id)?.let { return it }
+        return null
+    }
+
     override suspend fun emlFile(id: Long): java.io.File? {
         for (account in accounts) account.emlFile(id)?.let { return it }
         return null

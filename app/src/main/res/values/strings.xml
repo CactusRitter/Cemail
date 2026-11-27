@@ -475,4 +475,5 @@
         <item quantity="one">%1$d more event in this invitation</item>
         <item quantity="other">%1$d more events in this invitation</item>
     </plurals>
+    <string name="invite_from_text">Found in the text</string>
 </resources>

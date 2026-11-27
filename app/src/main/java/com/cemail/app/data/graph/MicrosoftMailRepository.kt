@@ -510,6 +510,19 @@ class MicrosoftMailRepository(
         }
     }
 
+    override suspend fun isMailingList(id: Long): Boolean? = withContext(Dispatchers.IO) {
+        val remote = dao.remoteIdOf(id, accountId) ?: return@withContext null
+        try {
+            api.message(remote, "internetMessageHeaders").internetMessageHeaders
+                .any { header -> com.cemail.app.data.mail.Unsubscribe.LIST_HEADERS.any { it.equals(header.name, ignoreCase = true) } }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppLog.e("dates", "could not read the headers", e)
+            null
+        }
+    }
+
     override suspend fun attachments(id: Long): List<AttachmentInfo> = withContext(Dispatchers.IO) {
         val remote = dao.remoteIdOf(id, accountId) ?: return@withContext emptyList()
         try {

@@ -4,6 +4,7 @@ Siempre por debajo de 1.0: la 1.0 será cuando funcionen todas las funciones pri
 Cada versión se guarda en Google Drive (`Mi unidad/Ce Apps/Cemail/Cemail-x.y.z.apk`, sin reemplazar la anterior) y, desde la 2.0.0, también como *release* de GitHub (`vx.y.z`, con el APK), que es de donde la app avisa de versiones nuevas.
 
 ## Sin publicar
+- Citas escritas en el correo («reunión el martes a las 10:00»), en inglés, español y alemán: se reconocen en el móvil (ML Kit; la primera vez descarga el modelo del idioma) y salen en la misma tarjeta, como sugerencia («Visto en el texto»). Reglas estrictas para evitar falsos positivos (ver `docs/FUNCIONES.md`). El APK universal de release pasa de 4,6 MB a 19,2 MB (librería nativa para 4 arquitecturas). Probado en emulador con frases de ejemplo; sin probar con correos reales.
 - Invitaciones de calendario: un correo con parte `text/calendar` o archivo .ics muestra una tarjeta con título, fecha y hora (zona del móvil), lugar y «Añadir al calendario», que abre cualquier app de calendario (sin permisos). Las cancelaciones lo dicen y, si está Celander, ofrecen abrirlo allí. Probado en emulador con invitaciones de ejemplo (los 6 diseños, claro y oscuro); sin probar con correos reales de Gmail, Outlook ni IMAP.
 - Pantalla de entrada: «Echar un vistazo con mensajes de ejemplo» (modo de prueba, con su aviso) solo existe en las compilaciones de depuración; la app publicada ya no lo muestra.
 

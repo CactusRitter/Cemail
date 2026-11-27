@@ -473,4 +473,5 @@
         <item quantity="one">%1$d evento más en esta invitación</item>
         <item quantity="other">%1$d eventos más en esta invitación</item>
     </plurals>
+    <string name="invite_from_text">Visto en el texto</string>
 </resources>

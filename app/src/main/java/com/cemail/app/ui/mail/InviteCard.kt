@@ -35,33 +35,58 @@ import com.ce.kit.ui.glass.GlassKind
 import com.ce.kit.ui.glass.glass
 import com.ce.kit.ui.glass.popIn
 import com.cemail.app.R
+import com.cemail.app.data.mail.Appointments
+import com.cemail.app.data.mail.Folder
 import com.cemail.app.data.mail.Ics
 import com.cemail.app.data.mail.IcsEvent
+import com.cemail.app.data.mail.Mail
+import com.cemail.app.data.mail.TextDates
+import java.time.ZoneId
 import java.util.Formatter
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** An event found in a message and the whole file it came from (handed over to Celander). */
-class Invite(val event: IcsEvent, val ics: String)
+/** An event of a message and the whole .ics file it came from (handed over to Celander); null if read from the text. */
+class Invite(val event: IcsEvent, val ics: String?)
 
 private const val CELANDER = "com.celander.app"
 private const val CELANDER_ICS = "com.celander.app.extra.ICS"
 private const val MAX_ICS_EXTRA = 100 * 1024
 private const val SHOWN = 3
 
-/** The invitations of a message, once they have been fetched and read; empty meanwhile. */
+/**
+ * The events of a message, once they have been fetched and read; empty meanwhile. Its .ics invitations, or, when it
+ * brings none, the appointments written in its text.
+ */
 @Composable
-fun rememberInvites(messageId: Long, vm: MailViewModel): List<Invite> {
-    val invites by produceState(emptyList<Invite>(), messageId) {
+fun rememberInvites(mail: Mail?, vm: MailViewModel): List<Invite> {
+    val invites by produceState(emptyList<Invite>(), mail?.id) {
         value = emptyList()
-        val texts = vm.calendarTexts(messageId)
-        value = withContext(Dispatchers.Default) {
-            texts.flatMap { text -> Ics.parse(text).map { Invite(it, text) } }
-                .distinctBy { listOf(it.event.uid, it.event.title, it.event.startMillis, it.event.cancelled) }
+        if (mail == null) return@produceState
+        val texts = vm.calendarTexts(mail.id)
+        value = if (texts.isNotEmpty()) {
+            withContext(Dispatchers.Default) {
+                texts.flatMap { text -> Ics.parse(text).map { Invite(it, text) } }
+                    .distinctBy { listOf(it.event.uid, it.event.title, it.event.startMillis, it.event.cancelled) }
+            }
+        } else {
+            fromText(mail, vm).map { Invite(it, null) }
         }
     }
     return invites
+}
+
+private suspend fun fromText(mail: Mail, vm: MailViewModel): List<IcsEvent> {
+    if (mail.folder == Folder.SPAM || mail.folder == Folder.TRASH) return emptyList()
+    val events = withContext(Dispatchers.Default) {
+        val text = Appointments.ownText(mail.body)
+        val language = Appointments.language(text, Locale.getDefault().language)
+        val found = TextDates.find(text, language, mail.timeMillis)
+        Appointments.suggestions(text, mail.subject, mail.timeMillis, found, ZoneId.systemDefault())
+    }
+    // The server is only asked when there is something to suggest. If it cannot say, nothing is suggested.
+    return if (events.isNotEmpty() && vm.isMailingList(mail.id) == false) events else emptyList()
 }
 
 /** The events a message invites to, in a glass card above its text. */
@@ -79,6 +104,13 @@ fun InviteCard(invites: List<Invite>, modifier: Modifier = Modifier) {
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+        if (invites.firstOrNull()?.ics == null) {
+            Text(
+                stringResource(R.string.invite_from_text),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         invites.take(SHOWN).forEachIndexed { n, invite ->
             if (n > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
             val event = invite.event
@@ -164,7 +196,7 @@ private fun insertIntent(invite: Invite): Intent {
         .putExtra(CalendarContract.EXTRA_EVENT_END_TIME, event.endMillis)
         .putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, event.allDay)
     event.rrule?.let { intent.putExtra(CalendarContract.Events.RRULE, it) }
-    if (invite.ics.toByteArray().size <= MAX_ICS_EXTRA) intent.putExtra(CELANDER_ICS, invite.ics)
+    invite.ics?.takeIf { it.toByteArray().size <= MAX_ICS_EXTRA }?.let { intent.putExtra(CELANDER_ICS, it) }
     return intent
 }
 
