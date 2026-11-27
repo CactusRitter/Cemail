@@ -3,6 +3,10 @@
 Lo que necesita una sesión nueva (o tras `/clear`) además de `CLAUDE.md`. Mantener al día al cerrar cada bloque.
 Última actualización: 2026-11-22.
 
+## 2026-11-27: recorrido Cemail -> Celander probado en emulador
+- Con `com.celander.app` (rama de Celander con 3083c2d): .ics nuevo se revisa y guarda; mismo UID actualiza; CANCEL permite borrar; cita del texto llega con título, fecha y hora; al cerrar se vuelve a Cemail. Sin fallos que corregir.
+- Google Calendar no se pudo probar: en el emulador pide iniciar sesión (no hay cuenta).
+
 ## Cierre de bloque 2026-11-27 (2): citas escritas en el texto
 - En `main`, sin publicar. Reglas y límites en `docs/FUNCIONES.md`.
 - Fallos conocidos de ML Kit en las pruebas: «Treffen am 5.12. um 18:30 Uhr» no reconoce «5.12.» (no sale nada); «lunes de 16:00 a 17:30» sale 16:00–17:00; fechas numéricas en inglés se leen mes/día. Corregidos en código: «9 de la noche», «day after tomorrow», «viernes que viene» dicho en viernes.
